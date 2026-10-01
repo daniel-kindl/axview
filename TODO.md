@@ -9,8 +9,6 @@ When you finish an item, mark it `[x]` and add the commit hash.
 
 ## Next
 
-- [ ] **Design DataContext forms (S).** Support `d:DataContext="{d:DesignInstance ...}"` and a `Design.DataContext` with content.
-  Today only `<Design.DataContext><vm:Type /></Design.DataContext>` is removed when its type is not creatable.
 - [ ] **ViewModel picker (M).** Let the user select a ViewModel type for the current view.
   Remember the choice per file.
 - [ ] **DI ViewModels (M).** Optional convention: a static factory or a `ServiceCollection` hook in the target app.
@@ -51,3 +49,4 @@ When you finish an item, mark it `[x]` and add the commit hash.
 - [x] ViewModel from the XAML: `Design.DataContext`, else `x:DataType`, else a "No DataContext" badge. `20a92b3`
 - [x] Picker window check: recent rows show the file name, then the folder. A hint replaces an empty list. `518bbcd`
 - [x] Project switch recovery: a failed switch starts the host again on the previous file and shows the setup error.
+- [x] Design DataContext forms: `d:DataContext="{d:DesignInstance ...}"`, and a `Design.DataContext` with content.
