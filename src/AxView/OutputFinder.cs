@@ -53,11 +53,10 @@ internal static class OutputFinder
 
         foreach (string runtimeConfig in Directory.EnumerateFiles(directory, "*.runtimeconfig.json"))
         {
-            string appName = Path.GetFileName(runtimeConfig)[..^".runtimeconfig.json".Length];
-            string deps = Path.Combine(directory, appName + ".deps.json");
-            if (File.Exists(deps))
+            AppOutput candidate = AppOutput.FromRuntimeConfig(runtimeConfig);
+            if (File.Exists(candidate.DepsFile))
             {
-                return new AppOutput(directory, deps, runtimeConfig);
+                return candidate;
             }
         }
 

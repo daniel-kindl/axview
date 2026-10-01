@@ -1,37 +1,18 @@
 using System.Diagnostics;
-using System.Text.Json;
 
 namespace AxView;
 
-/// <summary>Finds the runtime XAML loader that matches the target app's Avalonia version.</summary>
-/// <remarks>
-/// The loader uses Avalonia internals, so its version must match the target's Avalonia exactly.
-/// Apps do not usually ship the loader, so the launcher takes it from the NuGet cache.
-/// </remarks>
-internal static class LoaderLocator
+/// <summary>Takes the XAML loader from the NuGet cache. Restores the package into the cache if it is missing.</summary>
+/// <remarks>Apps do not usually ship the loader, so the launcher cannot take it from the app output.</remarks>
+internal sealed class NuGetLoaderSource : ILoaderSource
 {
     private const string PackageId = "avalonia.markup.xaml.loader";
     private const string AssemblyFile = "Avalonia.Markup.Xaml.Loader.dll";
     private static readonly string[] PreferredTargets = ["net8.0", "net6.0", "netstandard2.0"];
 
-    public static string ReadAvaloniaVersion(string depsFile)
-    {
-        using FileStream stream = File.OpenRead(depsFile);
-        using JsonDocument doc = JsonDocument.Parse(stream);
-        if (doc.RootElement.TryGetProperty("libraries", out JsonElement libraries))
-        {
-            foreach (JsonProperty library in libraries.EnumerateObject())
-            {
-                if (library.Name.StartsWith("Avalonia/", StringComparison.OrdinalIgnoreCase))
-                {
-                    return library.Name["Avalonia/".Length..];
-                }
-            }
-        }
-
-        throw new PreviewSetupException($"'{depsFile}' does not reference the Avalonia package.");
-    }
-
+    /// <summary>Returns the loader of the exact version in the packages folder, or null.</summary>
+    /// <param name="packagesRoot">The NuGet global packages folder.</param>
+    /// <param name="version">The Avalonia version.</param>
     public static string? FindInCache(string packagesRoot, string version)
     {
         string lib = Path.Combine(packagesRoot, PackageId, version.ToLowerInvariant(), "lib");
@@ -40,19 +21,19 @@ internal static class LoaderLocator
             .FirstOrDefault(File.Exists);
     }
 
-    /// <summary>Returns the loader path. Restores the package into the NuGet cache if it is missing.</summary>
-    public static string Ensure(string version)
+    /// <inheritdoc />
+    public string Find(string avaloniaVersion)
     {
         string packagesRoot = NuGetPackagesRoot();
-        string? cached = FindInCache(packagesRoot, version);
+        string? cached = FindInCache(packagesRoot, avaloniaVersion);
         if (cached is not null)
         {
             return cached;
         }
 
-        Restore(version);
-        return FindInCache(packagesRoot, version)
-            ?? throw new PreviewSetupException($"Restore did not produce {PackageId} {version} in '{packagesRoot}'.");
+        Restore(avaloniaVersion);
+        return FindInCache(packagesRoot, avaloniaVersion)
+            ?? throw new PreviewSetupException($"Restore did not produce {PackageId} {avaloniaVersion} in '{packagesRoot}'.");
     }
 
     private static string NuGetPackagesRoot()

@@ -11,8 +11,8 @@ When you finish an item, mark it `[x]` and add the commit hash.
 - [x] **Deepen the preview renderer (M).** `PreviewRenderer` takes a path and returns the preview control.
   It owns the read retry, the base URI, the namespace index, and the root mapping.
   Test it with Avalonia.Headless in the test project only.
-  Add notes to the result when the "no DataContext" badge needs them.
-- [ ] **Testable preview target (S).** Put the XAML loader source behind an interface (NuGet and a fake).
+  Add notes to the result when the "no DataContext" badge needs them. `3d7e3f0`
+- [x] **Testable preview target (S).** Put the XAML loader source behind an interface (NuGet and a fake).
   Test `Resolve` on temporary folders.
 - [ ] **Code-behind (S).** Find the `x:Class` type in the built assembly.
   Create it and fill it from the new XAML (`rootInstance`), so code-behind runs.

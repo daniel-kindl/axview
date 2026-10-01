@@ -17,12 +17,13 @@ internal static class HostSession
     {
         string hostPath = Path.Combine(AppContext.BaseDirectory, "host", "AxView.Host.dll");
         string handOffFile = Path.Combine(Path.GetTempPath(), $"axview-hand-off-{Guid.NewGuid():N}.json");
+        PreviewTargetResolver resolver = new(new NuGetLoaderSource());
         string path = axamlPath;
         try
         {
             while (true)
             {
-                PreviewTarget target = PreviewTarget.Resolve(path, outputDir);
+                PreviewTarget target = resolver.Resolve(path, outputDir);
                 opened(target.AxamlPath);
                 Console.Error.WriteLine($"axview: {target.AssemblyName} in '{target.Output.Directory}'");
 
