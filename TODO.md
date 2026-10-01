@@ -59,3 +59,4 @@ When you finish an item, mark it `[x]` and add the commit hash.
 - [x] Picker window check: recent rows show the file name, then the folder. A hint replaces an empty list. `518bbcd`
 - [x] Project switch recovery: a failed switch starts the host again on the previous file and shows the setup error. `b374865`
 - [x] Design DataContext forms: `d:DataContext="{d:DesignInstance ...}"`, and a `Design.DataContext` with content. `37d9f7d`
+- [x] Style and resource previews: `Design.PreviewWith` for a `Styles`, `Style`, or `ResourceDictionary` root. `efef44c`
