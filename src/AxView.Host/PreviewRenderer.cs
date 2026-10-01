@@ -8,6 +8,7 @@ namespace AxView.Host;
 /// <summary>Turns an AXAML file of one project into a control that the preview window can show.</summary>
 /// <remarks>
 /// The renderer reads the file, adds the owning assembly to each CLR namespace, and loads the XAML in design mode.
+/// The loader creates the <c>x:Class</c> type, so its code-behind runs. If the loader cannot create it, the root element type is used.
 /// Relative URIs in the XAML resolve against the avares URI of the file.
 /// </remarks>
 /// <param name="localAssembly">The assembly that the project builds.</param>
@@ -29,7 +30,8 @@ internal sealed class PreviewRenderer(Assembly localAssembly, string projectDire
     {
         string xaml = ReadWithRetry(axamlPath);
         Uri baseUri = AvaresUri.For(localAssembly.GetName().Name!, projectDirectory, axamlPath);
-        string qualified = XmlnsQualifier.Qualify(xaml, namespaces.FindOwner);
+        string creatable = CodeBehindClass.RemoveIfNotCreatable(xaml, localAssembly);
+        string qualified = XmlnsQualifier.Qualify(creatable, namespaces.FindOwner);
         object root = AvaloniaRuntimeXamlLoader.Load(qualified, localAssembly, null, baseUri, designMode: true);
         return root switch
         {

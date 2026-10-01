@@ -11,6 +11,7 @@ namespace AxView.Tests;
 public sealed class PreviewRendererTests
 {
     private const string AvaloniaXmlns = "xmlns=\"https://github.com/avaloniaui\"";
+    private const string XamlXmlns = "xmlns:x=\"http://schemas.microsoft.com/winfx/2006/xaml\"";
 
     [AvaloniaFact]
     public void Render_ReturnsTheRootControlOfTheFile()
@@ -56,6 +57,39 @@ public sealed class PreviewRendererTests
         window.Show();
         TextBlock text = Assert.IsType<TextBlock>(Assert.IsType<FixtureControl>(preview).Content);
         Assert.Equal("tagged", text.Text);
+    }
+
+    [AvaloniaFact]
+    public void Render_CreatesTheCodeBehindTypeAndFillsItFromTheXaml()
+    {
+        using TempDir dir = new();
+        string file = dir.Write("Views/WithCode.axaml", $"""
+            <UserControl {AvaloniaXmlns} {XamlXmlns} x:Class="AxView.Tests.FixtureCodeBehind">
+              <TextBlock Text="From XAML" />
+            </UserControl>
+            """);
+
+        Control preview = Renderer(dir).Render(file);
+
+        FixtureCodeBehind view = Assert.IsType<FixtureCodeBehind>(preview);
+        Assert.Equal(FixtureCodeBehind.ConstructedTag, view.Tag);
+        Assert.Equal("From XAML", Assert.IsType<TextBlock>(view.Content).Text);
+    }
+
+    [AvaloniaFact]
+    public void Render_UsesDesignModeWhenTheCodeBehindTypeHasNoParameterlessConstructor()
+    {
+        using TempDir dir = new();
+        string file = dir.Write("Views/NoDefault.axaml", $"""
+            <UserControl {AvaloniaXmlns} {XamlXmlns} x:Class="AxView.Tests.FixtureNoDefaultConstructor">
+              <TextBlock Text="From XAML" />
+            </UserControl>
+            """);
+
+        Control preview = Renderer(dir).Render(file);
+
+        Assert.IsNotType<FixtureNoDefaultConstructor>(preview);
+        Assert.Equal("From XAML", Assert.IsType<TextBlock>(Assert.IsAssignableFrom<UserControl>(preview).Content).Text);
     }
 
     [AvaloniaFact]
