@@ -13,9 +13,12 @@ When you finish an item, mark it `[x]` and add the commit hash.
   Remember the choice per file.
 - [ ] **DI ViewModels (M).** Optional convention: a static factory or a `ServiceCollection` hook in the target app.
   Stub services so the preview makes no network calls.
+  Test case: DAT4000 `ProgramEditorView` fails with "LoggerService not initialized".
 - [ ] **Rebuild on .cs change (M).** Watch the project's `.cs` files.
   Run `dotnet build` on the app project, then start the host again on the same file.
   Keep the window position and size.
+- [ ] **More DesignInstance forms (S).** Support `{d:DesignInstance Type={x:Type vm:Type}}`.
+  Apply a `d:DataContext` with a `d:DesignInstance` on a child element. Today the renderer only removes it.
 - [ ] **Style and resource previews (S).** Show `Design.PreviewWith` for a `Styles` or `ResourceDictionary` root.
 - [ ] **Theme switch (S).** Toolbar toggle for Light, Dark, and Default (`RequestedThemeVariant`).
 - [ ] **Preview size (S).** Presets (phone, tablet, desktop) and a custom width and height.
