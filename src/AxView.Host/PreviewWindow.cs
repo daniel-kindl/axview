@@ -22,8 +22,8 @@ internal sealed class PreviewWindow : Window
 {
     private const double SidebarWidth = 280;
 
-    private static readonly FontFamily Monospace = new("Cascadia Mono, Consolas, Menlo, DejaVu Sans Mono, monospace");
-    private static readonly StringComparison PathComparison =
+    private static readonly FontFamily monospace = new("Cascadia Mono, Consolas, Menlo, DejaVu Sans Mono, monospace");
+    private static readonly StringComparison pathComparison =
         OperatingSystem.IsLinux() ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
 
     private readonly HostOptions options;
@@ -57,7 +57,7 @@ internal sealed class PreviewWindow : Window
         {
             TextWrapping = TextWrapping.Wrap,
             Foreground = Brushes.White,
-            FontFamily = Monospace,
+            FontFamily = monospace,
             FontSize = 12,
         };
         errorPanel = new Border
@@ -125,7 +125,7 @@ internal sealed class PreviewWindow : Window
         base.OnClosed(e);
     }
 
-    private Control BuildSidebar(Button openButton)
+    private DockPanel BuildSidebar(Button openButton)
     {
         TextBlock projectName = new()
         {
@@ -148,7 +148,7 @@ internal sealed class PreviewWindow : Window
     }
 
     // The file name first, so a long folder path does not hide it.
-    private static Control FileItem(string? relative)
+    private static StackPanel FileItem(string? relative)
     {
         string path = relative ?? string.Empty;
         string folder = Path.GetDirectoryName(path)?.Replace(Path.DirectorySeparatorChar, '/') ?? string.Empty;
@@ -165,7 +165,7 @@ internal sealed class PreviewWindow : Window
         return item;
     }
 
-    private Control BuildStage()
+    private Grid BuildStage()
     {
         Grid stage = new();
         stage.Children.Add(new ScrollViewer
@@ -186,14 +186,13 @@ internal sealed class PreviewWindow : Window
     private void ShowCatalog()
     {
         string text = filter.Text ?? string.Empty;
-        List<string> items = catalog
+        List<string> items = [.. catalog
             .Select(RelativePath)
-            .Where(p => p.Contains(text, StringComparison.OrdinalIgnoreCase))
-            .ToList();
+            .Where(p => p.Contains(text, StringComparison.OrdinalIgnoreCase))];
 
         isSyncingSelection = true;
         fileList.ItemsSource = items;
-        fileList.SelectedItem = items.FirstOrDefault(p => string.Equals(p, RelativePath(currentPath), PathComparison));
+        fileList.SelectedItem = items.FirstOrDefault(p => string.Equals(p, RelativePath(currentPath), pathComparison));
         isSyncingSelection = false;
     }
 
@@ -221,7 +220,7 @@ internal sealed class PreviewWindow : Window
             return;
         }
 
-        if (catalog.Any(f => string.Equals(f, Path.GetFullPath(path), PathComparison)))
+        if (catalog.Any(f => string.Equals(f, Path.GetFullPath(path), pathComparison)))
         {
             Show(path);
             return;

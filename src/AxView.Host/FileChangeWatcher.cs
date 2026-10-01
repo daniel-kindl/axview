@@ -6,7 +6,7 @@ namespace AxView.Host;
 /// <remarks>Editors often save by writing a temporary file and renaming it, so the watcher also accepts renames.</remarks>
 internal sealed class FileChangeWatcher : IDisposable
 {
-    private static readonly StringComparison PathComparison =
+    private static readonly StringComparison pathComparison =
         OperatingSystem.IsLinux() ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
 
     private readonly string path;
@@ -41,7 +41,7 @@ internal sealed class FileChangeWatcher : IDisposable
 
     private void OnEvent(object sender, FileSystemEventArgs e)
     {
-        if (string.Equals(Path.GetFullPath(e.FullPath), path, PathComparison))
+        if (string.Equals(Path.GetFullPath(e.FullPath), path, pathComparison))
         {
             Dispatcher.UIThread.Post(() =>
             {

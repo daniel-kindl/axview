@@ -8,7 +8,7 @@ internal sealed class NuGetLoaderSource : ILoaderSource
 {
     private const string PackageId = "avalonia.markup.xaml.loader";
     private const string AssemblyFile = "Avalonia.Markup.Xaml.Loader.dll";
-    private static readonly string[] PreferredTargets = ["net8.0", "net6.0", "netstandard2.0"];
+    private static readonly string[] preferredTargets = ["net8.0", "net6.0", "netstandard2.0"];
 
     /// <summary>Returns the loader of the exact version in the packages folder, or null.</summary>
     /// <param name="packagesRoot">The NuGet global packages folder.</param>
@@ -16,7 +16,7 @@ internal sealed class NuGetLoaderSource : ILoaderSource
     public static string? FindInCache(string packagesRoot, string version)
     {
         string lib = Path.Combine(packagesRoot, PackageId, version.ToLowerInvariant(), "lib");
-        return PreferredTargets
+        return preferredTargets
             .Select(tfm => Path.Combine(lib, tfm, AssemblyFile))
             .FirstOrDefault(File.Exists);
     }

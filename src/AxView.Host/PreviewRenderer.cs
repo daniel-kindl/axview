@@ -10,23 +10,16 @@ namespace AxView.Host;
 /// The renderer reads the file, adds the owning assembly to each CLR namespace, and loads the XAML in design mode.
 /// Relative URIs in the XAML resolve against the avares URI of the file.
 /// </remarks>
-internal sealed class PreviewRenderer
+/// <param name="localAssembly">The assembly that the project builds.</param>
+/// <param name="projectDirectory">The folder of the project.</param>
+internal sealed class PreviewRenderer(Assembly localAssembly, string projectDirectory)
 {
     private const int ReadAttempts = 5;
-    private static readonly TimeSpan ReadRetryDelay = TimeSpan.FromMilliseconds(40);
+    private static readonly TimeSpan readRetryDelay = TimeSpan.FromMilliseconds(40);
 
-    private readonly Assembly localAssembly;
-    private readonly string projectDirectory;
-    private readonly NamespaceIndex namespaces;
-
-    /// <param name="localAssembly">The assembly that the project builds.</param>
-    /// <param name="projectDirectory">The folder of the project.</param>
-    public PreviewRenderer(Assembly localAssembly, string projectDirectory)
-    {
-        this.localAssembly = localAssembly;
-        this.projectDirectory = projectDirectory;
-        namespaces = new NamespaceIndex(localAssembly);
-    }
+    private readonly Assembly localAssembly = localAssembly;
+    private readonly string projectDirectory = projectDirectory;
+    private readonly NamespaceIndex namespaces = new(localAssembly);
 
     /// <summary>Loads the file and returns its root control.</summary>
     /// <param name="axamlPath">An AXAML file of the project.</param>
@@ -49,7 +42,7 @@ internal sealed class PreviewRenderer
     }
 
     // A Window cannot be a child. Move its content, styles, and resources into a plain container.
-    private static Control Detach(Window window)
+    private static Border Detach(Window window)
     {
         object? content = window.Content;
         window.Content = null;
@@ -85,7 +78,7 @@ internal sealed class PreviewRenderer
             }
             catch (IOException) when (attempt < ReadAttempts)
             {
-                Thread.Sleep(ReadRetryDelay);
+                Thread.Sleep(readRetryDelay);
             }
         }
     }

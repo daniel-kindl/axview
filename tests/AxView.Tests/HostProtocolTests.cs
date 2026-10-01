@@ -4,7 +4,7 @@ namespace AxView.Tests;
 
 public sealed class HostProtocolTests
 {
-    private static readonly HostOptions Full = new(
+    private static readonly HostOptions full = new(
         AxamlPath: "/src/Ui/Views/Main.axaml",
         ProjectDirectory: "/src/Ui",
         AssemblyName: "Ui",
@@ -16,15 +16,15 @@ public sealed class HostProtocolTests
     [Fact]
     public void Parse_ReadsTheArgumentsThatToArgumentsWrites()
     {
-        HostOptions parsed = HostOptions.Parse(Full.ToArguments());
+        HostOptions parsed = HostOptions.Parse(full.ToArguments());
 
-        Assert.Equal(Full, parsed);
+        Assert.Equal(full, parsed);
     }
 
     [Fact]
     public void Parse_ReadsTheArgumentsWithoutTheOptionalValues()
     {
-        HostOptions options = Full with { AppAssemblyName = null, SnapshotPath = null, HandOffFile = null };
+        HostOptions options = full with { AppAssemblyName = null, SnapshotPath = null, HandOffFile = null };
 
         HostOptions parsed = HostOptions.Parse(options.ToArguments());
 
@@ -34,7 +34,7 @@ public sealed class HostProtocolTests
     [Fact]
     public void Parse_RejectsAnUnknownKey()
     {
-        string[] args = [.. Full.ToArguments(), "--theme", "Dark"];
+        string[] args = [.. full.ToArguments(), "--theme", "Dark"];
 
         ArgumentException ex = Assert.Throws<ArgumentException>(() => HostOptions.Parse(args));
 
@@ -44,7 +44,7 @@ public sealed class HostProtocolTests
     [Fact]
     public void Parse_RejectsAKeyWithoutAValue()
     {
-        string[] args = [.. Full.ToArguments(), "--snapshot"];
+        string[] args = [.. full.ToArguments(), "--snapshot"];
 
         _ = Assert.Throws<ArgumentException>(() => HostOptions.Parse(args));
     }
@@ -52,7 +52,7 @@ public sealed class HostProtocolTests
     [Fact]
     public void Parse_RejectsADuplicateKey()
     {
-        string[] args = [.. Full.ToArguments(), "--assembly", "Other"];
+        string[] args = [.. full.ToArguments(), "--assembly", "Other"];
 
         ArgumentException ex = Assert.Throws<ArgumentException>(() => HostOptions.Parse(args));
 
@@ -62,7 +62,7 @@ public sealed class HostProtocolTests
     [Fact]
     public void Parse_RejectsAMissingRequiredKey()
     {
-        string[] args = [.. Full.ToArguments().Where((_, index) => index > 1)];
+        string[] args = [.. full.ToArguments().Where((_, index) => index > 1)];
 
         ArgumentException ex = Assert.Throws<ArgumentException>(() => HostOptions.Parse(args));
 

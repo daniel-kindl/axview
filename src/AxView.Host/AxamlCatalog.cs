@@ -6,16 +6,15 @@ namespace AxView.Host;
 /// </remarks>
 internal static class AxamlCatalog
 {
-    private static readonly HashSet<string> SkippedFolders = new(StringComparer.OrdinalIgnoreCase) { "bin", "obj", "node_modules" };
+    private static readonly HashSet<string> skippedFolders = new(StringComparer.OrdinalIgnoreCase) { "bin", "obj", "node_modules" };
 
     public static IReadOnlyList<string> List(string projectDirectory)
     {
         string root = Path.GetFullPath(projectDirectory);
         List<string> files = [];
         Collect(root, files);
-        return files
-            .OrderBy(f => Path.GetRelativePath(root, f).Replace(Path.DirectorySeparatorChar, '/'), StringComparer.OrdinalIgnoreCase)
-            .ToList();
+        return [.. files
+            .OrderBy(f => Path.GetRelativePath(root, f).Replace(Path.DirectorySeparatorChar, '/'), StringComparer.OrdinalIgnoreCase)];
     }
 
     private static void Collect(string directory, List<string> files)
@@ -25,7 +24,7 @@ internal static class AxamlCatalog
         {
             string name = Path.GetFileName(child);
             bool isSource = !name.StartsWith('.')
-                && !SkippedFolders.Contains(name)
+                && !skippedFolders.Contains(name)
                 && !Directory.EnumerateFiles(child, "*.csproj").Any();
             if (isSource)
             {

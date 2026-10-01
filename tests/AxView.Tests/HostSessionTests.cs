@@ -5,7 +5,7 @@ namespace AxView.Tests;
 public sealed class HostSessionTests
 {
     [Fact]
-    public async Task RunAsync_ReturnsTheExitCodeOfTheHost()
+    public async Task RunAsync_ReturnsTheExitCodeOfTheHostAsync()
     {
         using TempDir dir = new();
         _ = dir.Write("Repo.sln");
@@ -24,7 +24,7 @@ public sealed class HostSessionTests
     }
 
     [Fact]
-    public async Task RunAsync_StartsANewHostForTheFileOfTheHandOff()
+    public async Task RunAsync_StartsANewHostForTheFileOfTheHandOffAsync()
     {
         using TempDir dir = new();
         _ = dir.Write("Repo.sln");
@@ -46,7 +46,7 @@ public sealed class HostSessionTests
     }
 
     [Fact]
-    public async Task RunAsync_StopsWhenTheHostAsksForASwitchWithoutAHandOff()
+    public async Task RunAsync_StopsWhenTheHostAsksForASwitchWithoutAHandOffAsync()
     {
         using TempDir dir = new();
         _ = dir.Write("Repo.sln");
@@ -61,7 +61,7 @@ public sealed class HostSessionTests
     }
 
     [Fact]
-    public async Task RunAsync_StartsNoHostWhenTheSetupFails()
+    public async Task RunAsync_StartsNoHostWhenTheSetupFailsAsync()
     {
         using TempDir dir = new();
         FakeHostProcess hosts = new();

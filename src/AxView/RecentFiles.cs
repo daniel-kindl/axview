@@ -3,18 +3,12 @@ using System.Text.Json;
 namespace AxView;
 
 /// <summary>The AXAML files the user opened last, newest first. A JSON file stores them.</summary>
-internal sealed class RecentFiles
+internal sealed class RecentFiles(string storePath)
 {
     public const int Capacity = 10;
 
-    private readonly string storePath;
-    private readonly List<string> files;
-
-    public RecentFiles(string storePath)
-    {
-        this.storePath = storePath;
-        files = Load(storePath);
-    }
+    private readonly string storePath = storePath;
+    private readonly List<string> files = Load(storePath);
 
     public IReadOnlyList<string> Files => files;
 

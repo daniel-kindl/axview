@@ -29,7 +29,7 @@ internal sealed record HostOptions(
     private const string SnapshotKey = "--snapshot";
     private const string HandOffKey = "--hand-off";
 
-    private static readonly string[] Keys =
+    private static readonly string[] keys =
         [AxamlKey, ProjectKey, AssemblyKey, AppAssemblyKey, LoaderKey, SnapshotKey, HandOffKey];
 
     /// <summary>Reads the options from the host command line.</summary>
@@ -45,7 +45,7 @@ internal sealed record HostOptions(
         for (int i = 0; i < args.Count; i += 2)
         {
             string key = args[i];
-            if (!Keys.Contains(key, StringComparer.Ordinal))
+            if (!keys.Contains(key, StringComparer.Ordinal))
             {
                 throw new ArgumentException($"Unknown key '{key}'.", nameof(args));
             }

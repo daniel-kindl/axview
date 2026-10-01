@@ -6,7 +6,7 @@ namespace AxView.Tests;
 
 public sealed class XmlnsQualifierTests
 {
-    private static readonly Dictionary<string, string> Owners = new()
+    private static readonly Dictionary<string, string> owners = new()
     {
         ["My.App.Views"] = "My.App",
         ["Icons"] = "Icon.Lib",
@@ -17,7 +17,7 @@ public sealed class XmlnsQualifierTests
     {
         string xaml = """<UserControl xmlns:v="using:My.App.Views" />""";
 
-        string result = XmlnsQualifier.Qualify(xaml, Owners.GetValueOrDefault);
+        string result = XmlnsQualifier.Qualify(xaml, owners.GetValueOrDefault);
 
         Assert.Equal("""<UserControl xmlns:v="clr-namespace:My.App.Views;assembly=My.App" />""", result);
     }
@@ -27,7 +27,7 @@ public sealed class XmlnsQualifierTests
     {
         string xaml = "<UserControl xmlns:i='clr-namespace:Icons' />";
 
-        string result = XmlnsQualifier.Qualify(xaml, Owners.GetValueOrDefault);
+        string result = XmlnsQualifier.Qualify(xaml, owners.GetValueOrDefault);
 
         Assert.Equal("<UserControl xmlns:i='clr-namespace:Icons;assembly=Icon.Lib' />", result);
     }
@@ -37,7 +37,7 @@ public sealed class XmlnsQualifierTests
     {
         string xaml = """<UserControl xmlns:v="clr-namespace:My.App.Views;assembly=Other" />""";
 
-        Assert.Equal(xaml, XmlnsQualifier.Qualify(xaml, Owners.GetValueOrDefault));
+        Assert.Equal(xaml, XmlnsQualifier.Qualify(xaml, owners.GetValueOrDefault));
     }
 
     [Fact]
@@ -45,6 +45,6 @@ public sealed class XmlnsQualifierTests
     {
         string xaml = """<UserControl xmlns="https://github.com/avaloniaui" xmlns:u="using:Unknown" />""";
 
-        Assert.Equal(xaml, XmlnsQualifier.Qualify(xaml, Owners.GetValueOrDefault));
+        Assert.Equal(xaml, XmlnsQualifier.Qualify(xaml, owners.GetValueOrDefault));
     }
 }

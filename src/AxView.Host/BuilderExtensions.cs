@@ -11,7 +11,7 @@ namespace AxView.Host;
 /// </remarks>
 internal static class BuilderExtensions
 {
-    private static readonly (string Assembly, string Method)[] Known =
+    private static readonly (string Assembly, string Method)[] known =
     [
         ("Avalonia.Fonts.Inter", "WithInterFont"),
         ("ReactiveUI.Avalonia", "UseReactiveUI"),
@@ -20,7 +20,7 @@ internal static class BuilderExtensions
 
     public static AppBuilder ApplyAvailable(AppBuilder builder, List<string> applied)
     {
-        foreach ((string assemblyName, string methodName) in Known)
+        foreach ((string assemblyName, string methodName) in known)
         {
             Assembly assembly;
             try
@@ -87,7 +87,7 @@ internal static class BuilderExtensions
             MethodInfo invoke = type.GetMethod("Invoke")!;
             if (invoke.ReturnType == typeof(void))
             {
-                ParameterExpression[] parameters = invoke.GetParameters().Select(p => Expression.Parameter(p.ParameterType)).ToArray();
+                ParameterExpression[] parameters = [.. invoke.GetParameters().Select(p => Expression.Parameter(p.ParameterType))];
                 return Expression.Lambda(type, Expression.Empty(), parameters).Compile();
             }
         }
