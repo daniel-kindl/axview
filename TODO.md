@@ -6,9 +6,6 @@ When you finish an item, mark it `[x]` and add the commit hash.
 
 ## Now
 
-- [ ] **ViewModel from the XAML (S).** Apply `Design.DataContext` (`Design.ApplyDesignModeProperties` by reflection).
-  Else, create the `x:DataType` type if it has a parameterless constructor.
-  Else, show a "no DataContext" badge in the status bar.
 - [ ] **Check the picker window (S).** Nobody has looked at its layout yet.
   The project switch from the preview "Open..." button works (checked by hand on 2026-10-01).
 
@@ -16,6 +13,8 @@ When you finish an item, mark it `[x]` and add the commit hash.
 
 - [ ] **Project switch recovery (S).** When the next file fails to resolve, start the host again on the previous file.
   Show the setup error in the error overlay.
+- [ ] **Design DataContext forms (S).** Support `d:DataContext="{d:DesignInstance ...}"` and a `Design.DataContext` with content.
+  Today only `<Design.DataContext><vm:Type /></Design.DataContext>` is removed when its type is not creatable.
 - [ ] **ViewModel picker (M).** Let the user select a ViewModel type for the current view.
   Remember the choice per file.
 - [ ] **DI ViewModels (M).** Optional convention: a static factory or a `ServiceCollection` hook in the target app.
@@ -53,3 +52,4 @@ When you finish an item, mark it `[x]` and add the commit hash.
 - [x] XAML loader source behind an interface. `aa07d93`
 - [x] Session supervisor: `HostSession` with a host process interface. `eebcde0`
 - [x] Code-behind: the loader creates the `x:Class` type. Design mode when it has no parameterless constructor. `64016bc`
+- [x] ViewModel from the XAML: `Design.DataContext`, else `x:DataType`, else a "No DataContext" badge.

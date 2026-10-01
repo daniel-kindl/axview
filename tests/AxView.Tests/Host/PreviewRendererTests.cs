@@ -95,6 +95,87 @@ public sealed class PreviewRendererTests
     }
 
     [AvaloniaFact]
+    public void Render_AppliesTheDesignDataContext()
+    {
+        using TempDir dir = new();
+        string file = dir.Write("Views/Designed.axaml", $"""
+            <UserControl {AvaloniaXmlns} xmlns:vm="using:AxView.Tests.Fixtures">
+              <Design.DataContext>
+                <vm:FixtureViewModel />
+              </Design.DataContext>
+            </UserControl>
+            """);
+
+        Control preview = Renderer(dir).Render(file);
+
+        _ = Assert.IsType<FixtureViewModel>(preview.DataContext);
+    }
+
+    [AvaloniaFact]
+    public void Render_AppliesTheDesignDataContextOfAWindow()
+    {
+        using TempDir dir = new();
+        string file = dir.Write("Views/DesignedWindow.axaml", $"""
+            <Window {AvaloniaXmlns} xmlns:vm="using:AxView.Tests.Fixtures">
+              <Design.DataContext>
+                <vm:FixtureViewModel />
+              </Design.DataContext>
+              <TextBlock Text="Inside" />
+            </Window>
+            """);
+
+        Control preview = Renderer(dir).Render(file);
+
+        _ = Assert.IsType<FixtureViewModel>(preview.DataContext);
+    }
+
+    [AvaloniaFact]
+    public void Render_CreatesTheDataTypeWhenNoDesignDataContextIsSet()
+    {
+        using TempDir dir = new();
+        string file = dir.Write("Views/Typed.axaml", $"""
+            <UserControl {AvaloniaXmlns} {XamlXmlns} xmlns:vm="using:AxView.Tests.Fixtures" x:DataType="vm:FixtureViewModel">
+              <TextBlock Text="{"{"}Binding Greeting{"}"}" />
+            </UserControl>
+            """);
+
+        Control preview = Renderer(dir).Render(file);
+
+        _ = Assert.IsType<FixtureViewModel>(preview.DataContext);
+    }
+
+    [AvaloniaFact]
+    public void Render_CreatesTheDataTypeWhenTheDesignDataContextHasNoParameterlessConstructor()
+    {
+        using TempDir dir = new();
+        string file = dir.Write("Views/DependentDesign.axaml", $"""
+            <UserControl {AvaloniaXmlns} {XamlXmlns} xmlns:vm="using:AxView.Tests.Fixtures" x:DataType="vm:FixtureViewModel">
+              <Design.DataContext>
+                <vm:FixtureDependentViewModel />
+              </Design.DataContext>
+            </UserControl>
+            """);
+
+        Control preview = Renderer(dir).Render(file);
+
+        _ = Assert.IsType<FixtureViewModel>(preview.DataContext);
+    }
+
+    [AvaloniaFact]
+    public void Render_LeavesNoDataContextWhenTheDataTypeHasNoParameterlessConstructor()
+    {
+        using TempDir dir = new();
+        string file = dir.Write("Views/Dependent.axaml", $"""
+            <UserControl {AvaloniaXmlns} {XamlXmlns} xmlns:vm="using:AxView.Tests.Fixtures"
+                         x:DataType="vm:FixtureDependentViewModel" />
+            """);
+
+        Control preview = Renderer(dir).Render(file);
+
+        Assert.Null(preview.DataContext);
+    }
+
+    [AvaloniaFact]
     public void Render_RejectsAStylesRoot()
     {
         using TempDir dir = new();

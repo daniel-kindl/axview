@@ -10,6 +10,7 @@ namespace AxView.Host.Rendering;
 /// The renderer reads the file, adds the owning assembly to each CLR namespace, and loads the XAML in design mode.
 /// The loader creates the <c>x:Class</c> type, so its code-behind runs. If the loader cannot create it, the root element type is used.
 /// Relative URIs in the XAML resolve against the avares URI of the file.
+/// The root gets a DataContext from the XAML. See <see cref="DesignDataContext"/>.
 /// </remarks>
 /// <param name="localAssembly">The assembly that the project builds.</param>
 /// <param name="projectDirectory">The folder of the project.</param>
@@ -30,9 +31,15 @@ internal sealed class PreviewRenderer(Assembly localAssembly, string projectDire
     {
         string xaml = ReadWithRetry(axamlPath);
         Uri baseUri = AvaresUri.For(localAssembly.GetName().Name!, projectDirectory, axamlPath);
-        string creatable = CodeBehindClass.RemoveIfNotCreatable(xaml, localAssembly);
+        string withClass = CodeBehindClass.RemoveIfNotCreatable(xaml, localAssembly);
+        string creatable = DesignDataContext.RemoveIfNotCreatable(withClass, FindType);
         string qualified = XmlnsQualifier.Qualify(creatable, namespaces.FindOwner);
         object root = AvaloniaRuntimeXamlLoader.Load(qualified, localAssembly, null, baseUri, designMode: true);
+        if (root is Control loaded)
+        {
+            DesignDataContext.Apply(loaded, xaml, FindType);
+        }
+
         return root switch
         {
             Window window => Detach(window),
@@ -67,6 +74,13 @@ internal sealed class PreviewRenderer(Assembly localAssembly, string projectDire
         container.Resources = resources;
 
         return container;
+    }
+
+    private Type? FindType(string clrNamespace, string name)
+    {
+        string fullName = $"{clrNamespace}.{name}";
+        string? owner = namespaces.FindOwner(clrNamespace);
+        return localAssembly.GetType(fullName) ?? (owner is null ? null : Assembly.Load(owner).GetType(fullName));
     }
 
     // An editor can hold the file open for a short time while it saves.

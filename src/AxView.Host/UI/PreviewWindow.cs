@@ -34,6 +34,7 @@ internal sealed class PreviewWindow : Window
     private readonly Border errorPanel;
     private readonly SelectableTextBlock errorText;
     private readonly TextBlock status;
+    private readonly Border noDataContextBadge;
     private readonly TextBox filter;
     private readonly ListBox fileList;
     private readonly Action? unsubscribeErrors;
@@ -54,6 +55,17 @@ internal sealed class PreviewWindow : Window
 
         status = new TextBlock { Margin = new Thickness(8, 4), FontSize = 12, TextTrimming = TextTrimming.CharacterEllipsis };
         ToolTip.SetTip(status, string.Join(Environment.NewLine, notes));
+        noDataContextBadge = new Border
+        {
+            IsVisible = false,
+            Margin = new Thickness(8, 2),
+            Padding = new Thickness(6, 1),
+            CornerRadius = new CornerRadius(3),
+            Background = new SolidColorBrush(Color.FromRgb(0xB0, 0x6A, 0x00)),
+            Child = new TextBlock { Text = "No DataContext", FontSize = 11, Foreground = Brushes.White },
+        };
+        ToolTip.SetTip(noDataContextBadge, "Set Design.DataContext, or give x:DataType a parameterless constructor.");
+        DockPanel.SetDock(noDataContextBadge, Dock.Right);
 
         errorText = new SelectableTextBlock
         {
@@ -89,7 +101,12 @@ internal sealed class PreviewWindow : Window
 
         Control sidebar = BuildSidebar(openButton);
         Control stage = BuildStage();
-        Border statusBar = new() { Child = status, BorderThickness = new Thickness(0, 1, 0, 0), BorderBrush = Brushes.Gray };
+        Border statusBar = new()
+        {
+            Child = new DockPanel { Children = { noDataContextBadge, status } },
+            BorderThickness = new Thickness(0, 1, 0, 0),
+            BorderBrush = Brushes.Gray,
+        };
         DockPanel.SetDock(statusBar, Dock.Bottom);
 
         Grid body = new() { ColumnDefinitions = new ColumnDefinitions($"{SidebarWidth},Auto,*") };
@@ -266,6 +283,7 @@ internal sealed class PreviewWindow : Window
             Control view = renderer.Render(currentPath);
             host.Content = view;
             HideError();
+            noDataContextBadge.IsVisible = view.DataContext is null;
             lastGood = view;
             status.Text = $"Rendered {DateTime.Now:HH:mm:ss}   {currentPath}";
             Console.WriteLine($"axview: rendered {RelativePath(currentPath)}");
