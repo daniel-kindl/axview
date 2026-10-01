@@ -21,7 +21,7 @@ When you finish an item, mark it `[x]` and add the commit hash.
   Else, create the `x:DataType` type if it has a parameterless constructor.
   Else, show a "no DataContext" badge in the status bar.
 - [ ] **Check the picker window (S).** Nobody has looked at its layout yet.
-  Test the project switch from the preview "Open..." button by hand.
+  The project switch from the preview "Open..." button works (checked by hand on 2026-10-01).
 
 ## Next
 
