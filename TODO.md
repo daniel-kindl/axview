@@ -27,7 +27,7 @@ When you finish an item, mark it `[x]` and add the commit hash.
 
 - [x] **Session supervisor (M).** Do this before "Rebuild on .cs change".
   Give `HostSession` a host process interface (real and fake) and the preview target resolver.
-  Test the project switch, a missing hand-off, and a setup error.
+  Test the project switch, a missing hand-off, and a setup error. `eebcde0`
 - [ ] **Project switch recovery (S).** When the next file fails to resolve, start the host again on the previous file.
   Show the setup error in the error overlay.
 - [ ] **ViewModel picker (M).** Let the user select a ViewModel type for the current view.
