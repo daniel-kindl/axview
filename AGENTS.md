@@ -15,6 +15,11 @@ AxView renders one Avalonia AXAML file of any project, and reloads it when the f
   Its window lists the project's AXAML files. It switches between them in the same process.
 - `tests/AxView.Tests`: tests for the launcher.
 
+## Work list
+
+Read `TODO.md` before you start. Take the top open item, unless the user gives a different task.
+Update `TODO.md` when you finish an item or find new work.
+
 ## Language
 
 Write all agent-facing text in ASD-STE100 Simplified Technical English.
