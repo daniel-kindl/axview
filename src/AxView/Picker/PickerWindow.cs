@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Templates;
 using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
@@ -14,8 +15,13 @@ namespace AxView.Picker;
 internal sealed class PickerWindow : Window
 {
     private readonly RecentFiles recent;
+    private readonly TextBlock recentHeader;
     private readonly ListBox recentList;
+    private readonly TextBlock noRecentFiles;
     private readonly TextBlock message;
+
+    /// <summary>The hint that the window shows in place of an empty recent file list.</summary>
+    public const string NoRecentFilesText = "No recent files yet. Open an AXAML file to start.";
 
     public PickerWindow(RecentFiles recent)
     {
@@ -28,7 +34,10 @@ internal sealed class PickerWindow : Window
         Button openButton = new() { Content = "Open AXAML file...", HorizontalAlignment = HorizontalAlignment.Left };
         openButton.Click += async (_, _) => await PickAsync();
 
-        recentList = new ListBox { ItemsSource = recent.Files };
+        recentList = new ListBox
+        {
+            ItemTemplate = new FuncDataTemplate<string>((path, _) => new RecentFileItem(path ?? string.Empty)),
+        };
         recentList.DoubleTapped += async (_, _) => await OpenSelectedAsync();
         recentList.KeyDown += async (_, e) =>
         {
@@ -38,11 +47,14 @@ internal sealed class PickerWindow : Window
             }
         };
 
+        noRecentFiles = new TextBlock { Text = NoRecentFilesText, Opacity = 0.7 };
+        DockPanel.SetDock(noRecentFiles, Dock.Top);
+
         message = new TextBlock { TextWrapping = TextWrapping.Wrap, Foreground = Brushes.IndianRed, IsVisible = false };
 
         TextBlock title = new() { Text = "AxView", FontSize = 28, FontWeight = FontWeight.SemiBold };
         TextBlock subtitle = new() { Text = "Render any Avalonia AXAML file. It reloads when you save.", Opacity = 0.7 };
-        TextBlock recentHeader = new() { Text = "Recent (double-click to open)", FontWeight = FontWeight.SemiBold };
+        recentHeader = new TextBlock { Text = "Recent (double-click to open)", FontWeight = FontWeight.SemiBold };
 
         DockPanel layout = new() { Margin = new Thickness(24) };
         foreach (Control top in new Control[] { title, subtitle, openButton, message, recentHeader })
@@ -52,8 +64,10 @@ internal sealed class PickerWindow : Window
             layout.Children.Add(top);
         }
 
+        layout.Children.Add(noRecentFiles);
         layout.Children.Add(recentList);
         Content = layout;
+        ShowRecentFiles();
     }
 
     private async Task PickAsync()
@@ -99,8 +113,17 @@ internal sealed class PickerWindow : Window
             ShowMessage(ex.Message);
         }
 
-        recentList.ItemsSource = recent.Files.ToList();
+        ShowRecentFiles();
         Show();
+    }
+
+    private void ShowRecentFiles()
+    {
+        recentList.ItemsSource = recent.Files.ToList();
+        bool hasFiles = recent.Files.Count > 0;
+        recentHeader.IsVisible = hasFiles;
+        recentList.IsVisible = hasFiles;
+        noRecentFiles.IsVisible = !hasFiles;
     }
 
     private void ShowMessage(string text)
