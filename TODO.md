@@ -6,14 +6,6 @@ When you finish an item, mark it `[x]` and add the commit hash.
 
 ## Now
 
-- [x] **Host protocol (S).** Put the host options, the exit reasons, and the hand-off in one module. See ADR 0001.
-  Both assemblies compile its source. Decode the options strictly. Test a round trip. `4eb967e`
-- [x] **Deepen the preview renderer (M).** `PreviewRenderer` takes a path and returns the preview control.
-  It owns the read retry, the base URI, the namespace index, and the root mapping.
-  Test it with Avalonia.Headless in the test project only.
-  Add notes to the result when the "no DataContext" badge needs them. `3d7e3f0`
-- [x] **Testable preview target (S).** Put the XAML loader source behind an interface (NuGet and a fake).
-  Test `Resolve` on temporary folders. `aa07d93`
 - [ ] **Code-behind (S).** Find the `x:Class` type in the built assembly.
   Create it and fill it from the new XAML (`rootInstance`), so code-behind runs.
   Fall back to design mode when the type has no parameterless constructor.
@@ -25,9 +17,6 @@ When you finish an item, mark it `[x]` and add the commit hash.
 
 ## Next
 
-- [x] **Session supervisor (M).** Do this before "Rebuild on .cs change".
-  Give `HostSession` a host process interface (real and fake) and the preview target resolver.
-  Test the project switch, a missing hand-off, and a setup error. `eebcde0`
 - [ ] **Project switch recovery (S).** When the next file fails to resolve, start the host again on the previous file.
   Show the setup error in the error overlay.
 - [ ] **ViewModel picker (M).** Let the user select a ViewModel type for the current view.
@@ -62,3 +51,7 @@ When you finish an item, mark it `[x]` and add the commit hash.
 ## Done
 
 - [x] Launcher, host, hot reload, error overlay, snapshot mode, picker UI, project file list. `9ffd2dd`
+- [x] Host protocol module (ADR 0001). `4eb967e`
+- [x] Deep `PreviewRenderer`. `3d7e3f0`
+- [x] XAML loader source behind an interface. `aa07d93`
+- [x] Session supervisor: `HostSession` with a host process interface. `eebcde0`
