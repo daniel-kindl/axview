@@ -6,9 +6,6 @@ When you finish an item, mark it `[x]` and add the commit hash.
 
 ## Now
 
-- [ ] **Code-behind (S).** Find the `x:Class` type in the built assembly.
-  Create it and fill it from the new XAML (`rootInstance`), so code-behind runs.
-  Fall back to design mode when the type has no parameterless constructor.
 - [ ] **ViewModel from the XAML (S).** Apply `Design.DataContext` (`Design.ApplyDesignModeProperties` by reflection).
   Else, create the `x:DataType` type if it has a parameterless constructor.
   Else, show a "no DataContext" badge in the status bar.
@@ -55,3 +52,4 @@ When you finish an item, mark it `[x]` and add the commit hash.
 - [x] Deep `PreviewRenderer`. `3d7e3f0`
 - [x] XAML loader source behind an interface. `aa07d93`
 - [x] Session supervisor: `HostSession` with a host process interface. `eebcde0`
+- [x] Code-behind: the loader creates the `x:Class` type. Design mode when it has no parameterless constructor. `64016bc`
