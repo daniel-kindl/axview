@@ -10,6 +10,8 @@ using Avalonia.Media.Imaging;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 
+using AxView.Protocol;
+
 namespace AxView.Host;
 
 /// <summary>
@@ -233,16 +235,16 @@ internal sealed class PreviewWindow : Window
     // A file of another project needs that project's app runtime. Only the launcher can start it.
     private void SwitchProject(string path)
     {
-        if (options.SwitchFile is null)
+        if (options.HandOffFile is null)
         {
             ShowError(new InvalidOperationException($"'{path}' belongs to another project. Start axview with that file."));
             return;
         }
 
-        File.WriteAllText(options.SwitchFile, Path.GetFullPath(path));
+        new HandOff(Path.GetFullPath(path)).Save(options.HandOffFile);
         if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            desktop.Shutdown(HostOptions.SwitchProjectExitCode);
+            desktop.Shutdown((int)ExitReason.SwitchProject);
         }
     }
 
@@ -298,10 +300,10 @@ internal sealed class PreviewWindow : Window
             bitmap.Save(options.SnapshotPath!);
         }
 
-        int exitCode = errorPanel.IsVisible ? 1 : 0;
+        ExitReason reason = errorPanel.IsVisible ? ExitReason.RenderFailed : ExitReason.Ok;
         if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            desktop.Shutdown(exitCode);
+            desktop.Shutdown((int)reason);
         }
     }
 

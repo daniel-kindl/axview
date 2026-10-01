@@ -15,6 +15,11 @@
     <InternalsVisibleTo Include="AxView.Tests" />
   </ItemGroup>
 
+  <!-- The host protocol. The launcher and the host both compile this source. See docs/adr/0001. -->
+  <ItemGroup>
+    <Compile Include="..\Protocol\*.cs" Link="Protocol\%(Filename)%(Extension)" />
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="Avalonia" Version="11.0.0" ExcludeAssets="runtime" />
     <PackageReference Include="Avalonia.Desktop" Version="11.0.0" ExcludeAssets="runtime" />

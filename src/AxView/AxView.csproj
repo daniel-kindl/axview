@@ -11,6 +11,11 @@
     <InternalsVisibleTo Include="AxView.Tests" />
   </ItemGroup>
 
+  <!-- The host protocol. The launcher and the host both compile this source. See docs/adr/0001. -->
+  <ItemGroup>
+    <Compile Include="..\Protocol\*.cs" Link="Protocol\%(Filename)%(Extension)" />
+  </ItemGroup>
+
   <!-- The picker UI. Its Avalonia version is independent of the target app's version. -->
   <ItemGroup>
     <PackageReference Include="Avalonia" Version="11.3.22" />

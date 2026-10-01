@@ -20,7 +20,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\AxView\AxView.csproj" />
-    <ProjectReference Include="..\..\src\AxView.Host\AxView.Host.csproj" />
+    <!-- Both assemblies compile the host protocol. The alias prevents duplicate type names. -->
+    <ProjectReference Include="..\..\src\AxView.Host\AxView.Host.csproj" Aliases="host" />
   </ItemGroup>
 
 </Project>

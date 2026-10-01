@@ -1,5 +1,7 @@
 using Avalonia;
 
+using AxView.Protocol;
+
 namespace AxView;
 
 /// <summary>Starts the picker UI, or previews a file given on the command line.</summary>
@@ -45,7 +47,7 @@ internal static class Program
         catch (PreviewSetupException ex)
         {
             Console.Error.WriteLine($"axview: {ex.Message}");
-            return 1;
+            return (int)ExitReason.SetupFailed;
         }
     }
 

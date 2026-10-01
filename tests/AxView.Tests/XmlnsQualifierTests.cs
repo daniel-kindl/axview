@@ -1,4 +1,6 @@
-using AxView.Host;
+extern alias host;
+
+using host::AxView.Host;
 
 namespace AxView.Tests;
 

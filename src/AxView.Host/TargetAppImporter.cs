@@ -5,6 +5,8 @@ using Avalonia.Controls;
 using Avalonia.Controls.Templates;
 using Avalonia.Styling;
 
+using AxView.Protocol;
+
 namespace AxView.Host;
 
 /// <summary>Moves the target app's themes, styles, resources, and data templates into the host app.</summary>

@@ -6,6 +6,13 @@ When you finish an item, mark it `[x]` and add the commit hash.
 
 ## Now
 
+- [ ] **Host protocol (S).** Put the host options, the exit reasons, and the hand-off in one module. See ADR 0001.
+  Both assemblies compile its source. Decode the options strictly. Test a round trip.
+- [ ] **Deepen the preview renderer (M).** `PreviewRenderer` takes a path and returns a preview and notes.
+  It owns the read retry, the base URI, the namespace index, and the root mapping.
+  Test it with Avalonia.Headless in the test project only.
+- [ ] **Testable preview target (S).** Put the XAML loader source behind an interface (NuGet and a fake).
+  Test `Resolve` on temporary folders.
 - [ ] **Code-behind (S).** Find the `x:Class` type in the built assembly.
   Create it and fill it from the new XAML (`rootInstance`), so code-behind runs.
   Fall back to design mode when the type has no parameterless constructor.
@@ -17,6 +24,11 @@ When you finish an item, mark it `[x]` and add the commit hash.
 
 ## Next
 
+- [ ] **Session supervisor (M).** Do this before "Rebuild on .cs change".
+  Give `HostSession` a host process interface (real and fake) and the preview target resolver.
+  Test the project switch, a missing hand-off, and a setup error.
+- [ ] **Project switch recovery (S).** When the next file fails to resolve, start the host again on the previous file.
+  Show the setup error in the error overlay.
 - [ ] **ViewModel picker (M).** Let the user select a ViewModel type for the current view.
   Remember the choice per file.
 - [ ] **DI ViewModels (M).** Optional convention: a static factory or a `ServiceCollection` hook in the target app.
@@ -35,6 +47,8 @@ When you finish an item, mark it `[x]` and add the commit hash.
 - [ ] **Output choice (S).** When more than one output fits, prefer Debug. Show the choice in the status bar.
   Today the most recent build wins.
 - [ ] **CI snapshot mode (S).** Render all files of a project. Write one PNG per file and a summary. Fail on error.
+  Move the snapshot out of `PreviewWindow` into a snapshot runner that uses `PreviewRenderer`.
+  Capture only the preview. Get the result from the renderer and the dispatcher errors, not from the error panel.
 - [ ] **Packaging (M).** Publish as a `dotnet tool` (`axview`). Bundle the host in the tool package.
 - [ ] **Linux and macOS check (S).** Run the tests and one snapshot on each OS.
 

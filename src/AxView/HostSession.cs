@@ -1,13 +1,12 @@
 using System.Diagnostics;
 
+using AxView.Protocol;
+
 namespace AxView;
 
 /// <summary>Runs the host for one file. Starts the host again when the user opens a file of another project.</summary>
 internal static class HostSession
 {
-    /// <summary>The host exits with this code to ask for another project. The host defines the same value.</summary>
-    private const int SwitchProjectExitCode = 3;
-
     /// <param name="axamlPath">The first file to show.</param>
     /// <param name="outputDir">The app output to use, or null to find it.</param>
     /// <param name="snapshotPath">If set, the host saves one PNG and exits.</param>
@@ -17,7 +16,7 @@ internal static class HostSession
     public static async Task<int> RunAsync(string axamlPath, string? outputDir, string? snapshotPath, Action<string> opened)
     {
         string hostPath = Path.Combine(AppContext.BaseDirectory, "host", "AxView.Host.dll");
-        string switchFile = Path.Combine(Path.GetTempPath(), $"axview-switch-{Guid.NewGuid():N}.txt");
+        string handOffFile = Path.Combine(Path.GetTempPath(), $"axview-hand-off-{Guid.NewGuid():N}.json");
         string path = axamlPath;
         try
         {
@@ -27,14 +26,15 @@ internal static class HostSession
                 opened(target.AxamlPath);
                 Console.Error.WriteLine($"axview: {target.AssemblyName} in '{target.Output.Directory}'");
 
-                int exitCode = await RunHostAsync(HostCommand.Arguments(target, hostPath, snapshotPath, switchFile));
-                if (exitCode != SwitchProjectExitCode || !File.Exists(switchFile))
+                int exitCode = await RunHostAsync(target, hostPath, target.ToHostOptions(snapshotPath, handOffFile));
+                HandOff? handOff = exitCode == (int)ExitReason.SwitchProject ? HandOff.Load(handOffFile) : null;
+                if (handOff is null)
                 {
                     return exitCode;
                 }
 
-                path = File.ReadAllText(switchFile).Trim();
-                File.Delete(switchFile);
+                path = handOff.NextFile;
+                File.Delete(handOffFile);
 
                 // The given output belongs to the first project only.
                 outputDir = null;
@@ -42,13 +42,22 @@ internal static class HostSession
         }
         finally
         {
-            File.Delete(switchFile);
+            File.Delete(handOffFile);
         }
     }
 
-    private static async Task<int> RunHostAsync(IReadOnlyList<string> arguments)
+    // dotnet exec with the target's runtimeconfig and deps file runs the host on the target's runtime and Avalonia.
+    private static async Task<int> RunHostAsync(PreviewTarget target, string hostPath, HostOptions options)
     {
         ProcessStartInfo info = new(DotnetHost.Path()) { UseShellExecute = false };
+        List<string> arguments =
+        [
+            "exec",
+            "--runtimeconfig", target.Output.RuntimeConfig,
+            "--depsfile", target.Output.DepsFile,
+            hostPath,
+            .. options.ToArguments(),
+        ];
         foreach (string argument in arguments)
         {
             info.ArgumentList.Add(argument);

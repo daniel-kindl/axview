@@ -2,6 +2,8 @@ using System.Runtime.CompilerServices;
 
 using Avalonia;
 
+using AxView.Protocol;
+
 namespace AxView.Host;
 
 internal static class Program
@@ -17,7 +19,7 @@ internal static class Program
         catch (ArgumentException ex)
         {
             Console.Error.WriteLine($"axview-host: {ex.Message}");
-            return 2;
+            return (int)ExitReason.BadArguments;
         }
 
         // Register before any method that touches the loader is compiled.
