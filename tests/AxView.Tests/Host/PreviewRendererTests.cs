@@ -2,7 +2,6 @@ extern alias host;
 
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
-using Avalonia.Styling;
 
 using AxView.Tests.Fixtures;
 
@@ -248,14 +247,59 @@ public sealed class PreviewRendererTests
     }
 
     [AvaloniaFact]
-    public void Render_RejectsAStylesRoot()
+    public void Render_ShowsThePreviewWithControlOfAStylesRootWithTheStyles()
     {
         using TempDir dir = new();
-        string file = dir.Write("Styles/Buttons.axaml", $"""<Styles {AvaloniaXmlns} />""");
+        string file = dir.Write("Styles/Texts.axaml", $"""
+            <Styles {AvaloniaXmlns}>
+              <Design.PreviewWith>
+                <Border Padding="20"><TextBlock Text="Sample" /></Border>
+              </Design.PreviewWith>
+              <Style Selector="TextBlock">
+                <Setter Property="Tag" Value="styled" />
+              </Style>
+            </Styles>
+            """);
+
+        Control preview = Renderer(dir).Render(file);
+
+        Window window = new() { Content = preview };
+        window.Show();
+        TextBlock text = Assert.IsType<TextBlock>(Assert.IsType<Border>(preview).Child);
+        Assert.Equal("styled", text.Tag);
+    }
+
+    [AvaloniaFact]
+    public void Render_ShowsThePreviewWithControlOfAResourceDictionaryRootWithTheResources()
+    {
+        using TempDir dir = new();
+        string file = dir.Write("Styles/Colors.axaml", $"""
+            <ResourceDictionary {AvaloniaXmlns} {XamlXmlns}>
+              <Design.PreviewWith>
+                <Border Padding="20" />
+              </Design.PreviewWith>
+              <x:String x:Key="Greeting">Hello</x:String>
+            </ResourceDictionary>
+            """);
+
+        Control preview = Renderer(dir).Render(file);
+
+        _ = Assert.IsType<Border>(preview);
+        Assert.True(preview.TryFindResource("Greeting", out object? greeting));
+        Assert.Equal("Hello", greeting);
+    }
+
+    [AvaloniaTheory]
+    [InlineData("Styles")]
+    [InlineData("ResourceDictionary")]
+    public void Render_RejectsAStyleOrResourceRootWithoutPreviewWith(string rootName)
+    {
+        using TempDir dir = new();
+        string file = dir.Write("Styles/Plain.axaml", $"""<{rootName} {AvaloniaXmlns} />""");
 
         NotSupportedException ex = Assert.Throws<NotSupportedException>(() => Renderer(dir).Render(file));
 
-        Assert.Contains(nameof(Styles), ex.Message, StringComparison.Ordinal);
+        Assert.Contains("Design.PreviewWith", ex.Message, StringComparison.Ordinal);
     }
 
     [AvaloniaFact]

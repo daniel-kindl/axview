@@ -19,7 +19,6 @@ When you finish an item, mark it `[x]` and add the commit hash.
   Keep the window position and size.
 - [ ] **More DesignInstance forms (S).** Support `{d:DesignInstance Type={x:Type vm:Type}}`.
   Apply a `d:DataContext` with a `d:DesignInstance` on a child element. Today the renderer only removes it.
-- [ ] **Style and resource previews (S).** Show `Design.PreviewWith` for a `Styles` or `ResourceDictionary` root.
 - [ ] **Theme switch (S).** Toolbar toggle for Light, Dark, and Default (`RequestedThemeVariant`).
 - [ ] **Preview size (S).** Presets (phone, tablet, desktop) and a custom width and height.
 - [ ] **Watch included files (M).** Reload when a `ResourceInclude` or `StyleInclude` file of the project changes.
@@ -46,6 +45,7 @@ When you finish an item, mark it `[x]` and add the commit hash.
 - The preview window uses the target app's theme, so the AxView chrome looks different in each app.
 - `TargetAppImporter` skips `OnFrameworkInitializationCompleted`.
   Data templates that need the app's services (for example a `ViewLocator` with DI) can fail.
+- A style or resource preview shows the "No DataContext" badge. The badge is not applicable to these roots.
 
 ## Done
 
