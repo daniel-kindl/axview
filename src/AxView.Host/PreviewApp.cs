@@ -1,6 +1,8 @@
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 
+using AxView.Host.Startup;
+using AxView.Host.UI;
 using AxView.Protocol;
 
 namespace AxView.Host;

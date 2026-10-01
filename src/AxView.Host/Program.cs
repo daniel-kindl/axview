@@ -2,6 +2,7 @@ using System.Runtime.CompilerServices;
 
 using Avalonia;
 
+using AxView.Host.Startup;
 using AxView.Protocol;
 
 namespace AxView.Host;

@@ -1,6 +1,9 @@
 using Avalonia;
 
+using AxView.Hosting;
+using AxView.Picker;
 using AxView.Protocol;
+using AxView.Resolution;
 
 namespace AxView;
 
