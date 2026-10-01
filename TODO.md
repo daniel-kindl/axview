@@ -51,4 +51,4 @@ When you finish an item, mark it `[x]` and add the commit hash.
 - [x] Session supervisor: `HostSession` with a host process interface. `eebcde0`
 - [x] Code-behind: the loader creates the `x:Class` type. Design mode when it has no parameterless constructor. `64016bc`
 - [x] ViewModel from the XAML: `Design.DataContext`, else `x:DataType`, else a "No DataContext" badge. `20a92b3`
-- [x] Picker window check: recent rows show the file name, then the folder. A hint replaces an empty list.
+- [x] Picker window check: recent rows show the file name, then the folder. A hint replaces an empty list. `518bbcd`
