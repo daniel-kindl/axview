@@ -12,6 +12,7 @@ namespace AxView.Protocol;
 /// <param name="LoaderPath">The XAML loader assembly.</param>
 /// <param name="SnapshotPath">If set, the host saves one PNG to this path and exits.</param>
 /// <param name="HandOffFile">If set, the host writes a <see cref="HandOff"/> here before a project switch.</param>
+/// <param name="SetupError">If set, the host shows this error. The launcher cannot prepare the file that the user opened.</param>
 internal sealed record HostOptions(
     string AxamlPath,
     string ProjectDirectory,
@@ -19,7 +20,8 @@ internal sealed record HostOptions(
     string? AppAssemblyName,
     string LoaderPath,
     string? SnapshotPath,
-    string? HandOffFile)
+    string? HandOffFile,
+    string? SetupError = null)
 {
     private const string AxamlKey = "--axaml";
     private const string ProjectKey = "--project";
@@ -28,9 +30,10 @@ internal sealed record HostOptions(
     private const string LoaderKey = "--loader";
     private const string SnapshotKey = "--snapshot";
     private const string HandOffKey = "--hand-off";
+    private const string SetupErrorKey = "--setup-error";
 
     private static readonly string[] keys =
-        [AxamlKey, ProjectKey, AssemblyKey, AppAssemblyKey, LoaderKey, SnapshotKey, HandOffKey];
+        [AxamlKey, ProjectKey, AssemblyKey, AppAssemblyKey, LoaderKey, SnapshotKey, HandOffKey, SetupErrorKey];
 
     /// <summary>Reads the options from the host command line.</summary>
     /// <exception cref="ArgumentException">The arguments are not valid.</exception>
@@ -66,7 +69,8 @@ internal sealed record HostOptions(
             values.GetValueOrDefault(AppAssemblyKey),
             Required(LoaderKey),
             values.GetValueOrDefault(SnapshotKey),
-            values.GetValueOrDefault(HandOffKey));
+            values.GetValueOrDefault(HandOffKey),
+            values.GetValueOrDefault(SetupErrorKey));
     }
 
     /// <summary>Writes the options as the host command line.</summary>
@@ -82,6 +86,7 @@ internal sealed record HostOptions(
         AddOptional(args, AppAssemblyKey, AppAssemblyName);
         AddOptional(args, SnapshotKey, SnapshotPath);
         AddOptional(args, HandOffKey, HandOffFile);
+        AddOptional(args, SetupErrorKey, SetupError);
         return args;
     }
 

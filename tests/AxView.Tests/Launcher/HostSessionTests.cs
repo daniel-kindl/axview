@@ -49,6 +49,28 @@ public sealed class HostSessionTests
     }
 
     [Fact]
+    public async Task RunAsync_StartsTheHostAgainOnThePreviousFileWhenTheNextFileFailsAsync()
+    {
+        using TempDir dir = new();
+        _ = dir.Write("Repo.sln");
+        string first = AppFixture.WriteProject(dir, "First");
+        _ = dir.Write("src/Unbuilt/Unbuilt.csproj", "<Project />");
+        string unbuilt = dir.Write("src/Unbuilt/Views/Main.axaml");
+        FakeHostProcess hosts = new();
+        hosts.Enqueue(ExitReason.SwitchProject, nextFile: unbuilt);
+        hosts.Enqueue(ExitReason.Ok);
+        List<string> opened = [];
+
+        int exitCode = await Session(hosts).RunAsync(first, outputDir: null, snapshotPath: null, opened.Add);
+
+        Assert.Equal((int)ExitReason.Ok, exitCode);
+        Assert.Equal([first], opened);
+        Assert.Equal([first, first], hosts.Runs.Select(options => options.AxamlPath));
+        Assert.Null(hosts.Runs[0].SetupError);
+        Assert.Contains("Unbuilt", hosts.Runs[1].SetupError, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task RunAsync_StopsWhenTheHostAsksForASwitchWithoutAHandOffAsync()
     {
         using TempDir dir = new();

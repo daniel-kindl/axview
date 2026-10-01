@@ -125,6 +125,10 @@ internal sealed class PreviewWindow : Window
         unsubscribeErrors = DispatcherErrors.Subscribe(OnUnhandledException);
         RefreshCatalog();
         Show(currentPath);
+        if (options.SetupError is not null)
+        {
+            ShowError($"Cannot open the file: {options.SetupError}");
+        }
     }
 
     protected override void OnOpened(EventArgs e)
@@ -325,7 +329,12 @@ internal sealed class PreviewWindow : Window
     private void ShowError(Exception ex)
     {
         Exception shown = ex is TargetInvocationException { InnerException: { } inner } ? inner : ex;
-        errorText.Text = $"{shown.GetType().Name}: {shown.Message}";
+        ShowError($"{shown.GetType().Name}: {shown.Message}");
+    }
+
+    private void ShowError(string message)
+    {
+        errorText.Text = message;
         errorPanel.IsVisible = true;
         Console.Error.WriteLine($"axview: error: {errorText.Text}");
         status.Text = lastGood is null

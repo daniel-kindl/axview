@@ -12,7 +12,8 @@ public sealed class HostProtocolTests
         AppAssemblyName: "Desktop",
         LoaderPath: "/nuget/loader.dll",
         SnapshotPath: "/out/shot.png",
-        HandOffFile: "/tmp/hand-off.json");
+        HandOffFile: "/tmp/hand-off.json",
+        SetupError: "The app is not built.");
 
     [Fact]
     public void Parse_ReadsTheArgumentsThatToArgumentsWrites()
@@ -25,7 +26,7 @@ public sealed class HostProtocolTests
     [Fact]
     public void Parse_ReadsTheArgumentsWithoutTheOptionalValues()
     {
-        HostOptions options = full with { AppAssemblyName = null, SnapshotPath = null, HandOffFile = null };
+        HostOptions options = full with { AppAssemblyName = null, SnapshotPath = null, HandOffFile = null, SetupError = null };
 
         HostOptions parsed = HostOptions.Parse(options.ToArguments());
 
