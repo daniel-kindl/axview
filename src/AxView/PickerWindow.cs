@@ -82,7 +82,7 @@ internal sealed class PickerWindow : Window
         Hide();
         try
         {
-            int exitCode = await HostSession.RunAsync(path, outputDir: null, snapshotPath: null, recent.Add);
+            int exitCode = await HostSession.CreateDefault().RunAsync(path, outputDir: null, snapshotPath: null, recent.Add);
             if (exitCode == 0)
             {
                 Close();

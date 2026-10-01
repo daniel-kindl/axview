@@ -2,8 +2,6 @@ namespace AxView.Tests;
 
 public sealed class PreviewTargetResolverTests
 {
-    private const string AvaloniaDeps = """{ "libraries": { "Avalonia/11.3.22": { "type": "package" } } }""";
-
     [Fact]
     public void Resolve_FindsTheProjectTheAppOutputAndTheLoader()
     {
@@ -11,7 +9,7 @@ public sealed class PreviewTargetResolverTests
         _ = dir.Write("Repo.sln");
         _ = dir.Write("src/Ui/Ui.csproj", "<Project><PropertyGroup><AssemblyName>My.Ui</AssemblyName></PropertyGroup></Project>");
         string axaml = dir.Write("src/Ui/Views/Main.axaml");
-        string output = WriteAppOutput(dir, "src/Desktop/bin/Debug/net9.0", "Desktop", "My.Ui");
+        string output = AppFixture.WriteAppOutput(dir, "src/Desktop/bin/Debug/net9.0", "Desktop", "My.Ui");
         FakeLoaderSource loaders = new();
 
         PreviewTarget target = new PreviewTargetResolver(loaders).Resolve(axaml, outputDir: null);
@@ -32,8 +30,8 @@ public sealed class PreviewTargetResolverTests
         _ = dir.Write("Repo.sln");
         _ = dir.Write("src/Ui/Ui.csproj", "<Project />");
         string axaml = dir.Write("src/Ui/Views/Main.axaml");
-        string given = WriteAppOutput(dir, "src/A/bin/Debug/net9.0", "A", "Ui");
-        string recent = WriteAppOutput(dir, "src/B/bin/Debug/net9.0", "B", "Ui");
+        string given = AppFixture.WriteAppOutput(dir, "src/A/bin/Debug/net9.0", "A", "Ui");
+        string recent = AppFixture.WriteAppOutput(dir, "src/B/bin/Debug/net9.0", "B", "Ui");
         File.SetLastWriteTimeUtc(Path.Combine(given, "Ui.dll"), DateTime.UtcNow.AddHours(-1));
         File.SetLastWriteTimeUtc(Path.Combine(recent, "Ui.dll"), DateTime.UtcNow);
 
@@ -61,21 +59,10 @@ public sealed class PreviewTargetResolverTests
         _ = dir.Write("Repo.sln");
         _ = dir.Write("src/Ui/Ui.csproj", "<Project />");
         string axaml = dir.Write("src/Ui/Views/Main.axaml");
-        _ = WriteAppOutput(dir, "src/Desktop/bin/Debug/net9.0", "Desktop", "Ui", deps: "{}");
+        _ = AppFixture.WriteAppOutput(dir, "src/Desktop/bin/Debug/net9.0", "Desktop", "Ui", deps: "{}");
         FakeLoaderSource loaders = new();
 
         _ = Assert.Throws<PreviewSetupException>(() => new PreviewTargetResolver(loaders).Resolve(axaml, outputDir: null));
         Assert.Empty(loaders.RequestedVersions);
-    }
-
-    private static string WriteAppOutput(
-        TempDir dir, string relativeDir, string appName, string assemblyName, string deps = AvaloniaDeps)
-    {
-        _ = dir.Write($"{relativeDir}/{assemblyName}.dll");
-        _ = dir.Write($"{relativeDir}/Avalonia.Desktop.dll");
-        _ = dir.Write($"{relativeDir}/{appName}.dll");
-        _ = dir.Write($"{relativeDir}/{appName}.deps.json", deps);
-        _ = dir.Write($"{relativeDir}/{appName}.runtimeconfig.json", "{}");
-        return Path.Combine(dir.Path, relativeDir.Replace('/', Path.DirectorySeparatorChar));
     }
 }

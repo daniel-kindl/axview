@@ -42,7 +42,7 @@ internal static class Program
         try
         {
             RecentFiles recent = RecentFiles.ForCurrentUser();
-            return HostSession.RunAsync(axaml, outputDir, snapshot, recent.Add).GetAwaiter().GetResult();
+            return HostSession.CreateDefault().RunAsync(axaml, outputDir, snapshot, recent.Add).GetAwaiter().GetResult();
         }
         catch (PreviewSetupException ex)
         {

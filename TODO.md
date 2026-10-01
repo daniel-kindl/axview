@@ -13,7 +13,7 @@ When you finish an item, mark it `[x]` and add the commit hash.
   Test it with Avalonia.Headless in the test project only.
   Add notes to the result when the "no DataContext" badge needs them. `3d7e3f0`
 - [x] **Testable preview target (S).** Put the XAML loader source behind an interface (NuGet and a fake).
-  Test `Resolve` on temporary folders.
+  Test `Resolve` on temporary folders. `aa07d93`
 - [ ] **Code-behind (S).** Find the `x:Class` type in the built assembly.
   Create it and fill it from the new XAML (`rootInstance`), so code-behind runs.
   Fall back to design mode when the type has no parameterless constructor.
@@ -25,7 +25,7 @@ When you finish an item, mark it `[x]` and add the commit hash.
 
 ## Next
 
-- [ ] **Session supervisor (M).** Do this before "Rebuild on .cs change".
+- [x] **Session supervisor (M).** Do this before "Rebuild on .cs change".
   Give `HostSession` a host process interface (real and fake) and the preview target resolver.
   Test the project switch, a missing hand-off, and a setup error.
 - [ ] **Project switch recovery (S).** When the next file fails to resolve, start the host again on the previous file.
