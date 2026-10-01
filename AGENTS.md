@@ -42,6 +42,14 @@ Make the test fail for the right reason before you write the code.
 Obey all rules in `docs/agents/CODING.md`. Read it before you write or change code.
 `.editorconfig` enforces the rules that an analyzer can check. The build fails on a violation.
 
+## Definition of done
+
+A task is done only when all of these conditions are true:
+
+- The code implements the task.
+- `dotnet test` passes.
+- `dotnet format --verify-no-changes --severity info` shows no errors, warnings, or hints.
+
 ## Verify
 
 - Run `dotnet build` and `dotnet test`.
