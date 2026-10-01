@@ -19,7 +19,13 @@ When you finish an item, mark it `[x]` and add the commit hash.
 - [ ] **Style and resource previews (S).** Show `Design.PreviewWith` for a `Styles` or `ResourceDictionary` root.
 - [ ] **Theme switch (S).** Toolbar toggle for Light, Dark, and Default (`RequestedThemeVariant`).
 - [ ] **Preview size (S).** Presets (phone, tablet, desktop) and a custom width and height.
-- [ ] **Watch included files (S).** Reload when a `ResourceInclude` or `StyleInclude` file of the project changes.
+- [ ] **Watch included files (M).** Reload when a `ResourceInclude` or `StyleInclude` file of the project changes.
+  An `avares://` include loads the compiled XAML of the built assembly, not the file on disk.
+  So a watcher alone is not sufficient. The host must:
+  - Watch all AXAML files of the project.
+  - Find the include in the app styles and resources whose `Source` is the changed file.
+  - Load the file from disk with the runtime loader. Replace the include with the result.
+  - Render the view again. Keep the old include when the load fails.
 
 ## Later
 
@@ -48,5 +54,5 @@ When you finish an item, mark it `[x]` and add the commit hash.
 - [x] Code-behind: the loader creates the `x:Class` type. Design mode when it has no parameterless constructor. `64016bc`
 - [x] ViewModel from the XAML: `Design.DataContext`, else `x:DataType`, else a "No DataContext" badge. `20a92b3`
 - [x] Picker window check: recent rows show the file name, then the folder. A hint replaces an empty list. `518bbcd`
-- [x] Project switch recovery: a failed switch starts the host again on the previous file and shows the setup error.
-- [x] Design DataContext forms: `d:DataContext="{d:DesignInstance ...}"`, and a `Design.DataContext` with content.
+- [x] Project switch recovery: a failed switch starts the host again on the previous file and shows the setup error. `b374865`
+- [x] Design DataContext forms: `d:DataContext="{d:DesignInstance ...}"`, and a `Design.DataContext` with content. `37d9f7d`
