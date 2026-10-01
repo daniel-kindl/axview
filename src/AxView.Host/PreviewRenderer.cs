@@ -5,11 +5,37 @@ using Avalonia.Markup.Xaml;
 
 namespace AxView.Host;
 
-/// <summary>Turns AXAML text into a control that the preview window can show.</summary>
-internal static class PreviewRenderer
+/// <summary>Turns an AXAML file of one project into a control that the preview window can show.</summary>
+/// <remarks>
+/// The renderer reads the file, adds the owning assembly to each CLR namespace, and loads the XAML in design mode.
+/// Relative URIs in the XAML resolve against the avares URI of the file.
+/// </remarks>
+internal sealed class PreviewRenderer
 {
-    public static Control Render(string xaml, Assembly localAssembly, NamespaceIndex namespaces, Uri baseUri)
+    private const int ReadAttempts = 5;
+    private static readonly TimeSpan ReadRetryDelay = TimeSpan.FromMilliseconds(40);
+
+    private readonly Assembly localAssembly;
+    private readonly string projectDirectory;
+    private readonly NamespaceIndex namespaces;
+
+    /// <param name="localAssembly">The assembly that the project builds.</param>
+    /// <param name="projectDirectory">The folder of the project.</param>
+    public PreviewRenderer(Assembly localAssembly, string projectDirectory)
     {
+        this.localAssembly = localAssembly;
+        this.projectDirectory = projectDirectory;
+        namespaces = new NamespaceIndex(localAssembly);
+    }
+
+    /// <summary>Loads the file and returns its root control.</summary>
+    /// <param name="axamlPath">An AXAML file of the project.</param>
+    /// <exception cref="NotSupportedException">The root is not a control, or it is a top-level other than a window.</exception>
+    /// <remarks>The user's XAML and its code can throw any other exception.</remarks>
+    public Control Render(string axamlPath)
+    {
+        string xaml = ReadWithRetry(axamlPath);
+        Uri baseUri = AvaresUri.For(localAssembly.GetName().Name!, projectDirectory, axamlPath);
         string qualified = XmlnsQualifier.Qualify(xaml, namespaces.FindOwner);
         object root = AvaloniaRuntimeXamlLoader.Load(qualified, localAssembly, null, baseUri, designMode: true);
         return root switch
@@ -46,5 +72,21 @@ internal static class PreviewRenderer
         container.Resources = resources;
 
         return container;
+    }
+
+    // An editor can hold the file open for a short time while it saves.
+    private static string ReadWithRetry(string path)
+    {
+        for (int attempt = 1; ; attempt++)
+        {
+            try
+            {
+                return File.ReadAllText(path);
+            }
+            catch (IOException) when (attempt < ReadAttempts)
+            {
+                Thread.Sleep(ReadRetryDelay);
+            }
+        }
     }
 }

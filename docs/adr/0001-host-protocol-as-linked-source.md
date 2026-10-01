@@ -1,5 +1,5 @@
 ---
-status: proposed
+status: accepted
 ---
 
 # The host protocol is source that both assemblies compile

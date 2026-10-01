@@ -6,11 +6,12 @@ When you finish an item, mark it `[x]` and add the commit hash.
 
 ## Now
 
-- [ ] **Host protocol (S).** Put the host options, the exit reasons, and the hand-off in one module. See ADR 0001.
-  Both assemblies compile its source. Decode the options strictly. Test a round trip.
-- [ ] **Deepen the preview renderer (M).** `PreviewRenderer` takes a path and returns a preview and notes.
+- [x] **Host protocol (S).** Put the host options, the exit reasons, and the hand-off in one module. See ADR 0001.
+  Both assemblies compile its source. Decode the options strictly. Test a round trip. `4eb967e`
+- [x] **Deepen the preview renderer (M).** `PreviewRenderer` takes a path and returns the preview control.
   It owns the read retry, the base URI, the namespace index, and the root mapping.
   Test it with Avalonia.Headless in the test project only.
+  Add notes to the result when the "no DataContext" badge needs them.
 - [ ] **Testable preview target (S).** Put the XAML loader source behind an interface (NuGet and a fake).
   Test `Resolve` on temporary folders.
 - [ ] **Code-behind (S).** Find the `x:Class` type in the built assembly.

@@ -15,6 +15,7 @@ public sealed class AvaresUriTests
 
         Uri uri = AvaresUri.For("My.App", project, axaml);
 
-        Assert.Equal("avares://my.app/Views/Main%20View.axaml", uri.AbsoluteUri);
+        // Avalonia registers the avares scheme, which keeps the case of the host. The default parser does not.
+        Assert.Equal("avares://my.app/Views/Main%20View.axaml", uri.AbsoluteUri, ignoreCase: true);
     }
 }

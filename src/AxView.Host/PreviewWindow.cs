@@ -27,8 +27,7 @@ internal sealed class PreviewWindow : Window
         OperatingSystem.IsLinux() ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
 
     private readonly HostOptions options;
-    private readonly Assembly localAssembly;
-    private readonly NamespaceIndex namespaces;
+    private readonly PreviewRenderer renderer;
     private readonly ContentControl host = new();
     private readonly Border errorPanel;
     private readonly SelectableTextBlock errorText;
@@ -46,8 +45,7 @@ internal sealed class PreviewWindow : Window
     {
         this.options = options;
         currentPath = Path.GetFullPath(options.AxamlPath);
-        localAssembly = Assembly.Load(options.AssemblyName);
-        namespaces = new NamespaceIndex(localAssembly);
+        renderer = new PreviewRenderer(Assembly.Load(options.AssemblyName), options.ProjectDirectory);
 
         Width = 1280;
         Height = 800;
@@ -264,9 +262,7 @@ internal sealed class PreviewWindow : Window
     {
         try
         {
-            string xaml = ReadWithRetry(currentPath);
-            Uri baseUri = AvaresUri.For(options.AssemblyName, options.ProjectDirectory, currentPath);
-            Control view = PreviewRenderer.Render(xaml, localAssembly, namespaces, baseUri);
+            Control view = renderer.Render(currentPath);
             host.Content = view;
             HideError();
             lastGood = view;
@@ -322,19 +318,4 @@ internal sealed class PreviewWindow : Window
 
     private string RelativePath(string path) =>
         Path.GetRelativePath(options.ProjectDirectory, path);
-
-    private static string ReadWithRetry(string path)
-    {
-        for (int attempt = 0; ; attempt++)
-        {
-            try
-            {
-                return File.ReadAllText(path);
-            }
-            catch (IOException) when (attempt < 5)
-            {
-                Thread.Sleep(40);
-            }
-        }
-    }
 }
