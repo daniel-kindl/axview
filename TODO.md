@@ -8,24 +8,36 @@ Do not change or use again a number.
 
 ## Now
 
+- [ ] #36 **Includes in a view (M).** Load a changed include of a view or of a `Style` root from disk.
+  Make `AppIncludes` walk any loaded root and its XAML. Run it after each render.
 
 ## Next
 
-
-## Later
-
-- [ ] #35 **App.axaml reload (M).** Reload the app styles and resources when App.axaml changes.
-  Load the disk text with `AvaloniaRuntimeXamlLoader.Load(xaml, assembly, rootInstance: new App())`.
-  Take the styles as `TargetAppImporter` does. Put them in each live copy of `AppStyles`. Make `AppIncludes` again.
-- [ ] #36 **Includes in a view (M).** Load a changed include of a view or of a `Style` root from disk.
-  Make `AppIncludes` walk any loaded root and its XAML. Run it after each render.
 - [ ] #37 **Own chrome theme (M).** When the app ships no Fluent or Simple theme, get `Avalonia.Themes.Simple` from NuGet.
   Use the Avalonia version of the app, as `NuGetLoaderSource` does for the loader.
   Add the package to the probe path of `LoaderResolver`. Then the chrome does not use a second instance of the app styles.
+- [ ] #47 **Packaging script (S).** Add `pack.ps1` in the repo root. Use DAT3810 `make_new.cmd` as a model.
+  Run it with PowerShell 7 on each OS. Use no external tools: `git archive` and `Compress-Archive` are sufficient.
+  - `src`: write `AxView_<yyyyMMdd>_<HHmmss>_src.zip` with `git archive HEAD`. Stop on a dirty work tree, unless `-Force`.
+  - `bin`: run `dotnet publish src/AxView -c Release`. Put the host files in the output, as the launcher expects them.
+    Write `AxView_<yyyyMMdd>_<HHmmss>_bin.zip`. Put the version from `AboutInfo` in the name.
+  - `all`: do `src`, then `bin`. Delete the old archives of the same kind first.
+  - Write the archives to `artifacts/`. Add `artifacts/` to `.gitignore`.
+  - Make a smoke check: start the packed `axview.dll` with `--snapshot` on a test view. A non-zero exit code fails the script.
+- [ ] #48 **Signed binaries (S).** Add a `sign` action to `pack.ps1`. Sign `axview.exe` and the AxView DLLs with the SPS certificate.
+  Use the signtool settings of DAT3810 `make_new.cmd`. Read the paths from environment variables, not from the script.
+
+## Later
+
 - [ ] #39 **Build progress (M).** Show the build progress during a rebuild.
   Option A: the launcher shows a "Building" window.
   Option B: the host runs from a copy of the output. It stays open during the build and shows a build overlay.
 - [ ] #20 **Avalonia 12 (L).** Check the loader and host APIs. A second host build may be necessary.
+- [ ] #49 **App.axaml data templates (S).** A reload of App.axaml does not change the data templates or the theme variant of the copies.
+  Give each owner a way to replace its data templates. Then `TargetStyles.ReplaceWith` can move them too.
+- [ ] #50 **Nested includes after an App.axaml reload (S).** The reload gives `StyleInclude` and `ResourceInclude` objects.
+  `AppIncludes` does not walk into an include object. Thus a changed include inside an unchanged include goes back to the build.
+  Walk the `Loaded` value of an include object.
 
 
 ## Known issues
@@ -73,3 +85,4 @@ Each known issue is now an item: #30 to #39.
 - [x] #38 Include reload for the app resources of Application.Current: #44 does it. `f74593e`
 - [x] #46 Host mode: `HostOptions.Mode`. The host and the launcher reject `--snapshot` with `--snapshot-all`, and `--view-model` without `--snapshot`. `45d8968`
 - [x] #45 Project preview: `ProjectPreview` owns the catalog, the live preview, the include reload, the rebuild watch, and the ViewModels. It gives a stop request. `10f0e36`
+- [x] #35 App.axaml reload: `AppStyles` loads a changed App.axaml into each live copy. A new copy gets the changed App.axaml and includes. `6e48d86`
