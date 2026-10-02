@@ -11,9 +11,37 @@ Do not change or use again a number.
 
 ## Next
 
+- [ ] #30 **No badge on style roots (S).** Hide the "No DataContext" badge for a `Styles`, `Style`, or `ResourceDictionary` root.
+  The renderer knows the root kind. Give it to the window.
+- [ ] #31 **App project watch (S).** For a library view, also rebuild when a `.cs` file of the app project changes.
+  The launcher finds the app project with `ProjectFinder.FindAppProject`. Give its folder to the host in a new `--app-project` option.
+  Later, follow the `ProjectReference` graph.
+- [ ] #32 **Library include reload (S).** For a library view, reload the include files of the App.axaml in the app project.
+  Use the `--app-project` option of #31. Use a renderer for the app assembly and the app project folder.
+- [ ] #33 **Window styles on the frame (S).** Apply a `Style Selector="Window"` of the app to the preview frame.
+  Try `StyleKeyOverride => typeof(Window)` on `PreviewFrame`. Always set an explicit `Theme`, else the chrome Window theme applies.
+  Write a test for a setter of a window-only property, for example `Title`.
+  If that setter throws, copy only the frame setters of each matching style.
+- [ ] #34 **App startup services (S).** Document that `AxViewDesign.CreateServices` must set static services, for example `App.Services`.
+  Then a `ViewLocator` with DI works.
+  Add an opt-in setting that calls `OnFrameworkInitializationCompleted` of the imported app. Its `ApplicationLifetime` is null.
 
 ## Later
 
+- [ ] #35 **App.axaml reload (M).** Reload the app styles and resources when App.axaml changes.
+  Load the disk text with `AvaloniaRuntimeXamlLoader.Load(xaml, assembly, rootInstance: new App())`.
+  Take the styles as `TargetAppImporter` does. Put them in `PreviewScope`. Make `AppIncludes` again.
+- [ ] #36 **Includes in a view (M).** Load a changed include of a view or of a `Style` root from disk.
+  Make `AppIncludes` walk any loaded root and its XAML. Run it after each render.
+- [ ] #37 **Own chrome theme (M).** When the app ships no Fluent or Simple theme, get `Avalonia.Themes.Simple` from NuGet.
+  Use the Avalonia version of the app, as `NuGetLoaderSource` does for the loader.
+  Add the package to the probe path of `LoaderResolver`. Then the chrome does not use a second instance of the app styles.
+- [ ] #38 **App resources through Application.Current (M).** Code that reads `Application.Current` resources must find the app resources.
+  Import a second instance of the app resources. Put it in `PreviewApp.Styles` before the chrome theme.
+  Then the chrome theme wins when both define a key. Include reload must update both instances.
+- [ ] #39 **Build progress (M).** Show the build progress during a rebuild.
+  Option A: the launcher shows a "Building" window.
+  Option B: the host runs from a copy of the output. It stays open during the build and shows a build overlay.
 - [ ] #20 **Avalonia 12 (L).** Check the loader and host APIs. A second host build may be necessary.
 - [ ] #21 **Output choice (S).** When more than one output fits, prefer Debug. Show the choice in the status bar.
   Today the most recent build wins.
@@ -31,16 +59,7 @@ Do not change or use again a number.
 
 ## Known issues
 
-- The preview frame takes only the setters of the target `Window` control theme. A `Style Selector="Window"` of the app does not apply to the preview.
-- Code that reads the app resources through `Application.Current` does not find them. They are in the preview scope.
-- When the app ships no Fluent or Simple theme, the AxView chrome uses a second instance of the app styles.
-- `TargetAppImporter` skips `OnFrameworkInitializationCompleted`.
-  Data templates that need the app's services (for example a `ViewLocator` with DI) can fail.
-- A style or resource preview shows the "No DataContext" badge. The badge is not applicable to these roots.
-- A rebuild watches only the `.cs` files of the project of the file. A change in the app project of a library view starts no rebuild.
-- During a rebuild, no window is open. The user sees no build progress.
-- An include file reloads only when App.axaml is in the project of the file. A library view gets no include reload.
-- A change of App.axaml itself does not reload. An include in a view or in a `Style` root loads the compiled file.
+Each known issue is now an item: #30 to #39.
 
 ## Done
 
