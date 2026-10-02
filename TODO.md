@@ -26,7 +26,6 @@ Do not change or use again a number.
   Option A: the launcher shows a "Building" window.
   Option B: the host runs from a copy of the output. It stays open during the build and shows a build overlay.
 - [ ] #20 **Avalonia 12 (L).** Check the loader and host APIs. A second host build may be necessary.
-- [ ] #24 **Linux and macOS check (S).** Run the tests and one snapshot on each OS.
 
 
 ## Known issues
