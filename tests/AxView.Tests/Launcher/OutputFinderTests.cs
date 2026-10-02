@@ -39,6 +39,22 @@ public sealed class OutputFinderTests
     }
 
     [Fact]
+    public void Find_PrefersADebugOutputToAMoreRecentReleaseOutput()
+    {
+        using TempDir dir = new();
+        _ = dir.Write("Repo.sln");
+        string project = dir.Write("src/Ui/Ui.csproj", "<Project />");
+        string debug = WriteExecutableOutput(dir, "src/Desktop/bin/Debug/net9.0", "Desktop", "Ui");
+        string release = WriteExecutableOutput(dir, "src/Desktop/bin/Release/net9.0", "Desktop", "Ui");
+        File.SetLastWriteTimeUtc(Path.Combine(debug, "Ui.dll"), DateTime.UtcNow.AddHours(-1));
+        File.SetLastWriteTimeUtc(Path.Combine(release, "Ui.dll"), DateTime.UtcNow);
+
+        AppOutput output = OutputFinder.Find(project, "Ui");
+
+        Assert.Equal(debug, output.Directory);
+    }
+
+    [Fact]
     public void Find_IgnoresOutputsWithoutAvaloniaDesktop()
     {
         using TempDir dir = new();

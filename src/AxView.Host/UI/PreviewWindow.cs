@@ -442,7 +442,7 @@ internal sealed class PreviewWindow : Window
         }
 
         HideError();
-        status.Text = $"Rendered {DateTime.Now:HH:mm:ss}   {livePreview.FilePath}";
+        status.Text = $"Rendered {DateTime.Now:HH:mm:ss}   {livePreview.FilePath}   Output: {OutputDirectory()}";
         Console.WriteLine($"axview: rendered {RelativePath(livePreview.FilePath)}");
     }
 
@@ -455,6 +455,10 @@ internal sealed class PreviewWindow : Window
             ? $"Error {DateTime.Now:HH:mm:ss}   {livePreview.FilePath}"
             : $"Error {DateTime.Now:HH:mm:ss}. Showing the last good render.   {livePreview.FilePath}";
     }
+
+    // The app output folder shows which build the preview uses, for example Debug or Release.
+    private string OutputDirectory() =>
+        Path.GetDirectoryName(System.Reflection.Assembly.Load(options.AssemblyName).Location) ?? string.Empty;
 
     private void HideError() => errorPanel.IsVisible = false;
 

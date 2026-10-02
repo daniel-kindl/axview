@@ -29,8 +29,6 @@ Do not change or use again a number.
   Option A: the launcher shows a "Building" window.
   Option B: the host runs from a copy of the output. It stays open during the build and shows a build overlay.
 - [ ] #20 **Avalonia 12 (L).** Check the loader and host APIs. A second host build may be necessary.
-- [ ] #21 **Output choice (S).** When more than one output fits, prefer Debug. Show the choice in the status bar.
-  Today the most recent build wins.
 - [ ] #22 **CI snapshot mode (S).** Render all files of a project. Write one PNG per file and a summary. Fail on error.
   Use `SnapshotWindow` for each file.
 - [ ] #23 **Packaging (M).** Publish AxView as one portable exe (`axview.exe`).
@@ -82,3 +80,4 @@ Each known issue is now an item: #30 to #39.
 - [x] #32 Library include reload: `AppIncludes.Find` looks for App.axaml in the view project, then in the app project. `c928c7a`
 - [x] #33 Window styles on the frame: the frame has the style key of a window, and always an explicit theme. `eb3d514`
 - [x] #34 App startup services: `RunAppStartup` in `settings.json` calls `OnFrameworkInitializationCompleted` of the app. `AxViewDesign` docs name `App.Services`. `c58e640`
+- [x] #21 Output choice: a Debug output wins over a newer Release output. The status bar shows the output folder. `HASH`

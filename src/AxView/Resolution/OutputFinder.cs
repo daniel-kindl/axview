@@ -4,10 +4,12 @@ namespace AxView.Resolution;
 /// <remarks>
 /// A view often lives in a class library. A library output has no runtimeconfig and no platform
 /// backend, so the finder searches the repository for an app that ships the library.
+/// A Debug output wins over any other output. Among equal outputs, the most recent build wins.
 /// </remarks>
 internal static class OutputFinder
 {
     private const string PlatformMarker = "Avalonia.Desktop.dll";
+    private const string PreferredConfiguration = "Debug";
 
     public static AppOutput Find(string projectPath, string assemblyName)
     {
@@ -15,14 +17,18 @@ internal static class OutputFinder
         EnumerationOptions options = new() { RecurseSubdirectories = true, IgnoreInaccessible = true };
 
         AppOutput? best = null;
+        bool bestIsDebug = false;
         DateTime bestTime = DateTime.MinValue;
         foreach (string dll in Directory.EnumerateFiles(root, assemblyName + ".dll", options))
         {
             AppOutput? candidate = TryRead(Path.GetDirectoryName(dll)!);
             DateTime time = File.GetLastWriteTimeUtc(dll);
-            if (candidate is not null && time > bestTime)
+            bool isDebug = candidate is not null && IsDebug(candidate.Directory);
+            bool isBetter = (isDebug && !bestIsDebug) || (isDebug == bestIsDebug && time > bestTime);
+            if (candidate is not null && isBetter)
             {
                 best = candidate;
+                bestIsDebug = isDebug;
                 bestTime = time;
             }
         }
@@ -43,6 +49,10 @@ internal static class OutputFinder
         return TryRead(full) ?? throw new PreviewSetupException(
             $"'{full}' is not an executable Avalonia app output. It needs a runtimeconfig, a deps file, and {PlatformMarker}.");
     }
+
+    private static bool IsDebug(string directory) =>
+        directory.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+            .Contains(PreferredConfiguration, StringComparer.OrdinalIgnoreCase);
 
     private static AppOutput? TryRead(string directory)
     {
