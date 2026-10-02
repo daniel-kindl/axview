@@ -34,6 +34,10 @@ internal sealed class LivePreview : IDisposable
     /// <summary>Gets the last good preview of the shown file. Null when no load of the file succeeded.</summary>
     public Control? View { get; private set; }
 
+    /// <summary>Gets a value that tells if <see cref="View"/> is the preview of a style or resource root.</summary>
+    /// <remarks>Such a preview needs no DataContext.</remarks>
+    public bool IsStylePreview { get; private set; }
+
     /// <summary>Gets the message of the most recent error. Null after a good load.</summary>
     public string? Error { get; private set; }
 
@@ -67,7 +71,9 @@ internal sealed class LivePreview : IDisposable
     {
         try
         {
-            View = renderer.Render(path, viewModelType);
+            RenderedView rendered = renderer.Render(path, viewModelType);
+            View = rendered.Control;
+            IsStylePreview = rendered.IsStylePreview;
             Error = null;
         }
         catch (Exception ex)

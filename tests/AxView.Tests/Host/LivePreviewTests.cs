@@ -31,6 +31,24 @@ public sealed class LivePreviewTests
     }
 
     [AvaloniaFact]
+    public void Show_StylesFile_TellsThatThePreviewIsAStylePreview()
+    {
+        using TempDir dir = new();
+        string file = dir.Write("Styles/Texts.axaml", $"""
+            <Styles {AvaloniaXmlns}>
+              <Design.PreviewWith>
+                <Border />
+              </Design.PreviewWith>
+            </Styles>
+            """);
+        using LivePreview preview = new(Renderer(dir));
+
+        preview.Show(file);
+
+        Assert.True(preview.IsStylePreview);
+    }
+
+    [AvaloniaFact]
     public void Show_BrokenFile_GivesAnErrorAndNoView()
     {
         using TempDir dir = new();

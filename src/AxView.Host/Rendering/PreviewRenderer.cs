@@ -36,7 +36,7 @@ internal sealed class PreviewRenderer(Assembly localAssembly, string projectDire
     /// <summary>Gets the folder of the project.</summary>
     public string ProjectDirectory { get; } = projectDirectory;
 
-    /// <summary>Loads the file and returns its root control.</summary>
+    /// <summary>Loads the file and returns its root control and the kind of its root.</summary>
     /// <param name="axamlPath">An AXAML file of the project.</param>
     /// <param name="viewModelType">
     /// The type of the root DataContext, or null to use the DataContext from the XAML. The design services must create it.
@@ -45,7 +45,7 @@ internal sealed class PreviewRenderer(Assembly localAssembly, string projectDire
     /// The root is a top-level other than a window, a style or resource root without <c>Design.PreviewWith</c>, or another non-control.
     /// </exception>
     /// <remarks>The user's XAML and its code can throw any other exception.</remarks>
-    public Control Render(string axamlPath, Type? viewModelType = null)
+    public RenderedView Render(string axamlPath, Type? viewModelType = null)
     {
         string xaml = ReadWithRetry(axamlPath);
         object root = Load(axamlPath, xaml);
@@ -60,12 +60,12 @@ internal sealed class PreviewRenderer(Assembly localAssembly, string projectDire
 
         return root switch
         {
-            Window window => Detach(window),
+            Window window => new RenderedView(Detach(window), IsStylePreview: false),
             TopLevel => throw new NotSupportedException($"Cannot preview a {root.GetType().Name} root."),
-            Control control => control,
-            Styles styles => WithStyle(styles),
-            Style style => WithStyle(style),
-            ResourceDictionary resources => WithResources(resources),
+            Control control => new RenderedView(control, IsStylePreview: false),
+            Styles styles => new RenderedView(WithStyle(styles), IsStylePreview: true),
+            Style style => new RenderedView(WithStyle(style), IsStylePreview: true),
+            ResourceDictionary resources => new RenderedView(WithResources(resources), IsStylePreview: true),
             _ => throw new NotSupportedException($"The root is a {root.GetType().Name}, not a control."),
         };
     }
@@ -93,9 +93,22 @@ internal sealed class PreviewRenderer(Assembly localAssembly, string projectDire
 
     private static Control WithResources(ResourceDictionary resources)
     {
-        Control preview = Design.GetPreviewWith(resources) ?? throw NoPreviewWith(resources);
+        Control preview = FindPreviewWith(resources) ?? throw NoPreviewWith(resources);
         preview.Resources.MergedDictionaries.Add(resources);
         return preview;
+    }
+
+    // Avalonia reads a dictionary with an indexer. It throws when another dictionary already has a preview control.
+    private static Control? FindPreviewWith(ResourceDictionary resources)
+    {
+        try
+        {
+            return Design.GetPreviewWith(resources);
+        }
+        catch (KeyNotFoundException)
+        {
+            return null;
+        }
     }
 
     private static NotSupportedException NoPreviewWith(object root) =>

@@ -23,9 +23,39 @@ public sealed class PreviewRendererTests
         using TempDir dir = new();
         string file = dir.Write("Views/Hello.axaml", $"""<TextBlock {AvaloniaXmlns} Text="Hello" />""");
 
-        Control preview = Renderer(dir).Render(file);
+        Control preview = Renderer(dir).Render(file).Control;
 
         Assert.Equal("Hello", Assert.IsType<TextBlock>(preview).Text);
+    }
+
+    [AvaloniaFact]
+    public void Render_TellsThatAControlRootIsNoStylePreview()
+    {
+        using TempDir dir = new();
+        string file = dir.Write("Views/Hello.axaml", $"""<TextBlock {AvaloniaXmlns} Text="Hello" />""");
+
+        RenderedView view = Renderer(dir).Render(file);
+
+        Assert.False(view.IsStylePreview);
+    }
+
+    [AvaloniaTheory]
+    [InlineData("Styles")]
+    [InlineData("ResourceDictionary")]
+    public void Render_TellsThatAStyleOrResourceRootIsAStylePreview(string rootName)
+    {
+        using TempDir dir = new();
+        string file = dir.Write("Styles/Sample.axaml", $"""
+            <{rootName} {AvaloniaXmlns}>
+              <Design.PreviewWith>
+                <Border />
+              </Design.PreviewWith>
+            </{rootName}>
+            """);
+
+        RenderedView view = Renderer(dir).Render(file);
+
+        Assert.True(view.IsStylePreview);
     }
 
     [AvaloniaFact]
@@ -38,7 +68,7 @@ public sealed class PreviewRendererTests
             </Window>
             """);
 
-        Control preview = Renderer(dir).Render(file);
+        Control preview = Renderer(dir).Render(file).Control;
 
         Border container = Assert.IsType<Border>(preview);
         Assert.Equal(300, container.Width);
@@ -55,7 +85,7 @@ public sealed class PreviewRendererTests
             </local:FixtureControl>
             """);
 
-        Control preview = Renderer(dir).Render(file);
+        Control preview = Renderer(dir).Render(file).Control;
 
         Window window = new() { Content = preview };
         window.Show();
@@ -73,7 +103,7 @@ public sealed class PreviewRendererTests
             </UserControl>
             """);
 
-        Control preview = Renderer(dir).Render(file);
+        Control preview = Renderer(dir).Render(file).Control;
 
         FixtureCodeBehind view = Assert.IsType<FixtureCodeBehind>(preview);
         Assert.Equal(FixtureCodeBehind.ConstructedTag, view.Tag);
@@ -90,7 +120,7 @@ public sealed class PreviewRendererTests
             </UserControl>
             """);
 
-        Control preview = Renderer(dir).Render(file);
+        Control preview = Renderer(dir).Render(file).Control;
 
         Assert.IsNotType<FixtureNoDefaultConstructor>(preview);
         Assert.Equal("From XAML", Assert.IsType<TextBlock>(Assert.IsAssignableFrom<UserControl>(preview).Content).Text);
@@ -108,7 +138,7 @@ public sealed class PreviewRendererTests
             </UserControl>
             """);
 
-        Control preview = Renderer(dir).Render(file);
+        Control preview = Renderer(dir).Render(file).Control;
 
         _ = Assert.IsType<FixtureViewModel>(preview.DataContext);
     }
@@ -125,7 +155,7 @@ public sealed class PreviewRendererTests
             </UserControl>
             """);
 
-        Control preview = Renderer(dir).Render(file, typeof(FixtureOtherViewModel));
+        Control preview = Renderer(dir).Render(file, typeof(FixtureOtherViewModel)).Control;
 
         _ = Assert.IsType<FixtureOtherViewModel>(preview.DataContext);
     }
@@ -136,7 +166,7 @@ public sealed class PreviewRendererTests
         using TempDir dir = new();
         string file = dir.Write("Views/Main.axaml", $"""<Window {AvaloniaXmlns}><TextBlock /></Window>""");
 
-        Control preview = Renderer(dir).Render(file, typeof(FixtureOtherViewModel));
+        Control preview = Renderer(dir).Render(file, typeof(FixtureOtherViewModel)).Control;
 
         _ = Assert.IsType<FixtureOtherViewModel>(preview.DataContext);
     }
@@ -154,7 +184,7 @@ public sealed class PreviewRendererTests
             </Window>
             """);
 
-        Control preview = Renderer(dir).Render(file);
+        Control preview = Renderer(dir).Render(file).Control;
 
         _ = Assert.IsType<FixtureViewModel>(preview.DataContext);
     }
@@ -173,7 +203,7 @@ public sealed class PreviewRendererTests
             </UserControl>
             """);
 
-        Control preview = Renderer(dir).Render(file);
+        Control preview = Renderer(dir).Render(file).Control;
 
         Assert.Equal("Sample", Assert.IsType<FixtureViewModel>(preview.DataContext).Name);
     }
@@ -192,7 +222,7 @@ public sealed class PreviewRendererTests
             </UserControl>
             """);
 
-        Control preview = Renderer(dir).Render(file);
+        Control preview = Renderer(dir).Render(file).Control;
 
         _ = Assert.IsType<FixtureViewModel>(preview.DataContext);
     }
@@ -210,7 +240,7 @@ public sealed class PreviewRendererTests
                          d:DataContext="{designInstance}" />
             """);
 
-        Control preview = Renderer(dir).Render(file);
+        Control preview = Renderer(dir).Render(file).Control;
 
         _ = Assert.IsType<FixtureViewModel>(preview.DataContext);
     }
@@ -225,7 +255,7 @@ public sealed class PreviewRendererTests
             </UserControl>
             """);
 
-        Control preview = Renderer(dir).Render(file);
+        Control preview = Renderer(dir).Render(file).Control;
 
         TextBlock child = Assert.IsType<TextBlock>(Assert.IsType<UserControl>(preview).Content);
         _ = Assert.IsType<FixtureViewModel>(child.DataContext);
@@ -242,7 +272,7 @@ public sealed class PreviewRendererTests
             </UserControl>
             """);
 
-        Control preview = Renderer(dir).Render(file);
+        Control preview = Renderer(dir).Render(file).Control;
 
         TextBlock child = Assert.IsType<TextBlock>(Assert.IsType<UserControl>(preview).Content);
         _ = Assert.IsType<FixtureViewModel>(child.DataContext);
@@ -258,7 +288,7 @@ public sealed class PreviewRendererTests
                          d:DataContext="{"{"}d:DesignInstance vm:FixtureDependentViewModel{"}"}" />
             """);
 
-        Control preview = Renderer(dir).Render(file);
+        Control preview = Renderer(dir).Render(file).Control;
 
         _ = Assert.IsType<FixtureViewModel>(preview.DataContext);
     }
@@ -273,7 +303,7 @@ public sealed class PreviewRendererTests
             </UserControl>
             """);
 
-        Control preview = Renderer(dir).Render(file);
+        Control preview = Renderer(dir).Render(file).Control;
 
         _ = Assert.IsType<FixtureViewModel>(preview.DataContext);
     }
@@ -290,7 +320,7 @@ public sealed class PreviewRendererTests
             </UserControl>
             """);
 
-        Control preview = Renderer(dir).Render(file);
+        Control preview = Renderer(dir).Render(file).Control;
 
         _ = Assert.IsType<FixtureViewModel>(preview.DataContext);
     }
@@ -304,7 +334,7 @@ public sealed class PreviewRendererTests
                          x:DataType="vm:FixtureDependentViewModel" />
             """);
 
-        Control preview = Renderer(dir).Render(file);
+        Control preview = Renderer(dir).Render(file).Control;
 
         Assert.Null(preview.DataContext);
     }
@@ -318,7 +348,7 @@ public sealed class PreviewRendererTests
                          x:DataType="vm:FixtureDependentViewModel" />
             """);
 
-        Control preview = Renderer(dir, new DesignServices(new FixtureServices())).Render(file);
+        Control preview = Renderer(dir, new DesignServices(new FixtureServices())).Render(file).Control;
 
         Assert.Equal(FixtureServices.Greeting, Assert.IsType<FixtureDependentViewModel>(preview.DataContext).Greeting);
     }
@@ -335,7 +365,7 @@ public sealed class PreviewRendererTests
             </UserControl>
             """);
 
-        Control preview = Renderer(dir, new DesignServices(new FixtureServices())).Render(file);
+        Control preview = Renderer(dir, new DesignServices(new FixtureServices())).Render(file).Control;
 
         _ = Assert.IsType<FixtureDependentViewModel>(preview.DataContext);
     }
@@ -346,7 +376,7 @@ public sealed class PreviewRendererTests
         using TempDir dir = new();
         string file = dir.Write("Views/Selected.axaml", $"""<UserControl {AvaloniaXmlns} />""");
 
-        Control preview = Renderer(dir, new DesignServices(new FixtureServices())).Render(file, typeof(FixtureDependentViewModel));
+        Control preview = Renderer(dir, new DesignServices(new FixtureServices())).Render(file, typeof(FixtureDependentViewModel)).Control;
 
         _ = Assert.IsType<FixtureDependentViewModel>(preview.DataContext);
     }
@@ -366,7 +396,7 @@ public sealed class PreviewRendererTests
             </Styles>
             """);
 
-        Control preview = Renderer(dir).Render(file);
+        Control preview = Renderer(dir).Render(file).Control;
 
         Window window = new() { Content = preview };
         window.Show();
@@ -387,7 +417,7 @@ public sealed class PreviewRendererTests
             </ResourceDictionary>
             """);
 
-        Control preview = Renderer(dir).Render(file);
+        Control preview = Renderer(dir).Render(file).Control;
 
         _ = Assert.IsType<Border>(preview);
         Assert.True(preview.TryFindResource("Greeting", out object? greeting));

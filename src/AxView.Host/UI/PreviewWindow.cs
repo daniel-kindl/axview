@@ -419,7 +419,7 @@ internal sealed class PreviewWindow : Window
     private void ShowPreview()
     {
         scope.Content = livePreview.View;
-        noDataContextBadge.IsVisible = livePreview.View is { DataContext: null };
+        noDataContextBadge.IsVisible = livePreview.View is { DataContext: null } && !livePreview.IsStylePreview;
         if (livePreview.Error is not null)
         {
             ShowError(livePreview.Error);
