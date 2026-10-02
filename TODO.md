@@ -11,8 +11,6 @@ Do not change or use again a number.
 
 ## Next
 
-- [ ] #30 **No badge on style roots (S).** Hide the "No DataContext" badge for a `Styles`, `Style`, or `ResourceDictionary` root.
-  The renderer knows the root kind. Give it to the window.
 - [ ] #31 **App project watch (S).** For a library view, also rebuild when a `.cs` file of the app project changes.
   The launcher finds the app project with `ProjectFinder.FindAppProject`. Give its folder to the host in a new `--app-project` option.
   Later, follow the `ProjectReference` graph.
@@ -54,6 +52,8 @@ Do not change or use again a number.
 - [ ] #24 **Linux and macOS check (S).** Run the tests and one snapshot on each OS.
 - [ ] #28 **ViewModel in snapshot mode (S).** A snapshot ignores the ViewModel that the user selected for the file.
   Use the choice from the settings file, or add a `--view-model <type>` option.
+- [ ] #40 **Static resources of the app in a style preview (S).** `TextStyles.axaml` of DAT4000 fails: "Static resource 'RobotoCondensedBold' not found".
+  The app defines the resource. A `StaticResource` in a `Styles` root does not find it at load time.
 - [ ] #25 **About dialog (S).** Add a simple About dialog to the picker and the preview window.
   Show the AxView version, the build date, and the Avalonia version of the host.
 
@@ -85,3 +85,4 @@ Each known issue is now an item: #30 to #39.
 - [x] #18 Rebuild: a change of a `.cs` file of the project stops the host. The launcher builds the app and starts the host again. `2faa127`
 - [x] #19 Include reload: a changed `StyleInclude` or `ResourceInclude` file of the app loads from disk and replaces the compiled include. `d7ee20f`
 - [x] #29 Own chrome styles: the app styles apply only in a scope around the preview. The chrome uses the Fluent or Simple theme. `e162858`
+- [x] #30 No DataContext badge on style roots: the renderer gives the root kind. The window hides the badge for a style root. `a7c2453`
