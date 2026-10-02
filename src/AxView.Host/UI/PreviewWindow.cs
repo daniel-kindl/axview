@@ -6,9 +6,7 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Controls.Templates;
 using Avalonia.Layout;
 using Avalonia.Media;
-using Avalonia.Media.Imaging;
 using Avalonia.Platform.Storage;
-using Avalonia.Threading;
 
 using AxView.Host.Catalog;
 using AxView.Host.Rendering;
@@ -57,7 +55,7 @@ internal sealed class PreviewWindow : Window
             WindowPlacementTracker.Apply(this, settings.Window);
         }
 
-        // A snapshot has no settings file. Its window must not change the window of the user.
+        // Without a settings file, the window has no placement to keep.
         placementTracker = options.SettingsFile is null ? null : new WindowPlacementTracker(this);
         themeSwitch = new ThemeSwitch(this) { SelectedItem = settings.Theme };
         sizeSwitch = new PreviewSizeSwitch(host) { Size = settings.Size };
@@ -136,16 +134,6 @@ internal sealed class PreviewWindow : Window
         if (options.SetupError is not null)
         {
             ShowError($"Cannot open the file: {options.SetupError}");
-        }
-    }
-
-    protected override void OnOpened(EventArgs e)
-    {
-        base.OnOpened(e);
-        if (options.SnapshotPath is not null)
-        {
-            // Give layout, bindings, and image loads time to settle.
-            _ = DispatcherTimer.RunOnce(SaveSnapshotAndExit, TimeSpan.FromMilliseconds(500));
         }
     }
 
@@ -344,22 +332,6 @@ internal sealed class PreviewWindow : Window
         HideError();
         status.Text = $"Rendered {DateTime.Now:HH:mm:ss}   {livePreview.FilePath}";
         Console.WriteLine($"axview: rendered {RelativePath(livePreview.FilePath)}");
-    }
-
-    private void SaveSnapshotAndExit()
-    {
-        PixelSize size = PixelSize.FromSize(ClientSize, RenderScaling);
-        using (RenderTargetBitmap bitmap = new(size, new Vector(96 * RenderScaling, 96 * RenderScaling)))
-        {
-            bitmap.Render(this);
-            bitmap.Save(options.SnapshotPath!);
-        }
-
-        ExitReason reason = errorPanel.IsVisible ? ExitReason.RenderFailed : ExitReason.Ok;
-        if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
-        {
-            desktop.Shutdown((int)reason);
-        }
     }
 
     private void ShowError(string message)

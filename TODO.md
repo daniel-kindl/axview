@@ -33,8 +33,7 @@ Do not change or use again a number.
 - [ ] #21 **Output choice (S).** When more than one output fits, prefer Debug. Show the choice in the status bar.
   Today the most recent build wins.
 - [ ] #22 **CI snapshot mode (S).** Render all files of a project. Write one PNG per file and a summary. Fail on error.
-  Move the snapshot out of `PreviewWindow` into a snapshot runner that uses `PreviewRenderer`.
-  Capture only the preview. Get the result from the renderer and the dispatcher errors, not from the error panel.
+  Use `SnapshotWindow` for each file.
 - [ ] #23 **Packaging (M).** Publish AxView as one portable exe (`axview.exe`).
   The host must be a `.dll` on disk, because `dotnet exec` starts it in the target runtime.
   Thus the exe must unpack the host before it starts the host.
@@ -67,4 +66,5 @@ Do not change or use again a number.
 - [x] #13 More DesignInstance forms: `Type={x:Type ...}`, and a `d:DataContext` with a `d:DesignInstance` on a child element. `086075a`
 - [x] #14 Settings file: `settings.json` next to the app keeps the recent files, the window placement, and the theme. `f3df631`
 - [x] #15 Preview size: a toolbar switch for Fit, Phone, Tablet, Desktop, and a custom width and height. Kept in `settings.json`. `5f85977`
-- [x] #26 Live preview module: `LivePreview` owns the file watch, the load, the last good preview, and the dispatcher errors.
+- [x] #26 Live preview module: `LivePreview` owns the file watch, the load, the last good preview, and the dispatcher errors. `549ba1e`
+- [x] #27 Snapshot window: a snapshot captures only the preview. The exit reason comes from `LivePreview`, not from the error panel.
