@@ -43,11 +43,11 @@ internal sealed class PreviewWindow : Window
     private IReadOnlyList<string> catalog = [];
     private bool isSyncingSelection;
 
-    public PreviewWindow(HostOptions options, IReadOnlyList<string> notes)
+    public PreviewWindow(HostOptions options, IReadOnlyList<string> notes, DesignServices services)
     {
         this.options = options;
         Assembly localAssembly = Assembly.Load(options.AssemblyName);
-        livePreview = new LivePreview(new PreviewRenderer(localAssembly, options.ProjectDirectory));
+        livePreview = new LivePreview(new PreviewRenderer(localAssembly, options.ProjectDirectory, services));
         livePreview.Changed += (_, _) => ShowPreview();
 
         Width = 1280;
@@ -63,7 +63,7 @@ internal sealed class PreviewWindow : Window
         themeSwitch = new ThemeSwitch(this) { SelectedItem = settings.Theme };
         sizeSwitch = new PreviewSizeSwitch(host) { Size = settings.Size };
         viewModels = new Dictionary<string, string>(settings.ViewModels, StringComparer.FromComparison(pathComparison));
-        viewModelSwitch = new ViewModelSwitch(ViewModelCatalog.List(localAssembly));
+        viewModelSwitch = new ViewModelSwitch(ViewModelCatalog.List(localAssembly, services));
         viewModelSwitch.SelectionChanged += (_, _) => OnViewModelSelected();
 
         status = new TextBlock { Margin = new Thickness(8, 4), FontSize = 12, TextTrimming = TextTrimming.CharacterEllipsis };
@@ -77,7 +77,7 @@ internal sealed class PreviewWindow : Window
             Background = new SolidColorBrush(Color.FromRgb(0xB0, 0x6A, 0x00)),
             Child = new TextBlock { Text = "No DataContext", FontSize = 11, Foreground = Brushes.White },
         };
-        ToolTip.SetTip(noDataContextBadge, "Select a ViewModel, set Design.DataContext, or give x:DataType a parameterless constructor.");
+        ToolTip.SetTip(noDataContextBadge, "Select a ViewModel, set Design.DataContext, or make x:DataType creatable. See AxViewDesign.CreateServices.");
         DockPanel.SetDock(noDataContextBadge, Dock.Right);
 
         errorText = new SelectableTextBlock

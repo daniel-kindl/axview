@@ -14,13 +14,18 @@ namespace AxView.Host.Rendering;
 /// The <c>Design.DataContext</c> of the root, or its <c>d:DataContext</c> with a <c>d:DesignInstance</c>.
 /// </description></item>
 /// <item><description>The DataContext that the code-behind constructor sets.</description></item>
-/// <item><description>A new instance of the root <c>x:DataType</c>, if it has a parameterless constructor.</description></item>
+/// <item><description>
+/// The type of the root <c>Design.DataContext</c> that the loader cannot create. Its content is ignored.
+/// </description></item>
+/// <item><description>A new instance of the root <c>x:DataType</c>.</description></item>
 /// </list>
+/// The <see cref="DesignServices"/> create the types of the last two sources.
 /// </remarks>
 internal static partial class DesignDataContext
 {
     private const string ExtensionPrefix = "axview";
     private const string XamlPrefix = "axviewx";
+    private const string DesignDataContextElement = "Design.DataContext";
 
     private static readonly XNamespace xamlNamespace = "http://schemas.microsoft.com/winfx/2006/xaml";
 
@@ -66,19 +71,26 @@ internal static partial class DesignDataContext
     /// <param name="root">The loaded root control.</param>
     /// <param name="xaml">The AXAML text that the root came from.</param>
     /// <param name="findType">Returns the type with a CLR namespace and a name, or null.</param>
+    /// <param name="services">The design services that create the DataContext.</param>
     /// <remarks>The constructors of the design types are user code. They can throw any exception.</remarks>
-    public static void Apply(Control root, string xaml, Func<string, string, Type?> findType)
+    public static void Apply(Control root, string xaml, Func<string, string, Type?> findType, DesignServices services)
     {
         // Also applies Design.Width, Design.Height, and Design.DesignStyle.
         Design.ApplyDesignModeProperties(root, root);
         XElement element = XDocument.Parse(xaml).Root!;
-        root.DataContext ??= CreateOrNull(FindDataType(element, xaml, findType));
+        root.DataContext ??= services.CreateOrNull(FindDesignType(element, findType))
+            ?? services.CreateOrNull(FindDataType(element, xaml, findType));
     }
 
     private static bool IsCreatable(Type type) => type.GetConstructor(Type.EmptyTypes) is not null;
 
-    private static object? CreateOrNull(Type? type) =>
-        type is not null && IsCreatable(type) ? Activator.CreateInstance(type) : null;
+    // Reads the type of the first element in <Design.DataContext> of the root.
+    private static Type? FindDesignType(XElement root, Func<string, string, Type?> findType)
+    {
+        XElement? instance = root.Element(root.Name.Namespace + DesignDataContextElement)?.Elements().FirstOrDefault();
+        Match? clrNamespace = instance is null ? null : XmlClrNamespace().Match(instance.Name.NamespaceName);
+        return clrNamespace is { Success: true } ? findType(clrNamespace.Groups["ns"].Value, instance!.Name.LocalName) : null;
+    }
 
     // Reads x:DataType="prefix:Name" of the root element. A DataTemplate can have its own x:DataType.
     private static Type? FindDataType(XElement root, string xaml, Func<string, string, Type?> findType)
@@ -119,6 +131,10 @@ internal static partial class DesignDataContext
     // The name of the root element, after the XML declaration and comments.
     [GeneratedRegex("""\A(?:\s|<\?.*?\?>|<!--.*?-->)*<[\w.:-]+""", RegexOptions.Singleline)]
     private static partial Regex RootElementName();
+
+    // The value of a CLR namespace declaration: using:Name or clr-namespace:Name;assembly=...
+    [GeneratedRegex("""^(?:using|clr-namespace):(?<ns>[\w.]+)""")]
+    private static partial Regex XmlClrNamespace();
 
     [GeneratedRegex("""xmlns:(?<prefix>[\w.-]+)\s*=\s*(?<q>["'])(?:using|clr-namespace):(?<ns>[\w.]+)[^"']*\k<q>""")]
     private static partial Regex ClrNamespaceDeclaration();

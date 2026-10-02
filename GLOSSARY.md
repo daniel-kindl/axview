@@ -69,6 +69,10 @@ _Avoid_: fallback, cached render
 The change to an AXAML file of a different project. It needs a new host.
 _Avoid_: reopen, reload
 
+**Design services**:
+The service provider that the target app gives through `AxViewDesign.CreateServices()`. The host creates the ViewModels with it.
+_Avoid_: DI container, mocks, stubs
+
 **Snapshot**:
 A PNG image of a preview, written without user interaction.
 _Avoid_: screenshot, capture

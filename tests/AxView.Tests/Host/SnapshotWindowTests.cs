@@ -56,5 +56,5 @@ public sealed class SnapshotWindowTests
         window.Close();
     }
 
-    private static PreviewRenderer Renderer(TempDir dir) => new(typeof(SnapshotWindowTests).Assembly, dir.Path);
+    private static PreviewRenderer Renderer(TempDir dir) => new(typeof(SnapshotWindowTests).Assembly, dir.Path, DesignServices.None);
 }

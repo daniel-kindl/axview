@@ -310,6 +310,48 @@ public sealed class PreviewRendererTests
     }
 
     [AvaloniaFact]
+    public void Render_CreatesTheDataTypeWithTheDesignServices()
+    {
+        using TempDir dir = new();
+        string file = dir.Write("Views/DependentServices.axaml", $"""
+            <UserControl {AvaloniaXmlns} {XamlXmlns} xmlns:vm="using:AxView.Tests.Fixtures"
+                         x:DataType="vm:FixtureDependentViewModel" />
+            """);
+
+        Control preview = Renderer(dir, new DesignServices(new FixtureServices())).Render(file);
+
+        Assert.Equal(FixtureServices.Greeting, Assert.IsType<FixtureDependentViewModel>(preview.DataContext).Greeting);
+    }
+
+    [AvaloniaFact]
+    public void Render_CreatesTheDesignDataContextWithTheDesignServices()
+    {
+        using TempDir dir = new();
+        string file = dir.Write("Views/DependentDesignServices.axaml", $"""
+            <UserControl {AvaloniaXmlns} {XamlXmlns} xmlns:vm="using:AxView.Tests.Fixtures" x:DataType="vm:FixtureViewModel">
+              <Design.DataContext>
+                <vm:FixtureDependentViewModel />
+              </Design.DataContext>
+            </UserControl>
+            """);
+
+        Control preview = Renderer(dir, new DesignServices(new FixtureServices())).Render(file);
+
+        _ = Assert.IsType<FixtureDependentViewModel>(preview.DataContext);
+    }
+
+    [AvaloniaFact]
+    public void Render_CreatesTheSelectedViewModelWithTheDesignServices()
+    {
+        using TempDir dir = new();
+        string file = dir.Write("Views/Selected.axaml", $"""<UserControl {AvaloniaXmlns} />""");
+
+        Control preview = Renderer(dir, new DesignServices(new FixtureServices())).Render(file, typeof(FixtureDependentViewModel));
+
+        _ = Assert.IsType<FixtureDependentViewModel>(preview.DataContext);
+    }
+
+    [AvaloniaFact]
     public void Render_ShowsThePreviewWithControlOfAStylesRootWithTheStyles()
     {
         using TempDir dir = new();
@@ -377,5 +419,8 @@ public sealed class PreviewRendererTests
     }
 
     // The test assembly is the local assembly of the fixture project.
-    private static PreviewRenderer Renderer(TempDir dir) => new(typeof(PreviewRendererTests).Assembly, dir.Path);
+    private static PreviewRenderer Renderer(TempDir dir) => Renderer(dir, DesignServices.None);
+
+    private static PreviewRenderer Renderer(TempDir dir, DesignServices services) =>
+        new(typeof(PreviewRendererTests).Assembly, dir.Path, services);
 }

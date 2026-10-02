@@ -183,7 +183,7 @@ public sealed class LivePreviewTests
 
     private static string? TextOf(LivePreview preview) => Assert.IsType<TextBlock>(preview.View).Text;
 
-    private static PreviewRenderer Renderer(TempDir dir) => new(typeof(LivePreviewTests).Assembly, dir.Path);
+    private static PreviewRenderer Renderer(TempDir dir) => new(typeof(LivePreviewTests).Assembly, dir.Path, DesignServices.None);
 
     // Run the dispatcher loop until the preview changes, or until the timeout.
     private static bool WaitForChange(LivePreview preview)

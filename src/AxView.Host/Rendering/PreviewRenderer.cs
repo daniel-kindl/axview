@@ -14,23 +14,26 @@ namespace AxView.Host.Rendering;
 /// Relative URIs in the XAML resolve against the avares URI of the file.
 /// The root gets a DataContext from the XAML. See <see cref="DesignDataContext"/>.
 /// A selected ViewModel type replaces the DataContext from the XAML.
+/// The design services create the ViewModels.
 /// A <c>Styles</c>, <c>Style</c>, or <c>ResourceDictionary</c> root shows its <c>Design.PreviewWith</c> control.
 /// </remarks>
 /// <param name="localAssembly">The assembly that the project builds.</param>
 /// <param name="projectDirectory">The folder of the project.</param>
-internal sealed class PreviewRenderer(Assembly localAssembly, string projectDirectory)
+/// <param name="services">The design services that create the ViewModels.</param>
+internal sealed class PreviewRenderer(Assembly localAssembly, string projectDirectory, DesignServices services)
 {
     private const int ReadAttempts = 5;
     private static readonly TimeSpan readRetryDelay = TimeSpan.FromMilliseconds(40);
 
     private readonly Assembly localAssembly = localAssembly;
     private readonly string projectDirectory = projectDirectory;
+    private readonly DesignServices services = services;
     private readonly NamespaceIndex namespaces = new(localAssembly);
 
     /// <summary>Loads the file and returns its root control.</summary>
     /// <param name="axamlPath">An AXAML file of the project.</param>
     /// <param name="viewModelType">
-    /// The type of the root DataContext, or null to use the DataContext from the XAML. It must have a parameterless constructor.
+    /// The type of the root DataContext, or null to use the DataContext from the XAML. The design services must create it.
     /// </param>
     /// <exception cref="NotSupportedException">
     /// The root is a top-level other than a window, a style or resource root without <c>Design.PreviewWith</c>, or another non-control.
@@ -46,10 +49,10 @@ internal sealed class PreviewRenderer(Assembly localAssembly, string projectDire
         object root = AvaloniaRuntimeXamlLoader.Load(qualified, localAssembly, null, baseUri, designMode: true);
         if (root is Control loaded)
         {
-            DesignDataContext.Apply(loaded, xaml, FindType);
+            DesignDataContext.Apply(loaded, xaml, FindType, services);
             if (viewModelType is not null)
             {
-                loaded.DataContext = Activator.CreateInstance(viewModelType);
+                loaded.DataContext = services.Create(viewModelType);
             }
         }
 
