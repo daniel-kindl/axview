@@ -27,6 +27,14 @@ internal static class ViewModelCatalog
             .OrderBy(t => t.Name, StringComparer.OrdinalIgnoreCase)
             .ThenBy(t => t.FullName, StringComparer.Ordinal)];
 
+    /// <summary>Returns the ViewModel type with the full name.</summary>
+    /// <param name="localAssembly">The assembly that the project builds.</param>
+    /// <param name="services">The services that create the ViewModels.</param>
+    /// <param name="fullName">The full name of the type, with the namespace.</param>
+    /// <returns>The type, or null when the catalog has no such type.</returns>
+    public static Type? Find(Assembly localAssembly, DesignServices services, string fullName) =>
+        List(localAssembly, services).FirstOrDefault(t => t.FullName == fullName);
+
     private static bool IsViewModel(Type type) =>
         type is { IsPublic: true, IsClass: true, IsAbstract: false, IsGenericTypeDefinition: false }
         && type.Name.EndsWith(NameSuffix, StringComparison.Ordinal);

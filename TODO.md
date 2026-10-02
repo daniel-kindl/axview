@@ -30,8 +30,6 @@ Do not change or use again a number.
   Option B: the host runs from a copy of the output. It stays open during the build and shows a build overlay.
 - [ ] #20 **Avalonia 12 (L).** Check the loader and host APIs. A second host build may be necessary.
 - [ ] #24 **Linux and macOS check (S).** Run the tests and one snapshot on each OS.
-- [ ] #28 **ViewModel in snapshot mode (S).** A snapshot ignores the ViewModel that the user selected for the file.
-  Use the choice from the settings file, or add a `--view-model <type>` option.
 - [ ] #40 **Static resources of the app in a style preview (S).** `TextStyles.axaml` of DAT4000 fails: "Static resource 'RobotoCondensedBold' not found".
   The app defines the resource. A `StaticResource` in a `Styles` root does not find it at load time.
 - [ ] #41 **Project reference watch (S).** Rebuild when a `.cs` file of a project in the `ProjectReference` graph of the app changes.
@@ -76,3 +74,4 @@ Each known issue is now an item: #30 to #39.
 - [x] #34 App startup services: `RunAppStartup` in `settings.json` calls `OnFrameworkInitializationCompleted` of the app. `AxViewDesign` docs name `App.Services`. `c58e640`
 - [x] #21 Output choice: a Debug output wins over a newer Release output. The status bar shows the output folder. `e8652ea`
 - [x] #22 CI snapshot mode: `--snapshot-all <dir>` writes one PNG per project file and `summary.txt`. The exit code is 1 when a file fails. `577d727`
+- [x] #28 ViewModel in snapshot mode: `--view-model <full type name>` sets the DataContext of a `--snapshot`. An unknown type exits with 2. `HASH`

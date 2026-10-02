@@ -41,9 +41,11 @@ internal sealed class HostSession(
     /// <param name="snapshotPath">If set, the host saves one PNG and exits.</param>
     /// <param name="opened">Called with each file that the session opens.</param>
     /// <param name="snapshotAllDirectory">If set, the host saves a PNG of each file of the project in this folder and exits.</param>
+    /// <param name="viewModelName">If set, the full name of the ViewModel type for the DataContext of a snapshot.</param>
     /// <returns>The exit code of the last host.</returns>
     /// <exception cref="PreviewSetupException">The launcher cannot prepare the first file.</exception>
-    public async Task<int> RunAsync(string axamlPath, string? outputDir, string? snapshotPath, Action<string> opened, string? snapshotAllDirectory = null)
+    public async Task<int> RunAsync(string axamlPath, string? outputDir, string? snapshotPath, Action<string> opened, string? snapshotAllDirectory = null,
+        string? viewModelName = null)
     {
         string handOffFile = Path.Combine(Path.GetTempPath(), $"axview-hand-off-{Guid.NewGuid():N}.json");
         PreviewTarget target = Open(axamlPath, outputDir, opened);
@@ -60,6 +62,7 @@ internal sealed class HostSession(
                 {
                     SetupError = setupError,
                     SettingsFile = hostSettingsFile,
+                    ViewModelName = viewModelName,
                 };
                 int exitCode = await hostProcess.RunAsync(target, options);
                 bool isHandOff = exitCode is (int)ExitReason.SwitchProject or (int)ExitReason.Rebuild;

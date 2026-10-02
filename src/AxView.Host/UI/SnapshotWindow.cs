@@ -21,7 +21,8 @@ internal sealed class SnapshotWindow : Window
     /// <param name="renderer">The renderer of the project.</param>
     /// <param name="axamlPath">The AXAML file to capture.</param>
     /// <param name="target">The styles of the target app. The window becomes their owner.</param>
-    public SnapshotWindow(PreviewRenderer renderer, string axamlPath, TargetStyles target)
+    /// <param name="viewModelType">The type of the root DataContext, or null to use the DataContext from the XAML.</param>
+    public SnapshotWindow(PreviewRenderer renderer, string axamlPath, TargetStyles target, Type? viewModelType = null)
     {
         Width = DefaultWidth;
         Height = DefaultHeight;
@@ -29,7 +30,7 @@ internal sealed class SnapshotWindow : Window
         Content = scope;
         livePreview = new LivePreview(renderer);
         livePreview.Changed += (_, _) => scope.Content = livePreview.View;
-        livePreview.Show(axamlPath);
+        livePreview.Show(axamlPath, viewModelType);
     }
 
     /// <summary>Gets the error of the load or of a dispatcher job, or null.</summary>

@@ -22,6 +22,9 @@ namespace AxView.Protocol;
 /// <param name="SnapshotAllDirectory">
 /// If set, the host saves one PNG for each AXAML file of the project, and a summary file, in this folder. Then it exits.
 /// </param>
+/// <param name="ViewModelName">
+/// If set, the full name of the ViewModel type for the DataContext of a snapshot. The type is one of the ViewModel catalog.
+/// </param>
 internal sealed record HostOptions(
     string AxamlPath,
     string ProjectDirectory,
@@ -33,7 +36,8 @@ internal sealed record HostOptions(
     string? SetupError = null,
     string? SettingsFile = null,
     string? AppProjectDirectory = null,
-    string? SnapshotAllDirectory = null)
+    string? SnapshotAllDirectory = null,
+    string? ViewModelName = null)
 {
     private const string AxamlKey = "--axaml";
     private const string ProjectKey = "--project";
@@ -46,9 +50,10 @@ internal sealed record HostOptions(
     private const string SettingsKey = "--settings";
     private const string AppProjectKey = "--app-project";
     private const string SnapshotAllKey = "--snapshot-all";
+    private const string ViewModelKey = "--view-model";
 
     private static readonly string[] keys =
-        [AxamlKey, ProjectKey, AssemblyKey, AppAssemblyKey, LoaderKey, SnapshotKey, HandOffKey, SetupErrorKey, SettingsKey, AppProjectKey, SnapshotAllKey];
+        [AxamlKey, ProjectKey, AssemblyKey, AppAssemblyKey, LoaderKey, SnapshotKey, HandOffKey, SetupErrorKey, SettingsKey, AppProjectKey, SnapshotAllKey, ViewModelKey];
 
     /// <summary>Reads the options from the host command line.</summary>
     /// <exception cref="ArgumentException">The arguments are not valid.</exception>
@@ -88,7 +93,8 @@ internal sealed record HostOptions(
             values.GetValueOrDefault(SetupErrorKey),
             values.GetValueOrDefault(SettingsKey),
             values.GetValueOrDefault(AppProjectKey),
-            values.GetValueOrDefault(SnapshotAllKey));
+            values.GetValueOrDefault(SnapshotAllKey),
+            values.GetValueOrDefault(ViewModelKey));
     }
 
     /// <summary>Writes the options as the host command line.</summary>
@@ -108,6 +114,7 @@ internal sealed record HostOptions(
         AddOptional(args, SettingsKey, SettingsFile);
         AddOptional(args, AppProjectKey, AppProjectDirectory);
         AddOptional(args, SnapshotAllKey, SnapshotAllDirectory);
+        AddOptional(args, ViewModelKey, ViewModelName);
         return args;
     }
 

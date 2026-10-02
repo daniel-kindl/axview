@@ -10,7 +10,7 @@ namespace AxView;
 /// <summary>Starts the picker UI, or previews a file given on the command line.</summary>
 internal static class Program
 {
-    private const string Usage = "usage: axview [<file.axaml> [--output <app-bin-dir>] [--snapshot <file.png> | --snapshot-all <dir>]]";
+    private const string Usage = "usage: axview [<file.axaml> [--output <app-bin-dir>] [--snapshot <file.png> | --snapshot-all <dir>] [--view-model <type>]]";
 
     [STAThread]
     public static int Main(string[] args)
@@ -19,6 +19,7 @@ internal static class Program
         string? outputDir = null;
         string? snapshot = null;
         string? snapshotAll = null;
+        string? viewModel = null;
         for (int i = 0; i < args.Length; i++)
         {
             switch (args[i])
@@ -31,6 +32,9 @@ internal static class Program
                     break;
                 case "--snapshot-all" when i + 1 < args.Length:
                     snapshotAll = Path.GetFullPath(args[++i]);
+                    break;
+                case "--view-model" when i + 1 < args.Length:
+                    viewModel = args[++i];
                     break;
                 case "-h" or "--help":
                     Console.WriteLine(Usage);
@@ -50,7 +54,7 @@ internal static class Program
         {
             RecentFiles recent = RecentFiles.ForCurrentUser();
             HostSession session = HostSession.CreateDefault(recent.SettingsFile);
-            return session.RunAsync(axaml, outputDir, snapshot, recent.Add, snapshotAll).GetAwaiter().GetResult();
+            return session.RunAsync(axaml, outputDir, snapshot, recent.Add, snapshotAll, viewModel).GetAwaiter().GetResult();
         }
         catch (PreviewSetupException ex)
         {

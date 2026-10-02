@@ -6,6 +6,7 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Styling;
 using Avalonia.Threading;
 
+using AxView.Host.Catalog;
 using AxView.Host.Rendering;
 using AxView.Host.Startup;
 using AxView.Host.UI;
@@ -103,10 +104,25 @@ internal sealed class PreviewApp(HostOptions options, List<string> notes) : Appl
         desktop.Shutdown((int)reason);
     }
 
-    private SnapshotWindow CreateSnapshotWindow(IClassicDesktopStyleApplicationLifetime desktop, string pngPath)
+    private SnapshotWindow? CreateSnapshotWindow(IClassicDesktopStyleApplicationLifetime desktop, string pngPath)
     {
-        PreviewRenderer renderer = new(Assembly.Load(options.AssemblyName), options.ProjectDirectory, services);
-        SnapshotWindow window = new(renderer, options.AxamlPath, target);
+        Assembly localAssembly = Assembly.Load(options.AssemblyName);
+        PreviewRenderer renderer = new(localAssembly, options.ProjectDirectory, services);
+        Type? viewModelType = null;
+        if (options.ViewModelName is not null)
+        {
+            viewModelType = ViewModelCatalog.Find(localAssembly, services, options.ViewModelName);
+            if (viewModelType is null)
+            {
+                Console.Error.WriteLine($"axview: error: No ViewModel '{options.ViewModelName}' that the design services can create.");
+
+                // The lifetime has not started yet. Thus the shutdown must wait for the main loop.
+                Dispatcher.UIThread.Post(() => desktop.Shutdown((int)ExitReason.BadArguments));
+                return null;
+            }
+        }
+
+        SnapshotWindow window = new(renderer, options.AxamlPath, target, viewModelType);
         window.Opened += (_, _) => _ = DispatcherTimer.RunOnce(() => desktop.Shutdown((int)window.Save(pngPath)), snapshotDelay);
         return window;
     }

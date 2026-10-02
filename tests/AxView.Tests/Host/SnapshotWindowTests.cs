@@ -30,6 +30,20 @@ public sealed class SnapshotWindowTests
     }
 
     [AvaloniaFact]
+    public void New_WithAViewModelType_SetsTheDataContext()
+    {
+        using TempDir dir = new();
+        string file = dir.Write("Views/Hello.axaml", $"""<TextBlock {AvaloniaXmlns} Text="Hello" />""");
+
+        SnapshotWindow window = new(Renderer(dir), file, TargetStyles.None, typeof(FixtureViewModel));
+        window.Show();
+
+        TextBlock text = Assert.IsType<TextBlock>(Assert.IsType<PreviewScope>(window.Content).Content);
+        Assert.IsType<FixtureViewModel>(text.DataContext);
+        window.Close();
+    }
+
+    [AvaloniaFact]
     public void Save_GoodFile_GivesOk()
     {
         using TempDir dir = new();

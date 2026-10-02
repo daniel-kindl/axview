@@ -46,6 +46,20 @@ public sealed class HostSessionTests
     }
 
     [Fact]
+    public async Task RunAsync_GivesTheViewModelNameToTheHostAsync()
+    {
+        using TempDir dir = new();
+        _ = dir.Write("Repo.sln");
+        string view = AppFixture.WriteProject(dir, "Ui");
+        FakeHostProcess hosts = new();
+        hosts.Enqueue(ExitReason.Ok);
+
+        _ = await Session(hosts).RunAsync(view, null, "shot.png", _ => { }, viewModelName: "Ui.MainViewModel");
+
+        Assert.Equal("Ui.MainViewModel", Assert.Single(hosts.Runs).ViewModelName);
+    }
+
+    [Fact]
     public async Task RunAsync_StartsANewHostForTheFileOfTheHandOffAsync()
     {
         using TempDir dir = new();

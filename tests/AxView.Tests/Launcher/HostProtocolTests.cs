@@ -16,7 +16,8 @@ public sealed class HostProtocolTests
         SetupError: "The app is not built.",
         SettingsFile: "/tools/axview/settings.json",
         AppProjectDirectory: "/src/Desktop",
-        SnapshotAllDirectory: "/out/shots");
+        SnapshotAllDirectory: "/out/shots",
+        ViewModelName: "Ui.ViewModels.MainViewModel");
 
     [Fact]
     public void Parse_ReadsTheArgumentsThatToArgumentsWrites()
@@ -38,6 +39,7 @@ public sealed class HostProtocolTests
             SettingsFile = null,
             AppProjectDirectory = null,
             SnapshotAllDirectory = null,
+            ViewModelName = null,
         };
 
         HostOptions parsed = HostOptions.Parse(options.ToArguments());

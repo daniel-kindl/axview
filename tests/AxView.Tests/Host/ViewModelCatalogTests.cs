@@ -19,6 +19,23 @@ public sealed class ViewModelCatalogTests
     }
 
     [Fact]
+    public void Find_GivesTheViewModelWithTheFullName()
+    {
+        Type? type = ViewModelCatalog.Find(
+            typeof(ViewModelCatalogTests).Assembly, DesignServices.None, typeof(FixtureViewModel).FullName!);
+
+        Assert.Equal(typeof(FixtureViewModel), type);
+    }
+
+    [Fact]
+    public void Find_GivesNullForAnUnknownName()
+    {
+        Type? type = ViewModelCatalog.Find(typeof(ViewModelCatalogTests).Assembly, DesignServices.None, "No.Such.ViewModel");
+
+        Assert.Null(type);
+    }
+
+    [Fact]
     public void List_SkipsAViewModelThatTheServicesCannotCreate()
     {
         IReadOnlyList<Type> types = ViewModelCatalog.List(typeof(ViewModelCatalogTests).Assembly, DesignServices.None);
