@@ -188,16 +188,29 @@ internal sealed class PreviewWindow : Window
         return item;
     }
 
-    private Grid BuildStage()
+    private DockPanel BuildStage()
     {
-        Grid stage = new();
-        stage.Children.Add(new ScrollViewer
+        Grid preview = new();
+        preview.Children.Add(new ScrollViewer
         {
             HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
             Content = host,
         });
-        stage.Children.Add(errorPanel);
-        return stage;
+        preview.Children.Add(errorPanel);
+
+        Border toolbar = new()
+        {
+            Child = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Margin = new Thickness(8, 4),
+                Children = { new ThemeSwitch(this) },
+            },
+            BorderThickness = new Thickness(0, 0, 0, 1),
+            BorderBrush = Brushes.Gray,
+        };
+        DockPanel.SetDock(toolbar, Dock.Top);
+        return new DockPanel { Children = { toolbar, preview } };
     }
 
     private void RefreshCatalog()
