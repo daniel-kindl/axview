@@ -11,8 +11,6 @@ Do not change or use again a number.
 
 ## Next
 
-- [ ] #32 **Library include reload (S).** For a library view, reload the include files of the App.axaml in the app project.
-  Use the `--app-project` option of #31. Use a renderer for the app assembly and the app project folder.
 - [ ] #33 **Window styles on the frame (S).** Apply a `Style Selector="Window"` of the app to the preview frame.
   Try `StyleKeyOverride => typeof(Window)` on `PreviewFrame`. Always set an explicit `Theme`, else the chrome Window theme applies.
   Write a test for a setter of a window-only property, for example `Title`.
@@ -53,6 +51,8 @@ Do not change or use again a number.
   The app defines the resource. A `StaticResource` in a `Styles` root does not find it at load time.
 - [ ] #41 **Project reference watch (S).** Rebuild when a `.cs` file of a project in the `ProjectReference` graph of the app changes.
   Today the host watches only the view project and the app project (#31).
+- [ ] #42 **Includes into another assembly (S).** The include walk follows only the includes of the assembly of the app file.
+  For example, the App.axaml of the app project includes `avares://Ui/Styles/Main.axaml` of the library. That file does not load again.
 - [ ] #25 **About dialog (S).** Add a simple About dialog to the picker and the preview window.
   Show the AxView version, the build date, and the Avalonia version of the host.
 
@@ -86,3 +86,4 @@ Each known issue is now an item: #30 to #39.
 - [x] #29 Own chrome styles: the app styles apply only in a scope around the preview. The chrome uses the Fluent or Simple theme. `e162858`
 - [x] #30 No DataContext badge on style roots: the renderer gives the root kind. The window hides the badge for a style root. `a7c2453`
 - [x] #31 App project watch: the launcher gives the app project folder in `--app-project`. The host watches its C# files. `6419032`
+- [x] #32 Library include reload: `AppIncludes.Find` looks for App.axaml in the view project, then in the app project. `c928c7a`
