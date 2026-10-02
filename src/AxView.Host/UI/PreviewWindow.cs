@@ -18,6 +18,9 @@ namespace AxView.Host.UI;
 /// Lists the project's AXAML files and shows the selected one. Reloads it on save.
 /// Keeps the last good render when a load fails.
 /// </summary>
+/// <remarks>
+/// When a code file of the project changes, the host stops. The launcher then builds the app and starts a new host.
+/// </remarks>
 internal sealed class PreviewWindow : Window
 {
     private const double SidebarWidth = 280;
@@ -40,6 +43,7 @@ internal sealed class PreviewWindow : Window
     private readonly ViewModelSwitch viewModelSwitch;
     private readonly Dictionary<string, string> viewModels;
     private readonly WindowPlacementTracker? placementTracker;
+    private readonly FileChangeWatcher? codeWatcher;
     private IReadOnlyList<string> catalog = [];
     private bool isSyncingSelection;
 
@@ -135,11 +139,19 @@ internal sealed class PreviewWindow : Window
         // The user can add files while the window is open.
         Activated += (_, _) => RefreshCatalog();
 
+        // Only the launcher can build the app and start a new host.
+        if (options.HandOffFile is not null)
+        {
+            codeWatcher = FileChangeWatcher.ForCodeFiles(
+                options.ProjectDirectory,
+                () => StopWithHandOff(livePreview.FilePath, ExitReason.Rebuild));
+        }
+
         Show(options.AxamlPath);
         RefreshCatalog();
         if (options.SetupError is not null)
         {
-            ShowError($"Cannot open the file: {options.SetupError}");
+            ShowError(options.SetupError);
         }
     }
 
@@ -155,6 +167,7 @@ internal sealed class PreviewWindow : Window
 
     protected override void OnClosed(EventArgs e)
     {
+        codeWatcher?.Dispose();
         livePreview.Dispose();
         base.OnClosed(e);
     }
@@ -262,7 +275,7 @@ internal sealed class PreviewWindow : Window
         }
     }
 
-    // Save the choice now. A project switch stops the host without a close of the window.
+    // Save the choice now. A hand-off stops the host without a close of the window.
     private void OnViewModelSelected()
     {
         if (isSyncingSelection)
@@ -346,10 +359,17 @@ internal sealed class PreviewWindow : Window
             return;
         }
 
-        new HandOff(Path.GetFullPath(path)).Save(options.HandOffFile);
+        StopWithHandOff(path, ExitReason.SwitchProject);
+    }
+
+    // The shutdown does not close the window. Thus save the settings first, so the next host opens at the same place.
+    private void StopWithHandOff(string nextFile, ExitReason reason)
+    {
+        SaveSettings();
+        new HandOff(Path.GetFullPath(nextFile)).Save(options.HandOffFile!);
         if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            desktop.Shutdown((int)ExitReason.SwitchProject);
+            desktop.Shutdown((int)reason);
         }
     }
 

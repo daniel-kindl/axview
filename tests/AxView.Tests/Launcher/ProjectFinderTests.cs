@@ -44,4 +44,27 @@ public sealed class ProjectFinderTests
 
         Assert.Equal("My.App", ProjectFinder.ReadAssemblyName(project));
     }
+
+    [Fact]
+    public void FindAppProject_ReturnsTheProjectAboveTheOutputThatBuildsTheApp()
+    {
+        using TempDir dir = new();
+        _ = dir.Write("Ui/Ui.csproj", "<Project />");
+        string app = dir.Write("Desktop/Desktop.csproj", "<Project />");
+        string outputDir = AppFixture.WriteAppOutput(dir, "Desktop/bin/Debug/net9.0", "Desktop", "Ui");
+        AppOutput output = AppOutput.FromRuntimeConfig(Path.Combine(outputDir, "Desktop.runtimeconfig.json"));
+
+        Assert.Equal(app, ProjectFinder.FindAppProject(output));
+    }
+
+    [Fact]
+    public void FindAppProject_ThrowsWhenNoProjectAboveTheOutputBuildsTheApp()
+    {
+        using TempDir dir = new();
+        _ = dir.Write("Other/Other.csproj", "<Project />");
+        string outputDir = AppFixture.WriteAppOutput(dir, "Other/bin/Debug/net9.0", "Desktop", "Ui");
+        AppOutput output = AppOutput.FromRuntimeConfig(Path.Combine(outputDir, "Desktop.runtimeconfig.json"));
+
+        _ = Assert.Throws<PreviewSetupException>(() => ProjectFinder.FindAppProject(output));
+    }
 }

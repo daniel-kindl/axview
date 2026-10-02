@@ -71,6 +71,7 @@ public sealed class HostSessionTests
         Assert.Equal([first], opened);
         Assert.Equal([first, first], hosts.Runs.Select(options => options.AxamlPath));
         Assert.Null(hosts.Runs[0].SetupError);
+        Assert.StartsWith("Cannot open the file:", hosts.Runs[1].SetupError, StringComparison.Ordinal);
         Assert.Contains("Unbuilt", hosts.Runs[1].SetupError, StringComparison.Ordinal);
     }
 
@@ -90,6 +91,46 @@ public sealed class HostSessionTests
     }
 
     [Fact]
+    public async Task RunAsync_BuildsTheAppAndStartsTheHostAgainOnTheFileOfTheHandOffAsync()
+    {
+        using TempDir dir = new();
+        _ = dir.Write("Repo.sln");
+        string view = AppFixture.WriteProject(dir, "Ui");
+        string other = dir.Write("src/Ui/Views/Other.axaml");
+        FakeHostProcess hosts = new();
+        hosts.Enqueue(ExitReason.Rebuild, nextFile: other);
+        hosts.Enqueue(ExitReason.Ok);
+        FakeOutputBuilder builder = new();
+
+        int exitCode = await Session(hosts, builder).RunAsync(view, outputDir: null, snapshotPath: null, _ => { });
+
+        Assert.Equal((int)ExitReason.Ok, exitCode);
+        AppOutput built = Assert.Single(builder.Builds);
+        Assert.Equal(Path.Combine(dir.Path, "src", "Ui", "bin", "Debug", "net9.0"), built.Directory);
+        Assert.Equal([view, other], hosts.Runs.Select(options => options.AxamlPath));
+        Assert.Null(hosts.Runs[1].SetupError);
+        Assert.Equal(SettingsFile, hosts.Runs[1].SettingsFile);
+    }
+
+    [Fact]
+    public async Task RunAsync_ShowsTheBuildErrorInTheNextHostWhenTheBuildFailsAsync()
+    {
+        using TempDir dir = new();
+        _ = dir.Write("Repo.sln");
+        string view = AppFixture.WriteProject(dir, "Ui");
+        string other = dir.Write("src/Ui/Views/Other.axaml");
+        FakeHostProcess hosts = new();
+        hosts.Enqueue(ExitReason.Rebuild, nextFile: other);
+        hosts.Enqueue(ExitReason.Ok);
+        FakeOutputBuilder builder = new("Program.cs(3,1): error CS1002: ; expected");
+
+        _ = await Session(hosts, builder).RunAsync(view, outputDir: null, snapshotPath: null, _ => { });
+
+        Assert.Equal([view, other], hosts.Runs.Select(options => options.AxamlPath));
+        Assert.Equal("Program.cs(3,1): error CS1002: ; expected", hosts.Runs[1].SetupError);
+    }
+
+    [Fact]
     public async Task RunAsync_StartsNoHostWhenTheSetupFailsAsync()
     {
         using TempDir dir = new();
@@ -101,6 +142,8 @@ public sealed class HostSessionTests
         Assert.Empty(hosts.Runs);
     }
 
-    private static HostSession Session(FakeHostProcess hosts) =>
-        new(new PreviewTargetResolver(new FakeLoaderSource()), hosts, TextWriter.Null, SettingsFile);
+    private static HostSession Session(FakeHostProcess hosts) => Session(hosts, new FakeOutputBuilder());
+
+    private static HostSession Session(FakeHostProcess hosts, FakeOutputBuilder builder) =>
+        new(new PreviewTargetResolver(new FakeLoaderSource()), hosts, builder, TextWriter.Null, SettingsFile);
 }

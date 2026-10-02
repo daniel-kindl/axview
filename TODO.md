@@ -11,9 +11,6 @@ Do not change or use again a number.
 
 ## Next
 
-- [ ] #18 **Rebuild on .cs change (M).** Watch the project's `.cs` files.
-  Run `dotnet build` on the app project, then start the host again on the same file.
-  Keep the window position and size.
 - [ ] #19 **Watch included files (M).** Reload when a `ResourceInclude` or `StyleInclude` file of the project changes.
   An `avares://` include loads the compiled XAML of the built assembly, not the file on disk.
   So a watcher alone is not sufficient. The host must:
@@ -45,6 +42,8 @@ Do not change or use again a number.
 - `TargetAppImporter` skips `OnFrameworkInitializationCompleted`.
   Data templates that need the app's services (for example a `ViewLocator` with DI) can fail.
 - A style or resource preview shows the "No DataContext" badge. The badge is not applicable to these roots.
+- A rebuild watches only the `.cs` files of the project of the file. A change in the app project of a library view starts no rebuild.
+- During a rebuild, no window is open. The user sees no build progress.
 
 ## Done
 
@@ -67,3 +66,4 @@ Do not change or use again a number.
 - [x] #27 Snapshot window: a snapshot captures only the preview. The exit reason comes from `LivePreview`, not from the error panel. `2230fcf`
 - [x] #16 ViewModel picker: a toolbar switch selects a `*ViewModel` type. The settings file keeps the choice per file. `2a33eb3`
 - [x] #17 Design services: the target app's `AxViewDesign.CreateServices()` gives the constructor parameters of the ViewModels. `13f2102`
+- [x] #18 Rebuild: a change of a `.cs` file of the project stops the host. The launcher builds the app and starts the host again.

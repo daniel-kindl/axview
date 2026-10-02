@@ -18,4 +18,7 @@ internal enum ExitReason
 
     /// <summary>The launcher cannot prepare the preview, for example because the app is not built.</summary>
     SetupFailed = 4,
+
+    /// <summary>A code file of the project changed. The host wrote a <see cref="HandOff"/> with the shown file.</summary>
+    Rebuild = 5,
 }

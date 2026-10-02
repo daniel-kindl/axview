@@ -36,4 +36,22 @@ internal static class ProjectFinder
             .LastOrDefault(v => v.Length > 0 && !v.Contains("$(", StringComparison.Ordinal));
         return name ?? Path.GetFileNameWithoutExtension(projectPath);
     }
+
+    /// <summary>Finds the project that builds the app of the output. The project is in a folder above the output.</summary>
+    /// <exception cref="PreviewSetupException">No project above the output has the assembly name of the app.</exception>
+    public static string FindAppProject(AppOutput output)
+    {
+        for (DirectoryInfo? dir = new(output.Directory); dir is not null; dir = dir.Parent)
+        {
+            string? project = Directory.EnumerateFiles(dir.FullName, "*.csproj")
+                .FirstOrDefault(p => ReadAssemblyName(p) == output.AppName);
+            if (project is not null)
+            {
+                return project;
+            }
+        }
+
+        throw new PreviewSetupException(
+            $"No project above '{output.Directory}' builds '{output.AppName}'. Cannot build the app.");
+    }
 }

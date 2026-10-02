@@ -48,7 +48,7 @@ internal sealed class LivePreview : IDisposable
         FilePath = fullPath;
         this.viewModelType = viewModelType;
         watcher?.Dispose();
-        watcher = new FileChangeWatcher(fullPath, () => Load(fullPath));
+        watcher = FileChangeWatcher.ForFile(fullPath, () => Load(fullPath));
         View = null;
         Load(fullPath);
     }
