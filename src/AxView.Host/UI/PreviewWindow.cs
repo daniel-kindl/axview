@@ -47,6 +47,7 @@ internal sealed class PreviewWindow : Window
     private readonly Dictionary<string, string> viewModels;
     private readonly WindowPlacementTracker? placementTracker;
     private readonly FileChangeWatcher? codeWatcher;
+    private readonly FileChangeWatcher? appCodeWatcher;
     private readonly AppIncludes? appIncludes;
     private readonly FileChangeWatcher? axamlWatcher;
     private IReadOnlyList<string> catalog = [];
@@ -153,6 +154,14 @@ internal sealed class PreviewWindow : Window
             codeWatcher = FileChangeWatcher.ForCodeFiles(
                 options.ProjectDirectory,
                 () => StopWithHandOff(livePreview.FilePath, ExitReason.Rebuild));
+
+            // A library view also needs a rebuild when the code of the app changes.
+            if (options.AppProjectDirectory is not null)
+            {
+                appCodeWatcher = FileChangeWatcher.ForCodeFiles(
+                    options.AppProjectDirectory,
+                    () => StopWithHandOff(livePreview.FilePath, ExitReason.Rebuild));
+            }
         }
 
         // The app file of a library view is in another project. Its includes do not load again.
@@ -184,6 +193,7 @@ internal sealed class PreviewWindow : Window
     protected override void OnClosed(EventArgs e)
     {
         codeWatcher?.Dispose();
+        appCodeWatcher?.Dispose();
         axamlWatcher?.Dispose();
         livePreview.Dispose();
         base.OnClosed(e);

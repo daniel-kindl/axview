@@ -16,6 +16,9 @@ namespace AxView.Protocol;
 /// If set, the host shows this error. The launcher cannot prepare the file, or the build of the app failed.
 /// </param>
 /// <param name="SettingsFile">If set, the host reads and writes its window, theme, and preview size in this <see cref="Settings"/> file.</param>
+/// <param name="AppProjectDirectory">
+/// The folder of the app project, if it is not the project folder. A change of its C# files also starts a rebuild.
+/// </param>
 internal sealed record HostOptions(
     string AxamlPath,
     string ProjectDirectory,
@@ -25,7 +28,8 @@ internal sealed record HostOptions(
     string? SnapshotPath,
     string? HandOffFile,
     string? SetupError = null,
-    string? SettingsFile = null)
+    string? SettingsFile = null,
+    string? AppProjectDirectory = null)
 {
     private const string AxamlKey = "--axaml";
     private const string ProjectKey = "--project";
@@ -36,9 +40,10 @@ internal sealed record HostOptions(
     private const string HandOffKey = "--hand-off";
     private const string SetupErrorKey = "--setup-error";
     private const string SettingsKey = "--settings";
+    private const string AppProjectKey = "--app-project";
 
     private static readonly string[] keys =
-        [AxamlKey, ProjectKey, AssemblyKey, AppAssemblyKey, LoaderKey, SnapshotKey, HandOffKey, SetupErrorKey, SettingsKey];
+        [AxamlKey, ProjectKey, AssemblyKey, AppAssemblyKey, LoaderKey, SnapshotKey, HandOffKey, SetupErrorKey, SettingsKey, AppProjectKey];
 
     /// <summary>Reads the options from the host command line.</summary>
     /// <exception cref="ArgumentException">The arguments are not valid.</exception>
@@ -76,7 +81,8 @@ internal sealed record HostOptions(
             values.GetValueOrDefault(SnapshotKey),
             values.GetValueOrDefault(HandOffKey),
             values.GetValueOrDefault(SetupErrorKey),
-            values.GetValueOrDefault(SettingsKey));
+            values.GetValueOrDefault(SettingsKey),
+            values.GetValueOrDefault(AppProjectKey));
     }
 
     /// <summary>Writes the options as the host command line.</summary>
@@ -94,6 +100,7 @@ internal sealed record HostOptions(
         AddOptional(args, HandOffKey, HandOffFile);
         AddOptional(args, SetupErrorKey, SetupError);
         AddOptional(args, SettingsKey, SettingsFile);
+        AddOptional(args, AppProjectKey, AppProjectDirectory);
         return args;
     }
 

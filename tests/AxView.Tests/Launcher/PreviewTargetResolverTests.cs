@@ -27,6 +27,48 @@ public sealed class PreviewTargetResolverTests
     }
 
     [Fact]
+    public void Resolve_LibraryView_FindsTheFolderOfTheAppProject()
+    {
+        using TempDir dir = new();
+        _ = dir.Write("Repo.sln");
+        _ = dir.Write("src/Ui/Ui.csproj", "<Project />");
+        string axaml = dir.Write("src/Ui/Views/Main.axaml");
+        _ = dir.Write("src/Desktop/Desktop.csproj", "<Project />");
+        _ = AppFixture.WriteAppOutput(dir, "src/Desktop/bin/Debug/net9.0", "Desktop", "Ui");
+
+        PreviewTarget target = new PreviewTargetResolver(new FakeLoaderSource()).Resolve(axaml, outputDir: null);
+
+        string appProject = Path.Combine(dir.Path, "src", "Desktop");
+        Assert.Equal(appProject, target.AppProjectDirectory);
+        Assert.Equal(appProject, target.ToHostOptions(snapshotPath: null, handOffFile: null).AppProjectDirectory);
+    }
+
+    [Fact]
+    public void Resolve_AppView_GivesNoAppProject()
+    {
+        using TempDir dir = new();
+        string axaml = AppFixture.WriteProject(dir, "Desktop");
+
+        PreviewTarget target = new PreviewTargetResolver(new FakeLoaderSource()).Resolve(axaml, outputDir: null);
+
+        Assert.Null(target.AppProjectDirectory);
+    }
+
+    [Fact]
+    public void Resolve_LibraryViewWithoutAnAppProject_GivesNoAppProject()
+    {
+        using TempDir dir = new();
+        _ = dir.Write("Repo.sln");
+        _ = dir.Write("src/Ui/Ui.csproj", "<Project />");
+        string axaml = dir.Write("src/Ui/Views/Main.axaml");
+        _ = AppFixture.WriteAppOutput(dir, "src/Desktop/bin/Debug/net9.0", "Desktop", "Ui");
+
+        PreviewTarget target = new PreviewTargetResolver(new FakeLoaderSource()).Resolve(axaml, outputDir: null);
+
+        Assert.Null(target.AppProjectDirectory);
+    }
+
+    [Fact]
     public void Resolve_UsesTheGivenOutputDirectory()
     {
         using TempDir dir = new();

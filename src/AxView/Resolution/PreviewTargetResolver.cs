@@ -29,6 +29,25 @@ internal sealed class PreviewTargetResolver(ILoaderSource loaderSource)
             Path.GetDirectoryName(project)!,
             assemblyName,
             output,
-            loaderSource.Find(version));
+            loaderSource.Find(version),
+            FindAppProjectDirectory(output, assemblyName));
+    }
+
+    // The app of a library view is in another project. Without that project, only the build reports the problem.
+    private static string? FindAppProjectDirectory(AppOutput output, string assemblyName)
+    {
+        if (output.AppName == assemblyName)
+        {
+            return null;
+        }
+
+        try
+        {
+            return Path.GetDirectoryName(ProjectFinder.FindAppProject(output));
+        }
+        catch (PreviewSetupException)
+        {
+            return null;
+        }
     }
 }
