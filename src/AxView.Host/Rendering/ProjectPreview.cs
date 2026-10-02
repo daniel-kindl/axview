@@ -12,7 +12,7 @@ namespace AxView.Host.Rendering;
 /// <list type="bullet">
 /// <item><description>The catalog of the project files.</description></item>
 /// <item><description>The live preview of the shown file, with its ViewModel. Each file keeps its own ViewModel.</description></item>
-/// <item><description>The include reload of the app styles.</description></item>
+/// <item><description>The include reload of the app styles and of the shown file.</description></item>
 /// <item><description>The rebuild watch of the C# files.</description></item>
 /// </list>
 /// Only the launcher can build the app or open another project. Thus a rebuild or a project switch gives a
@@ -29,12 +29,18 @@ internal sealed class ProjectPreview : IDisposable
     private readonly LivePreview livePreview;
     private readonly Dictionary<string, string> viewModels;
     private readonly List<FileChangeWatcher> watchers = [];
+    private AppIncludes? viewIncludes;
+
+    // The include error of the last load. The window clears its error after a load, so report it after the change.
+    private string? viewIncludeError;
 
     /// <summary>Starts the watches of the code files and of the include files. Call <see cref="Show"/> to show a file.</summary>
     /// <param name="options">The options of the host.</param>
     /// <param name="projects">The projects of the preview.</param>
     /// <param name="services">The design services that create the ViewModels.</param>
-    /// <param name="appStyles">The app styles. The preview reloads the shown file after an include of them changes.</param>
+    /// <param name="appStyles">
+    /// The app styles. The preview reloads the shown file after an include of them or of the shown file changes.
+    /// </param>
     /// <param name="viewModels">The full name of the selected ViewModel type of each file, by full path.</param>
     public ProjectPreview(
         HostOptions options, ProjectSet projects, DesignServices services, AppStyles appStyles, IReadOnlyDictionary<string, string> viewModels)
@@ -44,7 +50,8 @@ internal sealed class ProjectPreview : IDisposable
         this.viewModels = new Dictionary<string, string>(viewModels, StringComparer.FromComparison(pathComparison));
         ViewModelTypes = ViewModelCatalog.List(projects.ViewAssembly, services);
         livePreview = new LivePreview(projects.CreateViewRenderer(services));
-        livePreview.Changed += (_, _) => Changed?.Invoke(this, EventArgs.Empty);
+        livePreview.Rendered += (_, view) => LoadViewIncludes(view);
+        livePreview.Changed += (_, _) => OnChanged();
 
         if (options.HandOffFile is not null)
         {
@@ -55,7 +62,7 @@ internal sealed class ProjectPreview : IDisposable
             }
         }
 
-        // The app file of a library view can be in the app project.
+        // The app file of a library view can be in the app project. An include of a view can point into any project.
         foreach (string directory in appStyles.ProjectDirectories)
         {
             watchers.Add(FileChangeWatcher.ForAxamlFiles(directory, UpdateIncludes));
@@ -155,18 +162,40 @@ internal sealed class ProjectPreview : IDisposable
         livePreview.Dispose();
     }
 
-    // A StaticResource does not follow a change of the app resources. Thus render the preview again.
+    // The loaded root has the compiled includes. Thus load the changed include files before the window shows the root.
+    private void LoadViewIncludes(RenderedView view)
+    {
+        viewIncludes = appStyles.CreateIncludes(FilePath, view.Root);
+        viewIncludeError = viewIncludes.Update().Error;
+    }
+
+    private void OnChanged()
+    {
+        Changed?.Invoke(this, EventArgs.Empty);
+        string? error = viewIncludeError;
+        viewIncludeError = null;
+        if (error is not null)
+        {
+            Failed?.Invoke(this, error);
+        }
+    }
+
+    // A StaticResource does not follow a change of the resources. Thus render the preview again.
+    // The render loads the changed includes of the shown file, and reports their errors.
     private void UpdateIncludes()
     {
-        IncludeUpdate update = appStyles.Update();
-        if (update.IsChanged)
+        IncludeUpdate appUpdate = appStyles.Update();
+        IncludeUpdate viewUpdate = viewIncludes?.Update() ?? new IncludeUpdate(IsChanged: false, Error: null);
+        bool isReloaded = appUpdate.IsChanged || viewUpdate.IsChanged;
+        if (isReloaded)
         {
             livePreview.Reload();
         }
 
-        if (update.Error is not null)
+        string[] errors = [.. new[] { appUpdate.Error, isReloaded ? null : viewUpdate.Error }.OfType<string>().Distinct()];
+        if (errors.Length > 0)
         {
-            Failed?.Invoke(this, update.Error);
+            Failed?.Invoke(this, string.Join(Environment.NewLine, errors));
         }
     }
 

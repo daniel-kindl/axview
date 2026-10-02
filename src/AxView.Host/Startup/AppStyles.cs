@@ -4,6 +4,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Styling;
 
+using AxView.Host.Catalog;
 using AxView.Host.Rendering;
 
 namespace AxView.Host.Startup;
@@ -27,15 +28,14 @@ internal sealed class AppStyles(
 {
     private readonly (PreviewRenderer Renderer, string Path)? appFile = FindAppFile(renderers);
     private readonly ConditionalWeakTable<IResourceDictionary, LiveCopy> liveCopies = [];
-    private readonly Dictionary<string, string> buildTexts = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, string> buildTexts = ReadBuildTexts(renderers);
     private TargetStyles? unclaimedImport = firstImport;
 
     // The text of the app file that the copies show. Null until the first copy.
     private string? appText;
 
-    /// <summary>Gets the folders whose AXAML files can be includes of the app. Empty when no project has an app file.</summary>
-    public IEnumerable<string> ProjectDirectories =>
-        appFile is null ? [] : renderers.Select(r => r.ProjectDirectory).Distinct();
+    /// <summary>Gets the folders whose AXAML files can be includes of the app or of a view.</summary>
+    public IEnumerable<string> ProjectDirectories => renderers.Select(r => r.ProjectDirectory).Distinct();
 
     /// <summary>Imports the app styles of the projects. Runs the startup of the app only for the first import.</summary>
     /// <param name="projects">The projects of the preview.</param>
@@ -70,6 +70,12 @@ internal sealed class AppStyles(
 
         return copy;
     }
+
+    /// <summary>Loads the changed include files of a loaded root from disk. Puts the result in place of the compiled include.</summary>
+    /// <param name="path">The file of the root.</param>
+    /// <param name="root">The root that the file loads. See <see cref="AppIncludes"/>.</param>
+    /// <returns>The includes of the root. Call <see cref="AppIncludes.Update"/> after a change of an AXAML file.</returns>
+    public AppIncludes CreateIncludes(string path, object root) => new(renderers[0], path, root, renderers, buildTexts);
 
     /// <summary>Gives the app a live copy of the app resources only.</summary>
     /// <remarks>Code that reads Application.Current finds them. For example, a StaticResource of a style root does.</remarks>
@@ -158,6 +164,25 @@ internal sealed class AppStyles(
 
         appText = text;
         return true;
+    }
+
+    // The host starts after the build. Thus the text of each file at the start is the text of the build.
+    private static Dictionary<string, string> ReadBuildTexts(IEnumerable<PreviewRenderer> renderers)
+    {
+        Dictionary<string, string> texts = new(StringComparer.Ordinal);
+        foreach (string path in renderers.SelectMany(r => AxamlCatalog.List(r.ProjectDirectory)))
+        {
+            try
+            {
+                _ = texts.TryAdd(path, PreviewRenderer.ReadWithRetry(path));
+            }
+            catch (IOException)
+            {
+                // The include walk reads the file again on its first use, and reports the error.
+            }
+        }
+
+        return texts;
     }
 
     private static (PreviewRenderer Renderer, string Path)? FindAppFile(IEnumerable<PreviewRenderer> renderers)

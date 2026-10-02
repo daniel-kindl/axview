@@ -139,15 +139,37 @@ public sealed class AppStylesTests
     }
 
     [AvaloniaFact]
-    public void ProjectDirectories_NoAppFile_GivesNone()
+    public void ProjectDirectories_NoAppFile_GivesTheProjects()
     {
         using TempDir dir = new();
         _ = dir.Write("Views/Main.axaml", $"""<UserControl {Xmlns} />""");
 
         AppStyles appStyles = new(TargetStyles.None, () => TargetStyles.None, [Renderer(dir)]);
 
-        Assert.Empty(appStyles.ProjectDirectories);
+        Assert.Equal([dir.Path], appStyles.ProjectDirectories);
         Assert.False(appStyles.Update().IsChanged);
+    }
+
+    [AvaloniaFact]
+    public void CreateIncludes_IncludeChangedBeforeTheFirstUse_LoadsTheIncludeFromDisk()
+    {
+        using TempDir dir = new();
+        string view = dir.Write("Views/Main.axaml", $"""
+            <UserControl {Xmlns}>
+              <UserControl.Styles>
+                <StyleInclude Source="/Styles/Main.axaml" />
+              </UserControl.Styles>
+            </UserControl>
+            """);
+        string main = dir.Write("Styles/Main.axaml", TagStyles("Before"));
+        AppStyles appStyles = new(TargetStyles.None, () => TargetStyles.None, [Renderer(dir)]);
+        IStyle compiled = Assert.IsAssignableFrom<IStyle>(Renderer(dir).Load(main, File.ReadAllText(main)));
+        UserControl root = new() { Styles = { compiled } };
+        File.WriteAllText(main, TagStyles("After"));
+
+        _ = appStyles.CreateIncludes(view, root);
+
+        Assert.Equal("After", TagOf(root.Styles[0]));
     }
 
     [AvaloniaFact]

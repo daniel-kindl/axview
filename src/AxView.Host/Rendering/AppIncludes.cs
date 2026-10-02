@@ -2,6 +2,7 @@ using System.Runtime.CompilerServices;
 using System.Xml;
 using System.Xml.Linq;
 
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Styling;
 
@@ -10,13 +11,16 @@ using AxView.Host.Catalog;
 namespace AxView.Host.Rendering;
 
 /// <summary>
-/// Loads the changed include files of the app styles and resources from disk. Puts the result in place of the compiled include.
+/// Loads the changed include files of the app styles or of a loaded root from disk.
+/// Puts the result in place of the compiled include.
 /// </summary>
 /// <remarks>
 /// The XAML compiler puts the content of each <c>StyleInclude</c> and <c>ResourceInclude</c> in place of the include.
-/// Thus the runtime objects do not know their source file.
-/// This class walks the XAML of App.axaml and of each include file side by side with the runtime objects:
+/// The runtime loader also does this for a view. Thus the runtime objects do not know their source file.
+/// This class walks the XAML of the root file and of each include file side by side with the runtime objects:
 /// <list type="bullet">
+/// <item>The root file is App.axaml, a control, a <c>Styles</c>, a <c>Style</c>, or a <c>ResourceDictionary</c>.</item>
+/// <item>The walk looks only at the <c>Styles</c> and <c>Resources</c> of a control root, not into its children.</item>
 /// <item>The children of <c>Application.Styles</c> and of a <c>Styles</c> root agree with the runtime styles by position.</item>
 /// <item>The children of <c>ResourceDictionary.MergedDictionaries</c> agree with the merged dictionaries by position.</item>
 /// <item>The children of <c>ResourceDictionary.ThemeDictionaries</c> agree with the theme dictionaries by <c>x:Key</c>.</item>
@@ -31,15 +35,20 @@ internal sealed class AppIncludes
 {
     private const string ApplicationRoot = "Application";
     private const string StylesRoot = "Styles";
+    private const string StyleRoot = "Style";
     private const string ResourceDictionaryRoot = "ResourceDictionary";
     private const string SourceAttribute = "Source";
     private static readonly XName keyAttribute = XName.Get("Key", "http://schemas.microsoft.com/winfx/2006/xaml");
 
     private readonly PreviewRenderer renderer;
     private readonly List<PreviewRenderer> projects;
-    private readonly string appPath;
-    private readonly Styles styles;
-    private readonly IResourceDictionary resources;
+    private readonly string rootPath;
+
+    // The loaded root of the file. For App.axaml, the styles of the app.
+    private readonly object root;
+
+    // The resources of the app. Null when the file is not App.axaml.
+    private readonly IResourceDictionary? appResources;
     private readonly Dictionary<string, string> buildTexts;
     private readonly ConditionalWeakTable<object, string> loadedTexts = [];
     private readonly List<string> errors = [];
@@ -62,13 +71,43 @@ internal sealed class AppIncludes
         IResourceDictionary resources,
         IEnumerable<PreviewRenderer>? otherProjects = null,
         Dictionary<string, string>? buildTexts = null)
+        : this(renderer, appPath, (object)styles, resources, otherProjects, buildTexts)
+    {
+    }
+
+    /// <summary>Reads a project file and each include file. Keeps their text as the text of the build.</summary>
+    /// <param name="renderer">The renderer of the project. It loads the changed files.</param>
+    /// <param name="path">The file of the root.</param>
+    /// <param name="root">
+    /// The root that the file loads: a control, a <c>Styles</c>, a <c>Style</c>, or a <c>ResourceDictionary</c>.
+    /// It must agree with the build of the file.
+    /// </param>
+    /// <param name="otherProjects">The renderers of the other projects that an include can point into.</param>
+    /// <param name="buildTexts">The text of the build of each file, by full path.</param>
+    public AppIncludes(
+        PreviewRenderer renderer,
+        string path,
+        object root,
+        IEnumerable<PreviewRenderer>? otherProjects = null,
+        Dictionary<string, string>? buildTexts = null)
+        : this(renderer, path, root, null, otherProjects, buildTexts)
+    {
+    }
+
+    private AppIncludes(
+        PreviewRenderer renderer,
+        string path,
+        object root,
+        IResourceDictionary? appResources,
+        IEnumerable<PreviewRenderer>? otherProjects,
+        Dictionary<string, string>? buildTexts)
     {
         this.renderer = renderer;
         this.buildTexts = buildTexts ?? new Dictionary<string, string>(StringComparer.Ordinal);
         projects = [renderer, .. otherProjects ?? []];
-        this.appPath = Path.GetFullPath(appPath);
-        this.styles = styles;
-        this.resources = resources;
+        rootPath = Path.GetFullPath(path);
+        this.root = root;
+        this.appResources = appResources;
         _ = Update();
     }
 
@@ -83,11 +122,14 @@ internal sealed class AppIncludes
     {
         isChanged = false;
         errors.Clear();
-        XElement? app = Parse(appPath, Read(appPath));
-        if (app is not null)
+        XElement? element = Parse(rootPath, Read(rootPath));
+        if (element is not null && appResources is not null && root is Styles appStyles)
         {
-            WalkStyles(Property(app, "Application.Styles"), appPath, styles);
-            WalkResources(ResourceContent(Property(app, "Application.Resources")), appPath, resources);
+            WalkOwner(element, rootPath, appStyles, appResources);
+        }
+        else if (element is not null)
+        {
+            WalkRoot(element, rootPath, root);
         }
 
         return new IncludeUpdate(isChanged, errors.Count == 0 ? null : string.Join(Environment.NewLine, errors));
@@ -226,17 +268,42 @@ internal sealed class AppIncludes
         WalkFile(path, text, shown);
     }
 
-    private void WalkFile(string path, string text, object root)
+    private void WalkFile(string path, string text, object loaded)
     {
         XElement? element = Parse(path, text);
-        if (element?.Name.LocalName == StylesRoot && root is Styles runtimeStyles)
+        if (element is not null)
         {
-            WalkStylesRoot(element, path, runtimeStyles);
+            WalkRoot(element, path, loaded);
         }
-        else if (element?.Name.LocalName == ResourceDictionaryRoot && root is IResourceDictionary dictionary)
+    }
+
+    private void WalkRoot(XElement element, string file, object loaded)
+    {
+        string name = element.Name.LocalName;
+        if (name == StylesRoot && loaded is Styles runtimeStyles)
         {
-            WalkResources(element, path, dictionary);
+            WalkStylesRoot(element, file, runtimeStyles);
         }
+        else if (name == ResourceDictionaryRoot && loaded is IResourceDictionary dictionary)
+        {
+            WalkResources(element, file, dictionary);
+        }
+        else if (name == StyleRoot && loaded is Style style)
+        {
+            WalkResources(ResourceContent(Property(element, "Style.Resources")), file, style.Resources);
+        }
+        else if (loaded is StyledElement owner)
+        {
+            WalkOwner(element, file, owner.Styles, owner.Resources);
+        }
+    }
+
+    // The root of App.axaml or of a control. Its styles and resources are property elements with the name of the root.
+    private void WalkOwner(XElement element, string file, Styles ownerStyles, IResourceDictionary ownerResources)
+    {
+        string name = element.Name.LocalName;
+        WalkStyles(Property(element, $"{name}.Styles"), file, ownerStyles);
+        WalkResources(ResourceContent(Property(element, $"{name}.Resources")), file, ownerResources);
     }
 
     private (PreviewRenderer Project, string Path)? FindSource(XElement element, string file)

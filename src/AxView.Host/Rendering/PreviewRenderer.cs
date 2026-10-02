@@ -60,12 +60,12 @@ internal sealed class PreviewRenderer(Assembly localAssembly, string projectDire
 
         return root switch
         {
-            Window window => new RenderedView(Detach(window), IsStylePreview: false),
+            Window window => FromWindow(window),
             TopLevel => throw new NotSupportedException($"Cannot preview a {root.GetType().Name} root."),
-            Control control => new RenderedView(control, IsStylePreview: false),
-            Styles styles => new RenderedView(WithStyle(styles), IsStylePreview: true),
-            Style style => new RenderedView(WithStyle(style), IsStylePreview: true),
-            ResourceDictionary resources => new RenderedView(WithResources(resources), IsStylePreview: true),
+            Control control => new RenderedView(control, IsStylePreview: false, root),
+            Styles styles => new RenderedView(WithStyle(styles), IsStylePreview: true, root),
+            Style style => new RenderedView(WithStyle(style), IsStylePreview: true, root),
+            ResourceDictionary resources => new RenderedView(WithResources(resources), IsStylePreview: true, root),
             _ => throw new NotSupportedException($"The root is a {root.GetType().Name}, not a control."),
         };
     }
@@ -114,6 +114,13 @@ internal sealed class PreviewRenderer(Assembly localAssembly, string projectDire
 
     private static NotSupportedException NoPreviewWith(object root) =>
         new($"Add a Design.PreviewWith control to the {root.GetType().Name} root to preview it.");
+
+    // The container gets the styles and resources of the window. Thus it is the root for the include walk.
+    private static RenderedView FromWindow(Window window)
+    {
+        Border container = Detach(window);
+        return new RenderedView(container, IsStylePreview: false, container);
+    }
 
     // A Window cannot be a child. Move its content, styles, and resources into a plain container.
     private static Border Detach(Window window)

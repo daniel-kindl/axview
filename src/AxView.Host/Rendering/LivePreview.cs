@@ -28,6 +28,10 @@ internal sealed class LivePreview : IDisposable
     /// <summary>Occurs after a load or a dispatcher error.</summary>
     public event EventHandler? Changed;
 
+    /// <summary>Occurs after a good load, before <see cref="Changed"/>.</summary>
+    /// <remarks>The owner can change the loaded root before the window shows it.</remarks>
+    public event EventHandler<RenderedView>? Rendered;
+
     /// <summary>Gets the full path of the shown file. Empty before the first <see cref="Show"/>.</summary>
     public string FilePath { get; private set; } = string.Empty;
 
@@ -72,6 +76,7 @@ internal sealed class LivePreview : IDisposable
         try
         {
             RenderedView rendered = renderer.Render(path, viewModelType);
+            Rendered?.Invoke(this, rendered);
             View = rendered.Control;
             IsStylePreview = rendered.IsStylePreview;
             Error = null;
