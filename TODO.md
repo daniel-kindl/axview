@@ -8,20 +8,12 @@ Do not change or use again a number.
 
 ## Now
 
-- [ ] #47 **Packaging script (S).** Add `pack.ps1` in the repo root. Use DAT3810 `make_new.cmd` as a model.
-  Run it with PowerShell 7 on each OS. Use no external tools: `git archive` and `Compress-Archive` are sufficient.
-  - `src`: write `AxView_<yyyyMMdd>_<HHmmss>_src.zip` with `git archive HEAD`. Stop on a dirty work tree, unless `-Force`.
-  - `bin`: run `dotnet publish src/AxView -c Release`. Put the host files in the output, as the launcher expects them.
-    Write `AxView_<yyyyMMdd>_<HHmmss>_bin.zip`. Put the version from `AboutInfo` in the name.
-  - `all`: do `src`, then `bin`. Delete the old archives of the same kind first.
-  - Write the archives to `artifacts/`. Add `artifacts/` to `.gitignore`.
-  - Make a smoke check: start the packed `axview.dll` with `--snapshot` on a test view. A non-zero exit code fails the script.
-
-## Next
-
 - [ ] #37 **Own chrome theme (M).** When the app ships no Fluent or Simple theme, get `Avalonia.Themes.Simple` from NuGet.
   Use the Avalonia version of the app, as `NuGetLoaderSource` does for the loader.
   Add the package to the probe path of `LoaderResolver`. Then the chrome does not use a second instance of the app styles.
+
+## Next
+
 - [ ] #48 **Signed binaries (S).** Add a `sign` action to `pack.ps1`. Sign `axview.exe` and the AxView DLLs with the SPS certificate.
   Use the signtool settings of DAT3810 `make_new.cmd`. Read the paths from environment variables, not from the script.
 
@@ -88,3 +80,4 @@ Each known issue is now an item: #30 to #39.
 - [x] #35 App.axaml reload: `AppStyles` loads a changed App.axaml into each live copy. A new copy gets the changed App.axaml and includes. `6e48d86`
 - [x] #36 View includes: `AppIncludes` walks a control, `Styles`, `Style`, or `ResourceDictionary` root after each render. `8a00e2a`
 - [x] #50 Nested includes after an App.axaml reload: no change necessary. The reload gives the compiled content, not include objects.
+- [x] #47 Packaging script: `pack.ps1 src|bin|all` writes the archives to `artifacts/`. A smoke check renders a new small app. `50bb0bf`
