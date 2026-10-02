@@ -29,12 +29,7 @@ Do not change or use again a number.
   Option B: the host runs from a copy of the output. It stays open during the build and shows a build overlay.
 - [ ] #20 **Avalonia 12 (L).** Check the loader and host APIs. A second host build may be necessary.
 - [ ] #24 **Linux and macOS check (S).** Run the tests and one snapshot on each OS.
-- [ ] #41 **Project reference watch (S).** Rebuild when a `.cs` file of a project in the `ProjectReference` graph of the app changes.
-  Today the host watches only the view project and the app project (#31).
-- [ ] #42 **Includes into another assembly (S).** The include walk follows only the includes of the assembly of the app file.
-  For example, the App.axaml of the app project includes `avares://Ui/Styles/Main.axaml` of the library. That file does not load again.
-- [ ] #25 **About dialog (S).** Add a simple About dialog to the picker and the preview window.
-  Show the AxView version, the build date, and the Avalonia version of the host.
+
 
 ## Known issues
 
@@ -73,3 +68,6 @@ Each known issue is now an item: #30 to #39.
 - [x] #22 CI snapshot mode: `--snapshot-all <dir>` writes one PNG per project file and `summary.txt`. The exit code is 1 when a file fails. `577d727`
 - [x] #28 ViewModel in snapshot mode: `--view-model <full type name>` sets the DataContext of a `--snapshot`. An unknown type exits with 2. `db53797`
 - [x] #40 App resources in Application.Current: a `StaticResource` in a style root finds the resources of the app. `c976fd6`
+- [x] #41 Project reference watch: the launcher gives the ProjectReference folders in `--referenced-projects`. A `.cs` change in one starts a rebuild. `819b070`
+- [x] #42 Includes into another project: `AppIncludes` finds the project of an include by its avares URI. The host watches the AXAML files of each project. `6f08f06`
+- [x] #25 About dialog: the picker and the preview window show the version, the build date, and the Avalonia version. `83b0fd3`
