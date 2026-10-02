@@ -10,6 +10,7 @@ using Avalonia.Platform.Storage;
 
 using AxView.Host.Catalog;
 using AxView.Host.Rendering;
+using AxView.Host.Startup;
 using AxView.Protocol;
 
 namespace AxView.Host.UI;
@@ -33,6 +34,7 @@ internal sealed class PreviewWindow : Window
     private readonly HostOptions options;
     private readonly LivePreview livePreview;
     private readonly ContentControl host = new();
+    private readonly PreviewScope scope;
     private readonly Border errorPanel;
     private readonly SelectableTextBlock errorText;
     private readonly TextBlock status;
@@ -50,9 +52,11 @@ internal sealed class PreviewWindow : Window
     private IReadOnlyList<string> catalog = [];
     private bool isSyncingSelection;
 
-    public PreviewWindow(HostOptions options, IReadOnlyList<string> notes, DesignServices services)
+    public PreviewWindow(HostOptions options, IReadOnlyList<string> notes, DesignServices services, TargetStyles target)
     {
         this.options = options;
+        scope = new PreviewScope(target);
+        host.Content = scope;
         Assembly localAssembly = Assembly.Load(options.AssemblyName);
         PreviewRenderer renderer = new(localAssembly, options.ProjectDirectory, services);
         livePreview = new LivePreview(renderer);
@@ -68,7 +72,7 @@ internal sealed class PreviewWindow : Window
 
         // Without a settings file, the window has no placement to keep.
         placementTracker = options.SettingsFile is null ? null : new WindowPlacementTracker(this);
-        themeSwitch = new ThemeSwitch(this) { SelectedItem = settings.Theme };
+        themeSwitch = new ThemeSwitch(scope) { SelectedItem = settings.Theme };
         sizeSwitch = new PreviewSizeSwitch(host) { Size = settings.Size };
         viewModels = new Dictionary<string, string>(settings.ViewModels, StringComparer.FromComparison(pathComparison));
         viewModelSwitch = new ViewModelSwitch(ViewModelCatalog.List(localAssembly, services));
@@ -153,9 +157,9 @@ internal sealed class PreviewWindow : Window
 
         // The app file of a library view is in another project. Its includes do not load again.
         string? appFile = AppIncludes.FindAppFile(options.ProjectDirectory);
-        if (appFile is not null && Application.Current is { } app)
+        if (appFile is not null)
         {
-            appIncludes = new AppIncludes(renderer, appFile, app.Styles, app.Resources);
+            appIncludes = new AppIncludes(renderer, appFile, scope.Styles, scope.Resources);
             axamlWatcher = FileChangeWatcher.ForAxamlFiles(options.ProjectDirectory, UpdateIncludes);
         }
 
@@ -414,7 +418,7 @@ internal sealed class PreviewWindow : Window
 
     private void ShowPreview()
     {
-        host.Content = livePreview.View;
+        scope.Content = livePreview.View;
         noDataContextBadge.IsVisible = livePreview.View is { DataContext: null };
         if (livePreview.Error is not null)
         {

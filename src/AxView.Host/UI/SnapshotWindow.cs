@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Media.Imaging;
 
 using AxView.Host.Rendering;
+using AxView.Host.Startup;
 using AxView.Protocol;
 
 namespace AxView.Host.UI;
@@ -19,12 +20,15 @@ internal sealed class SnapshotWindow : Window
     /// <summary>Loads the file and shows its preview.</summary>
     /// <param name="renderer">The renderer of the project.</param>
     /// <param name="axamlPath">The AXAML file to capture.</param>
-    public SnapshotWindow(PreviewRenderer renderer, string axamlPath)
+    /// <param name="target">The styles of the target app. The window becomes their owner.</param>
+    public SnapshotWindow(PreviewRenderer renderer, string axamlPath, TargetStyles target)
     {
         Width = DefaultWidth;
         Height = DefaultHeight;
+        PreviewScope scope = new(target);
+        Content = scope;
         livePreview = new LivePreview(renderer);
-        livePreview.Changed += (_, _) => Content = livePreview.View;
+        livePreview.Changed += (_, _) => scope.Content = livePreview.View;
         livePreview.Show(axamlPath);
     }
 

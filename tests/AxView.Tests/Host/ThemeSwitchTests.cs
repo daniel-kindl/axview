@@ -4,6 +4,7 @@ using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using Avalonia.Styling;
 
+using host::AxView.Host.Startup;
 using host::AxView.Host.UI;
 using host::AxView.Protocol;
 
@@ -14,38 +15,38 @@ public sealed class ThemeSwitchTests
     [AvaloniaFact]
     public void Select_Dark_SetsTheDarkVariantOnTheTarget()
     {
-        Window window = new();
+        PreviewScope scope = new(TargetStyles.None);
 
-        _ = new ThemeSwitch(window) { SelectedItem = PreviewTheme.Dark };
+        _ = new ThemeSwitch(scope) { SelectedItem = PreviewTheme.Dark };
 
-        Assert.Equal(ThemeVariant.Dark, window.RequestedThemeVariant);
+        Assert.Equal(ThemeVariant.Dark, scope.RequestedThemeVariant);
     }
 
     [AvaloniaFact]
     public void Select_Light_SetsTheLightVariantOnTheTarget()
     {
-        Window window = new();
+        PreviewScope scope = new(TargetStyles.None);
 
-        _ = new ThemeSwitch(window) { SelectedItem = PreviewTheme.Light };
+        _ = new ThemeSwitch(scope) { SelectedItem = PreviewTheme.Light };
 
-        Assert.Equal(ThemeVariant.Light, window.RequestedThemeVariant);
+        Assert.Equal(ThemeVariant.Light, scope.RequestedThemeVariant);
     }
 
     [AvaloniaFact]
-    public void Select_Default_ClearsTheVariantSoTheTargetUsesTheAppVariant()
+    public void Select_Default_SetsTheAppVariantOnTheTarget()
     {
-        Window window = new();
-        ThemeSwitch themeSwitch = new(window) { SelectedItem = PreviewTheme.Dark };
+        PreviewScope scope = new(new TargetStyles([], new ResourceDictionary(), [], ThemeVariant.Dark));
+        ThemeSwitch themeSwitch = new(scope) { SelectedItem = PreviewTheme.Light };
 
         themeSwitch.SelectedItem = PreviewTheme.Default;
 
-        Assert.False(window.IsSet(Window.RequestedThemeVariantProperty));
+        Assert.Equal(ThemeVariant.Dark, scope.RequestedThemeVariant);
     }
 
     [AvaloniaFact]
     public void New_SelectsDefault()
     {
-        ThemeSwitch themeSwitch = new(new Window());
+        ThemeSwitch themeSwitch = new(new PreviewScope(TargetStyles.None));
 
         Assert.Equal(PreviewTheme.Default, themeSwitch.SelectedItem);
     }

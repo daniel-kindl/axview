@@ -31,7 +31,9 @@ Do not change or use again a number.
 
 ## Known issues
 
-- The preview window uses the target app's theme, so the AxView chrome looks different in each app.
+- The preview frame takes only the setters of the target `Window` control theme. A `Style Selector="Window"` of the app does not apply to the preview.
+- Code that reads the app resources through `Application.Current` does not find them. They are in the preview scope.
+- When the app ships no Fluent or Simple theme, the AxView chrome uses a second instance of the app styles.
 - `TargetAppImporter` skips `OnFrameworkInitializationCompleted`.
   Data templates that need the app's services (for example a `ViewLocator` with DI) can fail.
 - A style or resource preview shows the "No DataContext" badge. The badge is not applicable to these roots.
@@ -63,3 +65,4 @@ Do not change or use again a number.
 - [x] #17 Design services: the target app's `AxViewDesign.CreateServices()` gives the constructor parameters of the ViewModels. `13f2102`
 - [x] #18 Rebuild: a change of a `.cs` file of the project stops the host. The launcher builds the app and starts the host again. `2faa127`
 - [x] #19 Include reload: a changed `StyleInclude` or `ResourceInclude` file of the app loads from disk and replaces the compiled include. `d7ee20f`
+- [x] #29 Own chrome styles: the app styles apply only in a scope around the preview. The chrome uses the Fluent or Simple theme.

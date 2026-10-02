@@ -9,19 +9,25 @@ using AxView.Protocol;
 
 namespace AxView.Host.Startup;
 
-/// <summary>Moves the target app's themes, styles, resources, and data templates into the host app.</summary>
+/// <summary>Takes the target app's themes, styles, resources, and data templates out of a new instance of the target app.</summary>
 /// <remarks>
 /// The importer calls only the target app's Initialize, which loads App.axaml.
 /// It does not call OnFrameworkInitializationCompleted, so the target's windows and services do not start.
+/// Each call creates a new instance. Thus each call gives new style objects.
 /// </remarks>
 internal static class TargetAppImporter
 {
-    public static string Import(Application into, HostOptions options)
+    /// <summary>Creates the target app and takes its styles.</summary>
+    /// <param name="options">The options of the host. They name the assemblies to search for the app.</param>
+    /// <param name="notes">Gets a note about the result.</param>
+    /// <returns>The styles of the app, or <see cref="TargetStyles.None"/> when the app is missing or fails.</returns>
+    public static TargetStyles Import(HostOptions options, List<string> notes)
     {
         Type? appType = FindAppType(options.AssemblyName) ?? FindAppType(options.AppAssemblyName);
         if (appType is null)
         {
-            return "No Application class found. Rendering without the app's styles.";
+            notes.Add("No Application class found. Rendering without the app's styles.");
+            return TargetStyles.None;
         }
 
         try
@@ -29,26 +35,23 @@ internal static class TargetAppImporter
             Application source = (Application)Activator.CreateInstance(appType)!;
             source.Initialize();
 
-            into.RequestedThemeVariant = source.RequestedThemeVariant;
-
             IResourceDictionary resources = source.Resources;
             source.Resources = new ResourceDictionary();
-            into.Resources = resources;
 
             List<IStyle> styles = [.. source.Styles];
             source.Styles.Clear();
-            into.Styles.AddRange(styles);
 
             List<IDataTemplate> templates = [.. source.DataTemplates];
             source.DataTemplates.Clear();
-            into.DataTemplates.AddRange(templates);
 
-            return $"Styles from {appType.FullName}.";
+            notes.Add($"Styles from {appType.FullName}.");
+            return new TargetStyles(styles, resources, templates, source.RequestedThemeVariant);
         }
         catch (Exception ex)
         {
             // The target's App.axaml can throw any exception. The preview still works without its styles.
-            return $"Cannot import {appType.FullName}: {ex.GetBaseException().Message}";
+            notes.Add($"Cannot import {appType.FullName}: {ex.GetBaseException().Message}");
+            return TargetStyles.None;
         }
     }
 

@@ -5,13 +5,13 @@ using AxView.Protocol;
 
 namespace AxView.Host.UI;
 
-/// <summary>Lets the user select the theme variant of a window: Default, Light, or Dark.</summary>
-/// <remarks>Default clears the window's variant, so the window uses the variant of the target app.</remarks>
+/// <summary>Lets the user select the theme variant of the preview: Default, Light, or Dark.</summary>
+/// <remarks>Default gives the preview the variant of the target app. The AxView chrome keeps its own variant.</remarks>
 internal sealed class ThemeSwitch : ComboBox
 {
-    private readonly TopLevel target;
+    private readonly PreviewScope target;
 
-    public ThemeSwitch(TopLevel target)
+    public ThemeSwitch(PreviewScope target)
     {
         this.target = target;
         ItemsSource = Enum.GetValues<PreviewTheme>();
@@ -34,7 +34,7 @@ internal sealed class ThemeSwitch : ComboBox
         }
         else
         {
-            target.ClearValue(TopLevel.RequestedThemeVariantProperty);
+            target.RequestedThemeVariant = target.AppThemeVariant;
         }
     }
 }
