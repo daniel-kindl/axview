@@ -16,6 +16,7 @@ public sealed class SettingsTests
             Window = new WindowPlacement(WindowMode.Maximized, 10, 20, 1000, 700),
             Theme = PreviewTheme.Dark,
             Size = new PreviewSize(PreviewSizePreset.Custom, 500, 300),
+            ViewModels = new Dictionary<string, string> { ["/src/Ui/Views/Main.axaml"] = "Ui.ViewModels.MainViewModel" },
         };
 
         settings.Save(file);
@@ -25,6 +26,7 @@ public sealed class SettingsTests
         Assert.Equal(settings.Window, loaded.Window);
         Assert.Equal(PreviewTheme.Dark, loaded.Theme);
         Assert.Equal(settings.Size, loaded.Size);
+        Assert.Equal(settings.ViewModels, loaded.ViewModels);
     }
 
     [Fact]
@@ -67,12 +69,13 @@ public sealed class SettingsTests
     {
         using TempDir dir = new();
 
-        Settings loaded = Settings.Load(dir.Write("settings.json", "{ \"Theme\": \"Dark\", \"RecentFiles\": null, \"Size\": null }"));
+        Settings loaded = Settings.Load(dir.Write("settings.json", "{ \"Theme\": \"Dark\", \"RecentFiles\": null, \"Size\": null, \"ViewModels\": null }"));
 
         Assert.Equal(PreviewTheme.Dark, loaded.Theme);
         Assert.Empty(loaded.RecentFiles);
         Assert.Null(loaded.Window);
         Assert.Equal(PreviewSize.Fit, loaded.Size);
+        Assert.Empty(loaded.ViewModels);
     }
 
     private static void AssertDefault(Settings settings)
@@ -81,5 +84,6 @@ public sealed class SettingsTests
         Assert.Null(settings.Window);
         Assert.Equal(PreviewTheme.Default, settings.Theme);
         Assert.Equal(PreviewSize.Fit, settings.Size);
+        Assert.Empty(settings.ViewModels);
     }
 }

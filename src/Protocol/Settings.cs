@@ -11,7 +11,8 @@ namespace AxView.Protocol;
 ///   "RecentFiles": [ "/src/Ui/Views/Main.axaml" ],
 ///   "Window": { "Mode": "Maximized", "X": 10, "Y": 20, "Width": 1280, "Height": 800 },
 ///   "Theme": "Dark",
-///   "Size": { "Preset": "Custom", "Width": 500, "Height": 300 }
+///   "Size": { "Preset": "Custom", "Width": 500, "Height": 300 },
+///   "ViewModels": { "/src/Ui/Views/Main.axaml": "Ui.ViewModels.MainViewModel" }
 /// }
 /// </code>
 /// Each change loads the file again, changes one value, and saves the file.
@@ -40,6 +41,10 @@ internal sealed record Settings
     /// <summary>The preview size that the user selected last.</summary>
     public PreviewSize Size { get; init; } = PreviewSize.Fit;
 
+    /// <summary>The ViewModel type that the user selected for each AXAML file: full file path to full type name.</summary>
+    /// <remarks>A file with no item uses the DataContext from its XAML.</remarks>
+    public IReadOnlyDictionary<string, string> ViewModels { get; init; } = new Dictionary<string, string>();
+
     /// <summary>Reads the settings file.</summary>
     /// <returns>The settings, or <see cref="Default"/> when the file is missing or not valid.</returns>
     public static Settings Load(string path)
@@ -54,7 +59,14 @@ internal sealed record Settings
             Settings? settings = JsonSerializer.Deserialize<Settings>(File.ReadAllText(path), jsonOptions);
 
             // JSON can set a value to null. The settings must not stop the app.
-            return settings is null ? Default : settings with { RecentFiles = settings.RecentFiles ?? [], Size = settings.Size ?? PreviewSize.Fit };
+            return settings is null
+                ? Default
+                : settings with
+                {
+                    RecentFiles = settings.RecentFiles ?? [],
+                    Size = settings.Size ?? PreviewSize.Fit,
+                    ViewModels = settings.ViewModels ?? new Dictionary<string, string>(),
+                };
         }
         catch (JsonException)
         {

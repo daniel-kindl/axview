@@ -37,6 +37,8 @@ internal sealed class PreviewWindow : Window
     private readonly ListBox fileList;
     private readonly ThemeSwitch themeSwitch;
     private readonly PreviewSizeSwitch sizeSwitch;
+    private readonly ViewModelSwitch viewModelSwitch;
+    private readonly Dictionary<string, string> viewModels;
     private readonly WindowPlacementTracker? placementTracker;
     private IReadOnlyList<string> catalog = [];
     private bool isSyncingSelection;
@@ -44,7 +46,8 @@ internal sealed class PreviewWindow : Window
     public PreviewWindow(HostOptions options, IReadOnlyList<string> notes)
     {
         this.options = options;
-        livePreview = new LivePreview(new PreviewRenderer(Assembly.Load(options.AssemblyName), options.ProjectDirectory));
+        Assembly localAssembly = Assembly.Load(options.AssemblyName);
+        livePreview = new LivePreview(new PreviewRenderer(localAssembly, options.ProjectDirectory));
         livePreview.Changed += (_, _) => ShowPreview();
 
         Width = 1280;
@@ -59,6 +62,9 @@ internal sealed class PreviewWindow : Window
         placementTracker = options.SettingsFile is null ? null : new WindowPlacementTracker(this);
         themeSwitch = new ThemeSwitch(this) { SelectedItem = settings.Theme };
         sizeSwitch = new PreviewSizeSwitch(host) { Size = settings.Size };
+        viewModels = new Dictionary<string, string>(settings.ViewModels, StringComparer.FromComparison(pathComparison));
+        viewModelSwitch = new ViewModelSwitch(ViewModelCatalog.List(localAssembly));
+        viewModelSwitch.SelectionChanged += (_, _) => OnViewModelSelected();
 
         status = new TextBlock { Margin = new Thickness(8, 4), FontSize = 12, TextTrimming = TextTrimming.CharacterEllipsis };
         ToolTip.SetTip(status, string.Join(Environment.NewLine, notes));
@@ -71,7 +77,7 @@ internal sealed class PreviewWindow : Window
             Background = new SolidColorBrush(Color.FromRgb(0xB0, 0x6A, 0x00)),
             Child = new TextBlock { Text = "No DataContext", FontSize = 11, Foreground = Brushes.White },
         };
-        ToolTip.SetTip(noDataContextBadge, "Set Design.DataContext, or give x:DataType a parameterless constructor.");
+        ToolTip.SetTip(noDataContextBadge, "Select a ViewModel, set Design.DataContext, or give x:DataType a parameterless constructor.");
         DockPanel.SetDock(noDataContextBadge, Dock.Right);
 
         errorText = new SelectableTextBlock
@@ -210,7 +216,13 @@ internal sealed class PreviewWindow : Window
                 Orientation = Orientation.Horizontal,
                 Margin = new Thickness(8, 4),
                 Spacing = 8,
-                Children = { themeSwitch, sizeSwitch },
+                Children =
+                {
+                    themeSwitch,
+                    sizeSwitch,
+                    new TextBlock { Text = "DataContext", Margin = new Thickness(8, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center },
+                    viewModelSwitch,
+                },
             },
             BorderThickness = new Thickness(0, 0, 0, 1),
             BorderBrush = Brushes.Gray,
@@ -219,28 +231,57 @@ internal sealed class PreviewWindow : Window
         return new DockPanel { Children = { toolbar, preview } };
     }
 
-    // The settings file must not stop the host. A failed write only loses the window, the theme, and the size.
     private void SaveSettings()
     {
-        if ((options.SettingsFile is null) || (placementTracker is null))
+        if (placementTracker is not null)
+        {
+            UpdateSettings(settings => settings with
+            {
+                Window = placementTracker.GetPlacement(),
+                Theme = themeSwitch.SelectedItem is PreviewTheme theme ? theme : PreviewTheme.Default,
+                Size = sizeSwitch.Size,
+            });
+        }
+    }
+
+    // The settings file must not stop the host. A failed write only loses the changed values.
+    private void UpdateSettings(Func<Settings, Settings> change)
+    {
+        if (options.SettingsFile is null)
         {
             return;
         }
 
         try
         {
-            Settings settings = Settings.Load(options.SettingsFile) with
-            {
-                Window = placementTracker.GetPlacement(),
-                Theme = themeSwitch.SelectedItem is PreviewTheme theme ? theme : PreviewTheme.Default,
-                Size = sizeSwitch.Size,
-            };
-            settings.Save(options.SettingsFile);
+            change(Settings.Load(options.SettingsFile)).Save(options.SettingsFile);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             Console.Error.WriteLine($"axview: cannot save the settings: {ex.Message}");
         }
+    }
+
+    // Save the choice now. A project switch stops the host without a close of the window.
+    private void OnViewModelSelected()
+    {
+        if (isSyncingSelection)
+        {
+            return;
+        }
+
+        string? typeName = viewModelSwitch.SelectedTypeName;
+        if (typeName is null)
+        {
+            _ = viewModels.Remove(livePreview.FilePath);
+        }
+        else
+        {
+            viewModels[livePreview.FilePath] = typeName;
+        }
+
+        UpdateSettings(settings => settings with { ViewModels = new Dictionary<string, string>(viewModels) });
+        livePreview.Show(livePreview.FilePath, viewModelSwitch.SelectedType);
     }
 
     private void RefreshCatalog()
@@ -315,7 +356,11 @@ internal sealed class PreviewWindow : Window
     private void Show(string path)
     {
         Title = $"AxView - {RelativePath(path)}";
-        livePreview.Show(path);
+        string fullPath = Path.GetFullPath(path);
+        isSyncingSelection = true;
+        viewModelSwitch.SelectedTypeName = viewModels.GetValueOrDefault(fullPath);
+        isSyncingSelection = false;
+        livePreview.Show(fullPath, viewModelSwitch.SelectedType);
         ShowCatalog();
     }
 

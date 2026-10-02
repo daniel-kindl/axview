@@ -114,6 +114,34 @@ public sealed class PreviewRendererTests
     }
 
     [AvaloniaFact]
+    public void Render_SelectedViewModel_ReplacesTheDesignDataContext()
+    {
+        using TempDir dir = new();
+        string file = dir.Write("Views/Designed.axaml", $"""
+            <UserControl {AvaloniaXmlns} xmlns:vm="using:AxView.Tests.Fixtures">
+              <Design.DataContext>
+                <vm:FixtureViewModel />
+              </Design.DataContext>
+            </UserControl>
+            """);
+
+        Control preview = Renderer(dir).Render(file, typeof(FixtureOtherViewModel));
+
+        _ = Assert.IsType<FixtureOtherViewModel>(preview.DataContext);
+    }
+
+    [AvaloniaFact]
+    public void Render_SelectedViewModel_SetsTheDataContextOfAWindow()
+    {
+        using TempDir dir = new();
+        string file = dir.Write("Views/Main.axaml", $"""<Window {AvaloniaXmlns}><TextBlock /></Window>""");
+
+        Control preview = Renderer(dir).Render(file, typeof(FixtureOtherViewModel));
+
+        _ = Assert.IsType<FixtureOtherViewModel>(preview.DataContext);
+    }
+
+    [AvaloniaFact]
     public void Render_AppliesTheDesignDataContextOfAWindow()
     {
         using TempDir dir = new();

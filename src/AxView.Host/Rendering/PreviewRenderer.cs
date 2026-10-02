@@ -13,6 +13,7 @@ namespace AxView.Host.Rendering;
 /// The loader creates the <c>x:Class</c> type, so its code-behind runs. If the loader cannot create it, the root element type is used.
 /// Relative URIs in the XAML resolve against the avares URI of the file.
 /// The root gets a DataContext from the XAML. See <see cref="DesignDataContext"/>.
+/// A selected ViewModel type replaces the DataContext from the XAML.
 /// A <c>Styles</c>, <c>Style</c>, or <c>ResourceDictionary</c> root shows its <c>Design.PreviewWith</c> control.
 /// </remarks>
 /// <param name="localAssembly">The assembly that the project builds.</param>
@@ -28,11 +29,14 @@ internal sealed class PreviewRenderer(Assembly localAssembly, string projectDire
 
     /// <summary>Loads the file and returns its root control.</summary>
     /// <param name="axamlPath">An AXAML file of the project.</param>
+    /// <param name="viewModelType">
+    /// The type of the root DataContext, or null to use the DataContext from the XAML. It must have a parameterless constructor.
+    /// </param>
     /// <exception cref="NotSupportedException">
     /// The root is a top-level other than a window, a style or resource root without <c>Design.PreviewWith</c>, or another non-control.
     /// </exception>
     /// <remarks>The user's XAML and its code can throw any other exception.</remarks>
-    public Control Render(string axamlPath)
+    public Control Render(string axamlPath, Type? viewModelType = null)
     {
         string xaml = ReadWithRetry(axamlPath);
         Uri baseUri = AvaresUri.For(localAssembly.GetName().Name!, projectDirectory, axamlPath);
@@ -43,6 +47,10 @@ internal sealed class PreviewRenderer(Assembly localAssembly, string projectDire
         if (root is Control loaded)
         {
             DesignDataContext.Apply(loaded, xaml, FindType);
+            if (viewModelType is not null)
+            {
+                loaded.DataContext = Activator.CreateInstance(viewModelType);
+            }
         }
 
         return root switch

@@ -17,6 +17,7 @@ internal sealed class LivePreview : IDisposable
     private readonly PreviewRenderer renderer;
     private readonly Action? unsubscribeErrors;
     private FileChangeWatcher? watcher;
+    private Type? viewModelType;
 
     /// <summary>Starts to catch the dispatcher errors. Call <see cref="Show"/> to show a file.</summary>
     /// <param name="renderer">The renderer of the project.</param>
@@ -40,10 +41,12 @@ internal sealed class LivePreview : IDisposable
 
     /// <summary>Loads the file and watches it. Stops the watch of the previous file.</summary>
     /// <param name="path">An AXAML file of the project.</param>
-    public void Show(string path)
+    /// <param name="viewModelType">The type of the root DataContext, or null to use the DataContext from the XAML.</param>
+    public void Show(string path, Type? viewModelType = null)
     {
         string fullPath = Path.GetFullPath(path);
         FilePath = fullPath;
+        this.viewModelType = viewModelType;
         watcher?.Dispose();
         watcher = new FileChangeWatcher(fullPath, () => Load(fullPath));
         View = null;
@@ -68,7 +71,7 @@ internal sealed class LivePreview : IDisposable
     {
         try
         {
-            View = renderer.Render(path);
+            View = renderer.Render(path, viewModelType);
             Error = null;
         }
         catch (Exception ex)

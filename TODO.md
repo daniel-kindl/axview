@@ -11,8 +11,6 @@ Do not change or use again a number.
 
 ## Next
 
-- [ ] #16 **ViewModel picker (M).** Let the user select a ViewModel type for the current view.
-  Remember the choice per file.
 - [ ] #17 **DI ViewModels (M).** Optional convention: a static factory or a `ServiceCollection` hook in the target app.
   Stub services so the preview makes no network calls.
   Test case: DAT4000 `ProgramEditorView` fails with "LoggerService not initialized".
@@ -39,6 +37,8 @@ Do not change or use again a number.
   Thus the exe must unpack the host before it starts the host.
   The settings file is next to the exe. It moves to `LocalApplicationData/AxView` only when the exe folder is not writable.
 - [ ] #24 **Linux and macOS check (S).** Run the tests and one snapshot on each OS.
+- [ ] #26 **ViewModel in snapshot mode (S).** A snapshot ignores the ViewModel that the user selected for the file.
+  Use the choice from the settings file, or add a `--view-model <type>` option.
 - [ ] #25 **About dialog (S).** Add a simple About dialog to the picker and the preview window.
   Show the AxView version, the build date, and the Avalonia version of the host.
 
@@ -68,3 +68,4 @@ Do not change or use again a number.
 - [x] #15 Preview size: a toolbar switch for Fit, Phone, Tablet, Desktop, and a custom width and height. Kept in `settings.json`. `5f85977`
 - [x] #26 Live preview module: `LivePreview` owns the file watch, the load, the last good preview, and the dispatcher errors. `549ba1e`
 - [x] #27 Snapshot window: a snapshot captures only the preview. The exit reason comes from `LivePreview`, not from the error panel. `2230fcf`
+- [x] #16 ViewModel picker: a toolbar switch selects a `*ViewModel` type. The settings file keeps the choice per file.

@@ -59,6 +59,21 @@ public sealed class LivePreviewTests
     }
 
     [AvaloniaFact]
+    public void Save_KeepsTheSelectedViewModel()
+    {
+        using TempDir dir = new();
+        string file = dir.Write("Views/Hello.axaml", TextBlock("Before"));
+        using LivePreview preview = new(Renderer(dir));
+        preview.Show(file, typeof(FixtureOtherViewModel));
+
+        File.WriteAllText(file, TextBlock("After"));
+
+        Assert.True(WaitForChange(preview));
+        Assert.Equal("After", TextOf(preview));
+        _ = Assert.IsType<FixtureOtherViewModel>(preview.View!.DataContext);
+    }
+
+    [AvaloniaFact]
     public void Save_LoadsTheFileAgain()
     {
         using TempDir dir = new();
