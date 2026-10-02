@@ -1,4 +1,4 @@
-using System.Xml.Linq;
+using AxView.Protocol;
 
 namespace AxView.Resolution;
 
@@ -27,16 +27,6 @@ internal static class ProjectFinder
         throw new PreviewSetupException($"No .csproj found above '{axamlPath}'.");
     }
 
-    public static string ReadAssemblyName(string projectPath)
-    {
-        XDocument doc = XDocument.Load(projectPath);
-        string? name = doc.Descendants()
-            .Where(e => e.Name.LocalName == "AssemblyName")
-            .Select(e => e.Value.Trim())
-            .LastOrDefault(v => v.Length > 0 && !v.Contains("$(", StringComparison.Ordinal));
-        return name ?? Path.GetFileNameWithoutExtension(projectPath);
-    }
-
     /// <summary>Finds the project that builds the app of the output. The project is in a folder above the output.</summary>
     /// <exception cref="PreviewSetupException">No project above the output has the assembly name of the app.</exception>
     public static string FindAppProject(AppOutput output)
@@ -44,7 +34,7 @@ internal static class ProjectFinder
         for (DirectoryInfo? dir = new(output.Directory); dir is not null; dir = dir.Parent)
         {
             string? project = Directory.EnumerateFiles(dir.FullName, "*.csproj")
-                .FirstOrDefault(p => ReadAssemblyName(p) == output.AppName);
+                .FirstOrDefault(p => ProjectAssembly.ReadName(p) == output.AppName);
             if (project is not null)
             {
                 return project;

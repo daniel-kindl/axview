@@ -1,4 +1,5 @@
 using AxView.Loader;
+using AxView.Protocol;
 
 namespace AxView.Resolution;
 
@@ -18,7 +19,7 @@ internal sealed class PreviewTargetResolver(ILoaderSource loaderSource)
         }
 
         string project = ProjectFinder.FindProject(fullPath);
-        string assemblyName = ProjectFinder.ReadAssemblyName(project);
+        string assemblyName = ProjectAssembly.ReadName(project);
         AppOutput output = outputDir is null
             ? OutputFinder.Find(project, assemblyName)
             : OutputFinder.FromDirectory(outputDir, assemblyName);

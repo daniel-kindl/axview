@@ -48,7 +48,7 @@ internal sealed class PreviewWindow : Window
     private readonly WindowPlacementTracker? placementTracker;
     private readonly List<FileChangeWatcher> codeWatchers = [];
     private readonly AppIncludes? appIncludes;
-    private readonly FileChangeWatcher? axamlWatcher;
+    private readonly List<FileChangeWatcher> axamlWatchers = [];
     private IReadOnlyList<string> catalog = [];
     private bool isSyncingSelection;
 
@@ -172,10 +172,11 @@ internal sealed class PreviewWindow : Window
             appRenderers.Add(new PreviewRenderer(Assembly.Load(options.AppAssemblyName), options.AppProjectDirectory, services));
         }
 
-        appIncludes = AppIncludes.Find(appRenderers, scope.Styles, scope.Resources);
-        if (appIncludes is not null)
+        IEnumerable<PreviewRenderer> libraries = ProjectRenderers.Create(options.ReferencedProjectDirectories, services);
+        appIncludes = AppIncludes.Find(appRenderers, scope.Styles, scope.Resources, libraries);
+        foreach (string directory in appIncludes?.ProjectDirectories ?? [])
         {
-            axamlWatcher = FileChangeWatcher.ForAxamlFiles(appIncludes.ProjectDirectory, UpdateIncludes);
+            axamlWatchers.Add(FileChangeWatcher.ForAxamlFiles(directory, UpdateIncludes));
         }
 
         Show(options.AxamlPath);
@@ -203,7 +204,11 @@ internal sealed class PreviewWindow : Window
             watcher.Dispose();
         }
 
-        axamlWatcher?.Dispose();
+        foreach (FileChangeWatcher watcher in axamlWatchers)
+        {
+            watcher.Dispose();
+        }
+
         livePreview.Dispose();
         base.OnClosed(e);
     }

@@ -24,7 +24,8 @@ namespace AxView.Host.Rendering;
 /// When the counts are different, the walk skips that branch.
 /// The first text of each file is the text of the build.
 /// A file loads again when its text is different from the text of the object that is in its place.
-/// The walk follows only the includes of the project assembly.
+/// An include can point into another project of the app. Each project has its own renderer.
+/// The walk finds the project of an include by its avares URI. It resolves a relative URI against the project of its file.
 /// </remarks>
 internal sealed class AppIncludes
 {
@@ -35,6 +36,7 @@ internal sealed class AppIncludes
     private static readonly XName keyAttribute = XName.Get("Key", "http://schemas.microsoft.com/winfx/2006/xaml");
 
     private readonly PreviewRenderer renderer;
+    private readonly List<PreviewRenderer> projects;
     private readonly string appPath;
     private readonly Styles styles;
     private readonly IResourceDictionary resources;
@@ -48,9 +50,16 @@ internal sealed class AppIncludes
     /// <param name="appPath">The App.axaml file of the project.</param>
     /// <param name="styles">The styles of the app. They must agree with the build of App.axaml.</param>
     /// <param name="resources">The resources of the app. They must agree with the build of App.axaml.</param>
-    public AppIncludes(PreviewRenderer renderer, string appPath, Styles styles, IResourceDictionary resources)
+    /// <param name="otherProjects">The renderers of the other projects that an include can point into.</param>
+    public AppIncludes(
+        PreviewRenderer renderer,
+        string appPath,
+        Styles styles,
+        IResourceDictionary resources,
+        IEnumerable<PreviewRenderer>? otherProjects = null)
     {
         this.renderer = renderer;
+        projects = [renderer, .. otherProjects ?? []];
         this.appPath = Path.GetFullPath(appPath);
         this.styles = styles;
         this.resources = resources;
@@ -60,6 +69,9 @@ internal sealed class AppIncludes
     /// <summary>Gets the folder of the project that contains the app file.</summary>
     public string ProjectDirectory => renderer.ProjectDirectory;
 
+    /// <summary>Gets the folders of all projects that an include can point into. The folder of the app file is first.</summary>
+    public IEnumerable<string> ProjectDirectories => projects.Select(p => p.ProjectDirectory).Distinct();
+
     /// <summary>Finds the app file in the project of the first renderer that has one, and reads its includes.</summary>
     /// <param name="renderers">
     /// The renderers of the projects that can contain the app file, in order of preference.
@@ -67,15 +79,21 @@ internal sealed class AppIncludes
     /// </param>
     /// <param name="styles">The styles of the app. They must agree with the build of App.axaml.</param>
     /// <param name="resources">The resources of the app. They must agree with the build of App.axaml.</param>
+    /// <param name="libraries">The renderers of the referenced projects. An include can point into them.</param>
     /// <returns>The includes of the app file, or null when no project has an app file.</returns>
-    public static AppIncludes? Find(IEnumerable<PreviewRenderer> renderers, Styles styles, IResourceDictionary resources)
+    public static AppIncludes? Find(
+        IEnumerable<PreviewRenderer> renderers,
+        Styles styles,
+        IResourceDictionary resources,
+        IEnumerable<PreviewRenderer>? libraries = null)
     {
-        foreach (PreviewRenderer renderer in renderers)
+        List<PreviewRenderer> candidates = [.. renderers];
+        foreach (PreviewRenderer renderer in candidates)
         {
             string? appPath = FindAppFile(renderer.ProjectDirectory);
             if (appPath is not null)
             {
-                return new AppIncludes(renderer, appPath, styles, resources);
+                return new AppIncludes(renderer, appPath, styles, resources, candidates.Concat(libraries ?? []));
             }
         }
 
@@ -203,12 +221,14 @@ internal sealed class AppIncludes
 
     private void Include(XElement element, string file, IncludeSlot slot)
     {
-        string? path = SourcePath(element, file);
-        string? text = path is null ? null : Read(path);
-        if (path is null || text is null)
+        (PreviewRenderer Project, string Path)? source = FindSource(element, file);
+        string? text = source is null ? null : Read(source.Value.Path);
+        if (source is null || text is null)
         {
             return;
         }
+
+        (PreviewRenderer project, string path) = source.Value;
 
         _ = buildTexts.TryAdd(path, text);
         object shown = slot.Get();
@@ -217,7 +237,7 @@ internal sealed class AppIncludes
         {
             try
             {
-                shown = renderer.Load(path, text);
+                shown = project.Load(path, text);
                 slot.Set(shown);
             }
             catch (Exception ex)
@@ -247,14 +267,34 @@ internal sealed class AppIncludes
         }
     }
 
-    private string? SourcePath(XElement element, string file)
+    private (PreviewRenderer Project, string Path)? FindSource(XElement element, string file)
     {
         string? source = element.Attribute(SourceAttribute)?.Value;
-        Uri baseUri = AvaresUri.For(renderer.AssemblyName, renderer.ProjectDirectory, file);
-        return source is not null && Uri.TryCreate(baseUri, source, out Uri? uri)
-            ? AvaresUri.ToPath(uri, renderer.AssemblyName, renderer.ProjectDirectory)
-            : null;
+        PreviewRenderer fileProject = ProjectOf(file);
+        Uri baseUri = AvaresUri.For(fileProject.AssemblyName, fileProject.ProjectDirectory, file);
+        if (source is null || !Uri.TryCreate(baseUri, source, out Uri? uri))
+        {
+            return null;
+        }
+
+        foreach (PreviewRenderer project in projects)
+        {
+            string? path = AvaresUri.ToPath(uri, project.AssemblyName, project.ProjectDirectory);
+            if (path is not null)
+            {
+                return (project, path);
+            }
+        }
+
+        return null;
     }
+
+    // The project with the longest folder that contains the file. A referenced project can sit inside another project.
+    private PreviewRenderer ProjectOf(string file) =>
+        projects
+            .Where(p => file.StartsWith(Path.GetFullPath(p.ProjectDirectory) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+            .OrderByDescending(p => p.ProjectDirectory.Length)
+            .FirstOrDefault() ?? renderer;
 
     private string? Read(string path)
     {
@@ -288,5 +328,5 @@ internal sealed class AppIncludes
     }
 
     private void AddError(string path, Exception ex) =>
-        errors.Add($"{Path.GetRelativePath(renderer.ProjectDirectory, path)}: {ExceptionText.Describe(ex)}");
+        errors.Add($"{Path.GetRelativePath(ProjectOf(path).ProjectDirectory, path)}: {ExceptionText.Describe(ex)}");
 }

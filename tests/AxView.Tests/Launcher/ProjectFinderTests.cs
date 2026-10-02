@@ -27,25 +27,6 @@ public sealed class ProjectFinderTests
     }
 
     [Fact]
-    public void ReadAssemblyName_UsesAssemblyNameProperty()
-    {
-        using TempDir dir = new();
-        string project = dir.Write("App/App.csproj",
-            "<Project><PropertyGroup><AssemblyName>My.Ui</AssemblyName></PropertyGroup></Project>");
-
-        Assert.Equal("My.Ui", ProjectFinder.ReadAssemblyName(project));
-    }
-
-    [Fact]
-    public void ReadAssemblyName_FallsBackToProjectFileName()
-    {
-        using TempDir dir = new();
-        string project = dir.Write("App/My.App.csproj", "<Project Sdk=\"Microsoft.NET.Sdk\" />");
-
-        Assert.Equal("My.App", ProjectFinder.ReadAssemblyName(project));
-    }
-
-    [Fact]
     public void FindAppProject_ReturnsTheProjectAboveTheOutputThatBuildsTheApp()
     {
         using TempDir dir = new();

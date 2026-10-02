@@ -14,6 +14,7 @@ public sealed class AppIncludesTests
 {
     private const string Xmlns = "xmlns=\"https://github.com/avaloniaui\" xmlns:x=\"http://schemas.microsoft.com/winfx/2006/xaml\"";
     private const string AssemblyUri = "avares://AxView.Tests";
+    private const string LibraryUri = "avares://Avalonia.Controls";
     private const string BrokenXaml = "<Styles";
 
     [AvaloniaFact]
@@ -229,6 +230,48 @@ public sealed class AppIncludesTests
         Assert.Null(AppIncludes.Find([Renderer(dir)], [], new ResourceDictionary()));
     }
 
+    [AvaloniaFact]
+    public void Update_IncludeInAnotherAssembly_LoadsTheFileOfThatProject()
+    {
+        using TempDir appDir = new();
+        using TempDir libraryDir = new();
+        string app = WriteApp(appDir, styles: $"""<StyleInclude Source="{LibraryUri}/Styles/Main.axaml" />""");
+        string main = libraryDir.Write("Styles/Main.axaml", TagStyles("Before"));
+        Styles styles = [Assert.IsAssignableFrom<IStyle>(LibraryRenderer(libraryDir).Load(main, File.ReadAllText(main)))];
+        AppIncludes includes = new(Renderer(appDir), app, styles, new ResourceDictionary(), [LibraryRenderer(libraryDir)]);
+
+        File.WriteAllText(main, TagStyles("After"));
+        IncludeUpdate update = includes.Update();
+
+        Assert.True(update.IsChanged);
+        Assert.Null(update.Error);
+        Assert.Equal("After", TagOf(styles[0]));
+    }
+
+    [AvaloniaFact]
+    public void Update_IncludeOfAFileInAnotherAssembly_ResolvesItsIncludesInThatAssembly()
+    {
+        using TempDir appDir = new();
+        using TempDir libraryDir = new();
+        string app = WriteApp(appDir, styles: $"""<StyleInclude Source="{LibraryUri}/Styles/Main.axaml" />""");
+        string main = libraryDir.Write("Styles/Main.axaml", $"""
+            <Styles {Xmlns}>
+              <StyleInclude Source="/Styles/Inner.axaml" />
+            </Styles>
+            """);
+        string inner = libraryDir.Write("Styles/Inner.axaml", TagStyles("Before"));
+        IStyle compiledInner = Assert.IsAssignableFrom<IStyle>(LibraryRenderer(libraryDir).Load(inner, File.ReadAllText(inner)));
+        Styles styles = [new Styles { compiledInner }];
+        AppIncludes includes = new(Renderer(appDir), app, styles, new ResourceDictionary(), [LibraryRenderer(libraryDir)]);
+
+        File.WriteAllText(inner, TagStyles("After"));
+        IncludeUpdate update = includes.Update();
+
+        Assert.True(update.IsChanged);
+        Assert.Null(update.Error);
+        Assert.Equal("After", TagOf(Assert.IsType<Styles>(styles[0])[0]));
+    }
+
     private static string WriteApp(TempDir dir, string styles = "", string resources = "") => dir.Write("App.axaml", $"""
         <Application {Xmlns} x:Class="AxView.Tests.App">
           <Application.Resources>{resources}</Application.Resources>
@@ -261,4 +304,8 @@ public sealed class AppIncludesTests
         Assert.IsType<ResourceDictionary>(Renderer(dir).Load(path, File.ReadAllText(path)));
 
     private static PreviewRenderer Renderer(TempDir dir) => new(typeof(AppIncludesTests).Assembly, dir.Path, DesignServices.None);
+
+    // Any other loaded assembly stands for the library project.
+    private static PreviewRenderer LibraryRenderer(TempDir dir) =>
+        new(typeof(Button).Assembly, dir.Path, DesignServices.None);
 }
