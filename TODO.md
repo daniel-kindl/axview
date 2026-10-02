@@ -22,16 +22,13 @@ Do not change or use again a number.
 - [ ] #37 **Own chrome theme (M).** When the app ships no Fluent or Simple theme, get `Avalonia.Themes.Simple` from NuGet.
   Use the Avalonia version of the app, as `NuGetLoaderSource` does for the loader.
   Add the package to the probe path of `LoaderResolver`. Then the chrome does not use a second instance of the app styles.
-- [ ] #38 **App resources through Application.Current (M).** Code that reads `Application.Current` resources must find the app resources.
-  Import a second instance of the app resources. Put it in `PreviewApp.Styles` before the chrome theme.
-  Then the chrome theme wins when both define a key. Include reload must update both instances.
+- [ ] #38 **Include reload for the app resources of Application.Current (S).** The host puts a second instance of the app resources in `PreviewApp.Styles` (#40).
+  Include reload must update this instance too.
 - [ ] #39 **Build progress (M).** Show the build progress during a rebuild.
   Option A: the launcher shows a "Building" window.
   Option B: the host runs from a copy of the output. It stays open during the build and shows a build overlay.
 - [ ] #20 **Avalonia 12 (L).** Check the loader and host APIs. A second host build may be necessary.
 - [ ] #24 **Linux and macOS check (S).** Run the tests and one snapshot on each OS.
-- [ ] #40 **Static resources of the app in a style preview (S).** `TextStyles.axaml` of DAT4000 fails: "Static resource 'RobotoCondensedBold' not found".
-  The app defines the resource. A `StaticResource` in a `Styles` root does not find it at load time.
 - [ ] #41 **Project reference watch (S).** Rebuild when a `.cs` file of a project in the `ProjectReference` graph of the app changes.
   Today the host watches only the view project and the app project (#31).
 - [ ] #42 **Includes into another assembly (S).** The include walk follows only the includes of the assembly of the app file.
@@ -75,3 +72,4 @@ Each known issue is now an item: #30 to #39.
 - [x] #21 Output choice: a Debug output wins over a newer Release output. The status bar shows the output folder. `e8652ea`
 - [x] #22 CI snapshot mode: `--snapshot-all <dir>` writes one PNG per project file and `summary.txt`. The exit code is 1 when a file fails. `577d727`
 - [x] #28 ViewModel in snapshot mode: `--view-model <full type name>` sets the DataContext of a `--snapshot`. An unknown type exits with 2. `db53797`
+- [x] #40 App resources in Application.Current: a `StaticResource` in a style root finds the resources of the app. `c976fd6`
