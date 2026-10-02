@@ -8,8 +8,12 @@ Do not change or use again a number.
 
 ## Now
 
-- [ ] #36 **Includes in a view (M).** Load a changed include of a view or of a `Style` root from disk.
-  Make `AppIncludes` walk any loaded root and its XAML. Run it after each render.
+- [ ] #51 **StaticResource from an include of a view (S).** The runtime loader resolves a `StaticResource` with the compiled include.
+  The include walk replaces the include after the load. Thus the `StaticResource` keeps the value of the build.
+  A `DynamicResource` and a style get the changed value.
+- [ ] #52 **Includes in the children of a view (S).** `AppIncludes` walks only the `Styles` and `Resources` of the root control.
+  An include in a child control goes back to the build. Match the child controls of the XAML with the logical tree.
+  First make sure that the reload gives include objects. The runtime loader puts the compiled content in place of an include of a view.
 
 ## Next
 
@@ -35,9 +39,11 @@ Do not change or use again a number.
 - [ ] #20 **Avalonia 12 (L).** Check the loader and host APIs. A second host build may be necessary.
 - [ ] #49 **App.axaml data templates (S).** A reload of App.axaml does not change the data templates or the theme variant of the copies.
   Give each owner a way to replace its data templates. Then `TargetStyles.ReplaceWith` can move them too.
-- [ ] #50 **Nested includes after an App.axaml reload (S).** The reload gives `StyleInclude` and `ResourceInclude` objects.
-  `AppIncludes` does not walk into an include object. Thus a changed include inside an unchanged include goes back to the build.
-  Walk the `Loaded` value of an include object.
+- [ ] #51 **StaticResource from an include of a view (S).** The runtime loader resolves a `StaticResource` with the compiled include.
+  The include walk replaces the include after the load. Thus the `StaticResource` keeps the value of the build.
+  A `DynamicResource` and a style get the changed value.
+- [ ] #52 **Includes in the children of a view (S).** `AppIncludes` walks only the `Styles` and `Resources` of the root control.
+  An include in a child control goes back to the build. Match the child controls of the XAML with the logical tree.
 
 
 ## Known issues
@@ -86,3 +92,4 @@ Each known issue is now an item: #30 to #39.
 - [x] #46 Host mode: `HostOptions.Mode`. The host and the launcher reject `--snapshot` with `--snapshot-all`, and `--view-model` without `--snapshot`. `45d8968`
 - [x] #45 Project preview: `ProjectPreview` owns the catalog, the live preview, the include reload, the rebuild watch, and the ViewModels. It gives a stop request. `10f0e36`
 - [x] #35 App.axaml reload: `AppStyles` loads a changed App.axaml into each live copy. A new copy gets the changed App.axaml and includes. `6e48d86`
+- [x] #36 View includes: `AppIncludes` walks a control, `Styles`, `Style`, or `ResourceDictionary` root after each render. `8a00e2a`
