@@ -75,6 +75,46 @@ public sealed class PreviewScopeTests
     }
 
     [AvaloniaFact]
+    public void New_FrameGetsTheSettersOfAWindowStyleOfTheApp()
+    {
+        Style windowStyle = new(x => x.OfType<Window>())
+        {
+            Setters =
+            {
+                new Setter(TemplatedControl.BackgroundProperty, Brushes.Red),
+                new Setter(Window.TitleProperty, "Target window"),
+            },
+        };
+        PreviewScope scope = new(Target([windowStyle])) { Content = new TextBlock() };
+        Window window = new() { Content = scope };
+
+        window.Show();
+
+        TemplatedControl frame = Assert.IsAssignableFrom<TemplatedControl>(scope.Child);
+        Assert.Same(Brushes.Red, frame.Background);
+        Assert.NotEqual("Target window", window.Title);
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void New_NoTargetWindowTheme_FrameSkipsTheChromeWindowTheme()
+    {
+        ControlTheme chromeWindowTheme = new(typeof(Window))
+        {
+            Setters = { new Setter(TemplatedControl.BackgroundProperty, Brushes.Blue) },
+        };
+        PreviewScope scope = new(TargetStyles.None) { Content = new TextBlock() };
+        Window window = new() { Content = scope, Theme = chromeWindowTheme };
+        window.Resources[typeof(Window)] = chromeWindowTheme;
+
+        window.Show();
+
+        TemplatedControl frame = Assert.IsAssignableFrom<TemplatedControl>(scope.Child);
+        Assert.Null(frame.Background);
+        window.Close();
+    }
+
+    [AvaloniaFact]
     public void New_RequestsTheAppThemeVariant()
     {
         PreviewScope scope = new(new TargetStyles([], new ResourceDictionary(), [], ThemeVariant.Dark));

@@ -12,6 +12,7 @@ namespace AxView.Host.UI;
 /// The frame takes the setters of the target <see cref="Window"/> control theme that apply to a <see cref="ContentControl"/>.
 /// Thus the preview gets the background, the foreground, and the font of a target window.
 /// The frame skips the window template and the window-only properties. It has its own template.
+/// A <c>Window</c> style of the app also applies to the frame, because the frame has the style key of a window.
 /// </remarks>
 internal sealed class PreviewFrame : ContentControl
 {
@@ -27,17 +28,19 @@ internal sealed class PreviewFrame : ContentControl
             [!ContentPresenter.ContentProperty] = new TemplateBinding(ContentProperty),
             [!ContentPresenter.ContentTemplateProperty] = new TemplateBinding(ContentTemplateProperty),
         });
-        if (windowTheme is not null)
+        // An explicit theme stops the search for a Window theme. Else the chrome Window theme can apply.
+        // A theme applies only when its target type agrees with the style key.
+        ControlTheme theme = new(typeof(Window));
+        foreach (SetterBase setter in windowTheme is null ? [] : FrameSetters(windowTheme))
         {
-            ControlTheme theme = new(typeof(PreviewFrame));
-            foreach (SetterBase setter in FrameSetters(windowTheme))
-            {
-                theme.Setters.Add(setter);
-            }
-
-            Theme = theme;
+            theme.Setters.Add(setter);
         }
+
+        Theme = theme;
     }
+
+    /// <inheritdoc/>
+    protected override Type StyleKeyOverride => typeof(Window);
 
     // A base theme comes first, so the setters of the derived theme win.
     private static IEnumerable<SetterBase> FrameSetters(ControlTheme theme)
