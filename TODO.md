@@ -11,12 +11,7 @@ Do not change or use again a number.
 
 ## Next
 
-- [ ] #44 **App styles module (M).** Make one module own the import of the app styles and each live copy.
-  It gives a copy to the preview scope, to `Application.Current`, to the chrome fallback, and to each snapshot window.
-  An include reload updates all live copies. This closes #38.
-  After this item, #35 and #36 change only this module.
-  Test: change an include file. Then check the resources of the scope and of `Application.Current`.
-- [ ] #45 **Project preview (M).** Move the host logic out of `PreviewWindow` into a project preview module. Needs #43 and #44.
+- [ ] #45 **Project preview (M).** Move the host logic out of `PreviewWindow` into a project preview module.
   The module owns the project catalog, the live preview, the include reload, the rebuild watch, and the ViewModel of each file.
   It gives a stop request: the exit reason and the next file. It does not call `Shutdown`.
   The window keeps the layout, the bindings, the settings file, the hand-off file, and the shutdown.
@@ -25,23 +20,17 @@ Do not change or use again a number.
   - A file of another project gives `SwitchProject` and that file.
   - Without a hand-off file, a file of another project gives an error.
   - The ViewModel of a file stays after a switch to another file and back.
-- [ ] #46 **Host mode (S).** Give `HostOptions` one host mode: preview, snapshot, or snapshot-all.
-  `Parse` rejects `--snapshot` with `--snapshot-all`. It rejects `--view-model` without `--snapshot`.
-  The launcher rejects the same options with the usage text.
-  `PreviewApp` and `HostSession` select their behavior from the mode.
 
 ## Later
 
 - [ ] #35 **App.axaml reload (M).** Reload the app styles and resources when App.axaml changes.
   Load the disk text with `AvaloniaRuntimeXamlLoader.Load(xaml, assembly, rootInstance: new App())`.
-  Take the styles as `TargetAppImporter` does. Put them in `PreviewScope`. Make `AppIncludes` again.
+  Take the styles as `TargetAppImporter` does. Put them in each live copy of `AppStyles`. Make `AppIncludes` again.
 - [ ] #36 **Includes in a view (M).** Load a changed include of a view or of a `Style` root from disk.
   Make `AppIncludes` walk any loaded root and its XAML. Run it after each render.
 - [ ] #37 **Own chrome theme (M).** When the app ships no Fluent or Simple theme, get `Avalonia.Themes.Simple` from NuGet.
   Use the Avalonia version of the app, as `NuGetLoaderSource` does for the loader.
   Add the package to the probe path of `LoaderResolver`. Then the chrome does not use a second instance of the app styles.
-- [ ] #38 **Include reload for the app resources of Application.Current (S).** The host puts a second instance of the app resources in `PreviewApp.Styles` (#40).
-  Include reload must update this instance too. #44 does this item.
 - [ ] #39 **Build progress (M).** Show the build progress during a rebuild.
   Option A: the launcher shows a "Building" window.
   Option B: the host runs from a copy of the output. It stays open during the build and shows a build overlay.
@@ -90,3 +79,6 @@ Each known issue is now an item: #30 to #39.
 - [x] #42 Includes into another project: `AppIncludes` finds the project of an include by its avares URI. The host watches the AXAML files of each project. `6f08f06`
 - [x] #25 About dialog: the picker and the preview window show the version, the build date, and the Avalonia version. `83b0fd3`
 - [x] #43 Project set: one host module loads the assemblies of the view, app, and referenced projects. It replaces `ProjectRenderers`. `b687af9`
+- [x] #44 App styles: `AppStyles` gives a live copy to each owner. An include reload updates all live copies. `f74593e`
+- [x] #38 Include reload for the app resources of Application.Current: #44 does it. `f74593e`
+- [x] #46 Host mode: `HostOptions.Mode`. The host and the launcher reject `--snapshot` with `--snapshot-all`, and `--view-model` without `--snapshot`. `45d8968`
