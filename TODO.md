@@ -75,4 +75,4 @@ Each known issue is now an item: #30 to #39.
 - [x] #33 Window styles on the frame: the frame has the style key of a window, and always an explicit theme. `eb3d514`
 - [x] #34 App startup services: `RunAppStartup` in `settings.json` calls `OnFrameworkInitializationCompleted` of the app. `AxViewDesign` docs name `App.Services`. `c58e640`
 - [x] #21 Output choice: a Debug output wins over a newer Release output. The status bar shows the output folder. `e8652ea`
-- [x] #22 CI snapshot mode: `--snapshot-all <dir>` writes one PNG per project file and `summary.txt`. The exit code is 1 when a file fails. `HASH`
+- [x] #22 CI snapshot mode: `--snapshot-all <dir>` writes one PNG per project file and `summary.txt`. The exit code is 1 when a file fails. `577d727`
