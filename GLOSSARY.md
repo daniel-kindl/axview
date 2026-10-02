@@ -53,6 +53,10 @@ _Avoid_: target, config
 The rendered result of one AXAML file that the host shows.
 _Avoid_: view, render, page
 
+**Live preview**:
+The host module that shows one file, loads it again on each save, and keeps the last good preview on an error.
+_Avoid_: reloader, preview session
+
 **Project catalog**:
 The list of the AXAML files of one project that the host can show without a restart.
 _Avoid_: file list, index

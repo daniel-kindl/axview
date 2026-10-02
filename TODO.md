@@ -40,6 +40,8 @@ Do not change or use again a number.
   Thus the exe must unpack the host before it starts the host.
   The settings file is next to the exe. It moves to `LocalApplicationData/AxView` only when the exe folder is not writable.
 - [ ] #24 **Linux and macOS check (S).** Run the tests and one snapshot on each OS.
+- [ ] #25 **About dialog (S).** Add a simple About dialog to the picker and the preview window.
+  Show the AxView version, the build date, and the Avalonia version of the host.
 
 ## Known issues
 
@@ -65,3 +67,4 @@ Do not change or use again a number.
 - [x] #13 More DesignInstance forms: `Type={x:Type ...}`, and a `d:DataContext` with a `d:DesignInstance` on a child element. `086075a`
 - [x] #14 Settings file: `settings.json` next to the app keeps the recent files, the window placement, and the theme. `f3df631`
 - [x] #15 Preview size: a toolbar switch for Fit, Phone, Tablet, Desktop, and a custom width and height. Kept in `settings.json`. `5f85977`
+- [x] #26 Live preview module: `LivePreview` owns the file watch, the load, the last good preview, and the dispatcher errors.

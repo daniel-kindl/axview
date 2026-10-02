@@ -29,7 +29,7 @@ internal sealed class PreviewWindow : Window
         OperatingSystem.IsLinux() ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
 
     private readonly HostOptions options;
-    private readonly PreviewRenderer renderer;
+    private readonly LivePreview livePreview;
     private readonly ContentControl host = new();
     private readonly Border errorPanel;
     private readonly SelectableTextBlock errorText;
@@ -40,18 +40,14 @@ internal sealed class PreviewWindow : Window
     private readonly ThemeSwitch themeSwitch;
     private readonly PreviewSizeSwitch sizeSwitch;
     private readonly WindowPlacementTracker? placementTracker;
-    private readonly Action? unsubscribeErrors;
     private IReadOnlyList<string> catalog = [];
-    private string currentPath;
-    private FileChangeWatcher? watcher;
-    private object? lastGood;
     private bool isSyncingSelection;
 
     public PreviewWindow(HostOptions options, IReadOnlyList<string> notes)
     {
         this.options = options;
-        currentPath = Path.GetFullPath(options.AxamlPath);
-        renderer = new PreviewRenderer(Assembly.Load(options.AssemblyName), options.ProjectDirectory);
+        livePreview = new LivePreview(new PreviewRenderer(Assembly.Load(options.AssemblyName), options.ProjectDirectory));
+        livePreview.Changed += (_, _) => ShowPreview();
 
         Width = 1280;
         Height = 800;
@@ -135,9 +131,8 @@ internal sealed class PreviewWindow : Window
         // The user can add files while the window is open.
         Activated += (_, _) => RefreshCatalog();
 
-        unsubscribeErrors = DispatcherErrors.Subscribe(OnUnhandledException);
+        Show(options.AxamlPath);
         RefreshCatalog();
-        Show(currentPath);
         if (options.SetupError is not null)
         {
             ShowError($"Cannot open the file: {options.SetupError}");
@@ -166,8 +161,7 @@ internal sealed class PreviewWindow : Window
 
     protected override void OnClosed(EventArgs e)
     {
-        watcher?.Dispose();
-        unsubscribeErrors?.Invoke();
+        livePreview.Dispose();
         base.OnClosed(e);
     }
 
@@ -276,7 +270,8 @@ internal sealed class PreviewWindow : Window
 
         isSyncingSelection = true;
         fileList.ItemsSource = items;
-        fileList.SelectedItem = items.FirstOrDefault(p => string.Equals(p, RelativePath(currentPath), pathComparison));
+        string shown = RelativePath(livePreview.FilePath);
+        fileList.SelectedItem = items.FirstOrDefault(p => string.Equals(p, shown, pathComparison));
         isSyncingSelection = false;
     }
 
@@ -318,7 +313,7 @@ internal sealed class PreviewWindow : Window
     {
         if (options.HandOffFile is null)
         {
-            ShowError(new InvalidOperationException($"'{path}' belongs to another project. Start axview with that file."));
+            ShowError($"'{path}' belongs to another project. Start axview with that file.");
             return;
         }
 
@@ -331,44 +326,24 @@ internal sealed class PreviewWindow : Window
 
     private void Show(string path)
     {
-        currentPath = Path.GetFullPath(path);
-        Title = $"AxView - {RelativePath(currentPath)}";
-        watcher?.Dispose();
-        watcher = new FileChangeWatcher(currentPath, Reload);
+        Title = $"AxView - {RelativePath(path)}";
+        livePreview.Show(path);
         ShowCatalog();
-        host.Content = null;
-        lastGood = null;
-        Reload();
     }
 
-    private void Reload()
+    private void ShowPreview()
     {
-        try
+        host.Content = livePreview.View;
+        noDataContextBadge.IsVisible = livePreview.View is { DataContext: null };
+        if (livePreview.Error is not null)
         {
-            Control view = renderer.Render(currentPath);
-            host.Content = view;
-            HideError();
-            noDataContextBadge.IsVisible = view.DataContext is null;
-            lastGood = view;
-            status.Text = $"Rendered {DateTime.Now:HH:mm:ss}   {currentPath}";
-            Console.WriteLine($"axview: rendered {RelativePath(currentPath)}");
-        }
-        catch (Exception ex)
-        {
-            // User XAML and its code can throw any exception. Show it and keep the last good render.
-            ShowError(ex);
-        }
-    }
-
-    // A load can succeed and then fail in layout or binding. Go back to the last good render.
-    private void OnUnhandledException(Exception ex)
-    {
-        if (!ReferenceEquals(host.Content, lastGood))
-        {
-            host.Content = lastGood;
+            ShowError(livePreview.Error);
+            return;
         }
 
-        ShowError(ex);
+        HideError();
+        status.Text = $"Rendered {DateTime.Now:HH:mm:ss}   {livePreview.FilePath}";
+        Console.WriteLine($"axview: rendered {RelativePath(livePreview.FilePath)}");
     }
 
     private void SaveSnapshotAndExit()
@@ -387,20 +362,14 @@ internal sealed class PreviewWindow : Window
         }
     }
 
-    private void ShowError(Exception ex)
-    {
-        Exception shown = ex is TargetInvocationException { InnerException: { } inner } ? inner : ex;
-        ShowError($"{shown.GetType().Name}: {shown.Message}");
-    }
-
     private void ShowError(string message)
     {
         errorText.Text = message;
         errorPanel.IsVisible = true;
         Console.Error.WriteLine($"axview: error: {errorText.Text}");
-        status.Text = lastGood is null
-            ? $"Error {DateTime.Now:HH:mm:ss}   {currentPath}"
-            : $"Error {DateTime.Now:HH:mm:ss}. Showing the last good render.   {currentPath}";
+        status.Text = livePreview.View is null
+            ? $"Error {DateTime.Now:HH:mm:ss}   {livePreview.FilePath}"
+            : $"Error {DateTime.Now:HH:mm:ss}. Showing the last good render.   {livePreview.FilePath}";
     }
 
     private void HideError() => errorPanel.IsVisible = false;
