@@ -5,8 +5,6 @@ using Avalonia.Controls;
 using Avalonia.Controls.Templates;
 using Avalonia.Styling;
 
-using AxView.Protocol;
-
 namespace AxView.Host.Startup;
 
 /// <summary>Takes the target app's themes, styles, resources, and data templates out of a new instance of the target app.</summary>
@@ -19,13 +17,13 @@ namespace AxView.Host.Startup;
 internal static class TargetAppImporter
 {
     /// <summary>Creates the target app and takes its styles.</summary>
-    /// <param name="options">The options of the host. They name the assemblies to search for the app.</param>
+    /// <param name="projects">The projects of the preview. The search for the app looks in the view assembly, then in the app assembly.</param>
     /// <param name="notes">Gets a note about the result.</param>
     /// <param name="runStartup">True to call OnFrameworkInitializationCompleted of the app.</param>
     /// <returns>The styles of the app, or <see cref="TargetStyles.None"/> when the app is missing or fails.</returns>
-    public static TargetStyles Import(HostOptions options, List<string> notes, bool runStartup = false)
+    public static TargetStyles Import(ProjectSet projects, List<string> notes, bool runStartup = false)
     {
-        Type? appType = FindAppType(options.AssemblyName) ?? FindAppType(options.AppAssemblyName);
+        Type? appType = FindAppType(projects.ViewAssembly) ?? FindAppType(projects.AppAssembly);
         if (appType is null)
         {
             notes.Add("No Application class found. Rendering without the app's styles.");
@@ -71,19 +69,9 @@ internal static class TargetAppImporter
         }
     }
 
-    private static Type? FindAppType(string? assemblyName)
+    private static Type? FindAppType(Assembly? assembly)
     {
-        if (assemblyName is null)
-        {
-            return null;
-        }
-
-        Assembly assembly;
-        try
-        {
-            assembly = Assembly.Load(assemblyName);
-        }
-        catch (FileNotFoundException)
+        if (assembly is null)
         {
             return null;
         }

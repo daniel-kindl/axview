@@ -74,26 +74,20 @@ internal sealed class AppIncludes
 
     /// <summary>Finds the app file in the project of the first renderer that has one, and reads its includes.</summary>
     /// <param name="renderers">
-    /// The renderers of the projects that can contain the app file, in order of preference.
-    /// For a library view, these are the renderers of the view project and of the app project.
+    /// The renderers of the project set, in order of preference: the view project, the app project, and the referenced projects.
+    /// An include can point into each of them.
     /// </param>
     /// <param name="styles">The styles of the app. They must agree with the build of App.axaml.</param>
     /// <param name="resources">The resources of the app. They must agree with the build of App.axaml.</param>
-    /// <param name="libraries">The renderers of the referenced projects. An include can point into them.</param>
     /// <returns>The includes of the app file, or null when no project has an app file.</returns>
-    public static AppIncludes? Find(
-        IEnumerable<PreviewRenderer> renderers,
-        Styles styles,
-        IResourceDictionary resources,
-        IEnumerable<PreviewRenderer>? libraries = null)
+    public static AppIncludes? Find(IReadOnlyList<PreviewRenderer> renderers, Styles styles, IResourceDictionary resources)
     {
-        List<PreviewRenderer> candidates = [.. renderers];
-        foreach (PreviewRenderer renderer in candidates)
+        foreach (PreviewRenderer renderer in renderers)
         {
             string? appPath = FindAppFile(renderer.ProjectDirectory);
             if (appPath is not null)
             {
-                return new AppIncludes(renderer, appPath, styles, resources, candidates.Concat(libraries ?? []));
+                return new AppIncludes(renderer, appPath, styles, resources, renderers);
             }
         }
 

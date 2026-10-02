@@ -1,5 +1,3 @@
-using System.Reflection;
-
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
@@ -32,6 +30,7 @@ internal sealed class PreviewWindow : Window
         OperatingSystem.IsLinux() ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
 
     private readonly HostOptions options;
+    private readonly ProjectSet projects;
     private readonly LivePreview livePreview;
     private readonly ContentControl host = new();
     private readonly PreviewScope scope;
@@ -52,14 +51,16 @@ internal sealed class PreviewWindow : Window
     private IReadOnlyList<string> catalog = [];
     private bool isSyncingSelection;
 
-    public PreviewWindow(HostOptions options, IReadOnlyList<string> notes, DesignServices services, TargetStyles target)
+    public PreviewWindow(HostOptions options, ProjectSet projects, IReadOnlyList<string> notes, DesignServices services, TargetStyles target)
     {
         this.options = options;
+        this.projects = projects;
         scope = new PreviewScope(target);
         host.Content = scope;
-        Assembly localAssembly = Assembly.Load(options.AssemblyName);
-        PreviewRenderer renderer = new(localAssembly, options.ProjectDirectory, services);
-        livePreview = new LivePreview(renderer);
+
+        // The renderer of the view project is first.
+        IReadOnlyList<PreviewRenderer> renderers = projects.CreateRenderers(services);
+        livePreview = new LivePreview(renderers[0]);
         livePreview.Changed += (_, _) => ShowPreview();
 
         Icon = AppIcon.Get();
@@ -76,7 +77,7 @@ internal sealed class PreviewWindow : Window
         themeSwitch = new ThemeSwitch(scope) { SelectedItem = settings.Theme };
         sizeSwitch = new PreviewSizeSwitch(host) { Size = settings.Size };
         viewModels = new Dictionary<string, string>(settings.ViewModels, StringComparer.FromComparison(pathComparison));
-        viewModelSwitch = new ViewModelSwitch(ViewModelCatalog.List(localAssembly, services));
+        viewModelSwitch = new ViewModelSwitch(ViewModelCatalog.List(projects.ViewAssembly, services));
         viewModelSwitch.SelectionChanged += (_, _) => OnViewModelSelected();
 
         status = new TextBlock { Margin = new Thickness(8, 4), FontSize = 12, TextTrimming = TextTrimming.CharacterEllipsis };
@@ -152,14 +153,7 @@ internal sealed class PreviewWindow : Window
         if (options.HandOffFile is not null)
         {
             // A library view also needs a rebuild when the code of the app or of a referenced project changes.
-            List<string> codeDirectories = [options.ProjectDirectory];
-            if (options.AppProjectDirectory is not null)
-            {
-                codeDirectories.Add(options.AppProjectDirectory);
-            }
-
-            codeDirectories.AddRange(options.ReferencedProjectDirectories);
-            foreach (string directory in codeDirectories)
+            foreach (string directory in projects.CodeDirectories)
             {
                 codeWatchers.Add(
                     FileChangeWatcher.ForCodeFiles(directory, () => StopWithHandOff(livePreview.FilePath, ExitReason.Rebuild)));
@@ -167,14 +161,7 @@ internal sealed class PreviewWindow : Window
         }
 
         // The app file of a library view can be in the app project.
-        List<PreviewRenderer> appRenderers = [renderer];
-        if (options is { AppProjectDirectory: not null, AppAssemblyName: not null })
-        {
-            appRenderers.Add(new PreviewRenderer(Assembly.Load(options.AppAssemblyName), options.AppProjectDirectory, services));
-        }
-
-        IEnumerable<PreviewRenderer> libraries = ProjectRenderers.Create(options.ReferencedProjectDirectories, services);
-        appIncludes = AppIncludes.Find(appRenderers, scope.Styles, scope.Resources, libraries);
+        appIncludes = AppIncludes.Find(renderers, scope.Styles, scope.Resources);
         foreach (string directory in appIncludes?.ProjectDirectories ?? [])
         {
             axamlWatchers.Add(FileChangeWatcher.ForAxamlFiles(directory, UpdateIncludes));
@@ -479,7 +466,7 @@ internal sealed class PreviewWindow : Window
 
     // The app output folder shows which build the preview uses, for example Debug or Release.
     private string OutputDirectory() =>
-        Path.GetDirectoryName(System.Reflection.Assembly.Load(options.AssemblyName).Location) ?? string.Empty;
+        Path.GetDirectoryName(projects.ViewAssembly.Location) ?? string.Empty;
 
     private void HideError() => errorPanel.IsVisible = false;
 
