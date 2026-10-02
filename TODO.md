@@ -8,9 +8,7 @@ Do not change or use again a number.
 
 ## Now
 
-- [ ] #53 **Versions from git tags (S).** Add MinVer. A `v<semver>` tag gives the version, for example `v1.2.0` or `v1.3.0-rc.1`.
-  A build without a git work tree, for example from the source archive, must not fail.
-  Write the tag rules in `docs/RELEASE.md`.
+- [ ] #54 **Pack only (S).** Remove the smoke check from `pack.ps1`. The script only publishes and writes the archives.
 - [ ] #37 **Own chrome theme (M).** When the app ships no Fluent or Simple theme, get `Avalonia.Themes.Simple` from NuGet.
   Use the Avalonia version of the app, as `NuGetLoaderSource` does for the loader.
   Add the package to the probe path of `LoaderResolver`. Then the chrome does not use a second instance of the app styles.
@@ -83,3 +81,4 @@ Each known issue is now an item: #30 to #39.
 - [x] #50 Nested includes after an App.axaml reload: no change necessary. The reload gives the compiled content, not include objects.
 - [x] #47 Packaging script: `pack.ps1 src|bin|all` writes the archives to `artifacts/`. A smoke check renders a new small app. `50bb0bf`
 - [x] #49 App.axaml data templates: `TargetStyles.ReplaceWith` replaces the data templates of each owner, and the theme variant. `ff65f2c`
+- [x] #53 Versions from git tags: MinVer gives the version from a `v<semver>` tag. `docs/RELEASE.md` has the tag rules. `14369a7`
