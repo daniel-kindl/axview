@@ -8,6 +8,9 @@ Do not change or use again a number.
 
 ## Now
 
+- [ ] #53 **Versions from git tags (S).** Add MinVer. A `v<semver>` tag gives the version, for example `v1.2.0` or `v1.3.0-rc.1`.
+  A build without a git work tree, for example from the source archive, must not fail.
+  Write the tag rules in `docs/RELEASE.md`.
 - [ ] #37 **Own chrome theme (M).** When the app ships no Fluent or Simple theme, get `Avalonia.Themes.Simple` from NuGet.
   Use the Avalonia version of the app, as `NuGetLoaderSource` does for the loader.
   Add the package to the probe path of `LoaderResolver`. Then the chrome does not use a second instance of the app styles.

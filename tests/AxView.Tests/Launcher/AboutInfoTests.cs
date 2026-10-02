@@ -21,6 +21,16 @@ public sealed class AboutInfoTests
     }
 
     [Fact]
+    public void Read_GivesTheVersionFromTheGitTags()
+    {
+        // The SDK gives 1.0.0 when nothing sets the version. MinVer gives 0.0.0-alpha.0.<height> without a tag.
+        AboutInfo info = AboutInfo.Read(typeof(AboutInfo).Assembly);
+
+        Assert.NotEqual("1.0.0", info.Version);
+        Assert.Matches(@"^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$", info.Version);
+    }
+
+    [Fact]
     public void Read_GivesTheWriteDateOfTheAssemblyAsTheBuildDate()
     {
         Assembly assembly = typeof(AboutInfo).Assembly;
