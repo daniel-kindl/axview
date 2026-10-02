@@ -1,4 +1,4 @@
-namespace AxView.Host.UI;
+namespace AxView.Protocol;
 
 /// <summary>The theme variant that the user selects for the preview.</summary>
 internal enum PreviewTheme

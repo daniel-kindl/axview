@@ -1,6 +1,8 @@
 using Avalonia.Controls;
 using Avalonia.Styling;
 
+using AxView.Protocol;
+
 namespace AxView.Host.UI;
 
 /// <summary>Lets the user select the theme variant of a window: Default, Light, or Dark.</summary>

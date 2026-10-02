@@ -99,7 +99,8 @@ internal sealed class PickerWindow : Window
         Hide();
         try
         {
-            int exitCode = await HostSession.CreateDefault().RunAsync(path, outputDir: null, snapshotPath: null, recent.Add);
+            HostSession session = HostSession.CreateDefault(recent.SettingsFile);
+            int exitCode = await session.RunAsync(path, outputDir: null, snapshotPath: null, recent.Add);
             if (exitCode == 0)
             {
                 Close();
@@ -120,6 +121,9 @@ internal sealed class PickerWindow : Window
     private void ShowRecentFiles()
     {
         recentList.ItemsSource = recent.Files.ToList();
+
+        // The first file is the last open file. Enter opens it again.
+        recentList.SelectedIndex = 0;
         bool hasFiles = recent.Files.Count > 0;
         recentHeader.IsVisible = hasFiles;
         recentList.IsVisible = hasFiles;

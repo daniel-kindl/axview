@@ -45,7 +45,8 @@ internal static class Program
         try
         {
             RecentFiles recent = RecentFiles.ForCurrentUser();
-            return HostSession.CreateDefault().RunAsync(axaml, outputDir, snapshot, recent.Add).GetAwaiter().GetResult();
+            HostSession session = HostSession.CreateDefault(recent.SettingsFile);
+            return session.RunAsync(axaml, outputDir, snapshot, recent.Add).GetAwaiter().GetResult();
         }
         catch (PreviewSetupException ex)
         {

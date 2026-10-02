@@ -13,6 +13,7 @@ namespace AxView.Protocol;
 /// <param name="SnapshotPath">If set, the host saves one PNG to this path and exits.</param>
 /// <param name="HandOffFile">If set, the host writes a <see cref="HandOff"/> here before a project switch.</param>
 /// <param name="SetupError">If set, the host shows this error. The launcher cannot prepare the file that the user opened.</param>
+/// <param name="SettingsFile">If set, the host reads and writes its window and theme in this <see cref="Settings"/> file.</param>
 internal sealed record HostOptions(
     string AxamlPath,
     string ProjectDirectory,
@@ -21,7 +22,8 @@ internal sealed record HostOptions(
     string LoaderPath,
     string? SnapshotPath,
     string? HandOffFile,
-    string? SetupError = null)
+    string? SetupError = null,
+    string? SettingsFile = null)
 {
     private const string AxamlKey = "--axaml";
     private const string ProjectKey = "--project";
@@ -31,9 +33,10 @@ internal sealed record HostOptions(
     private const string SnapshotKey = "--snapshot";
     private const string HandOffKey = "--hand-off";
     private const string SetupErrorKey = "--setup-error";
+    private const string SettingsKey = "--settings";
 
     private static readonly string[] keys =
-        [AxamlKey, ProjectKey, AssemblyKey, AppAssemblyKey, LoaderKey, SnapshotKey, HandOffKey, SetupErrorKey];
+        [AxamlKey, ProjectKey, AssemblyKey, AppAssemblyKey, LoaderKey, SnapshotKey, HandOffKey, SetupErrorKey, SettingsKey];
 
     /// <summary>Reads the options from the host command line.</summary>
     /// <exception cref="ArgumentException">The arguments are not valid.</exception>
@@ -70,7 +73,8 @@ internal sealed record HostOptions(
             Required(LoaderKey),
             values.GetValueOrDefault(SnapshotKey),
             values.GetValueOrDefault(HandOffKey),
-            values.GetValueOrDefault(SetupErrorKey));
+            values.GetValueOrDefault(SetupErrorKey),
+            values.GetValueOrDefault(SettingsKey));
     }
 
     /// <summary>Writes the options as the host command line.</summary>
@@ -87,6 +91,7 @@ internal sealed record HostOptions(
         AddOptional(args, SnapshotKey, SnapshotPath);
         AddOptional(args, HandOffKey, HandOffFile);
         AddOptional(args, SetupErrorKey, SetupError);
+        AddOptional(args, SettingsKey, SettingsFile);
         return args;
     }
 

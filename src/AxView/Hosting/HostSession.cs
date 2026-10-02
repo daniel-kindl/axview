@@ -12,11 +12,16 @@ namespace AxView.Hosting;
 /// <param name="resolver">Finds the preview target of each file.</param>
 /// <param name="hostProcess">Runs each host.</param>
 /// <param name="log">Receives a line for each host that the session starts.</param>
-internal sealed class HostSession(PreviewTargetResolver resolver, IHostProcess hostProcess, TextWriter log)
+/// <param name="settingsFile">The settings file that keeps the window and the theme of each preview host.</param>
+internal sealed class HostSession(PreviewTargetResolver resolver, IHostProcess hostProcess, TextWriter log, string settingsFile)
 {
     /// <summary>Makes a session that runs the installed host and takes the XAML loader from NuGet.</summary>
-    public static HostSession CreateDefault() =>
-        new(new PreviewTargetResolver(new NuGetLoaderSource()), DotnetHostProcess.ForInstalledHost(), Console.Error);
+    /// <param name="settingsFile">The settings file that keeps the window and the theme of each preview host.</param>
+    public static HostSession CreateDefault(string settingsFile)
+    {
+        PreviewTargetResolver resolver = new(new NuGetLoaderSource());
+        return new HostSession(resolver, DotnetHostProcess.ForInstalledHost(), Console.Error, settingsFile);
+    }
 
     /// <param name="axamlPath">The first file to show.</param>
     /// <param name="outputDir">The app output to use, or null to find it.</param>
@@ -29,12 +34,19 @@ internal sealed class HostSession(PreviewTargetResolver resolver, IHostProcess h
         string handOffFile = Path.Combine(Path.GetTempPath(), $"axview-hand-off-{Guid.NewGuid():N}.json");
         PreviewTarget target = Open(axamlPath, outputDir, opened);
         string? setupError = null;
+
+        // A snapshot must not depend on the last window of the user.
+        string? hostSettingsFile = snapshotPath is null ? settingsFile : null;
         try
         {
             while (true)
             {
                 await log.WriteLineAsync($"axview: {target.AssemblyName} in '{target.Output.Directory}'");
-                HostOptions options = target.ToHostOptions(snapshotPath, handOffFile) with { SetupError = setupError };
+                HostOptions options = target.ToHostOptions(snapshotPath, handOffFile) with
+                {
+                    SetupError = setupError,
+                    SettingsFile = hostSettingsFile,
+                };
                 int exitCode = await hostProcess.RunAsync(target, options);
                 HandOff? handOff = exitCode == (int)ExitReason.SwitchProject ? HandOff.Load(handOffFile) : null;
                 if (handOff is null)

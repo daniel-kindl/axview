@@ -25,7 +25,7 @@ public sealed class PickerWindowTests
     public void PickerWindow_ShowsAHintWhenNoFileIsRecent()
     {
         using TempDir dir = new();
-        RecentFiles recent = new(Path.Combine(dir.Path, "recent.json"));
+        RecentFiles recent = new(Path.Combine(dir.Path, "settings.json"));
 
         PickerWindow window = new(recent);
 
@@ -37,12 +37,26 @@ public sealed class PickerWindowTests
     public void PickerWindow_HidesTheHintWhenAFileIsRecent()
     {
         using TempDir dir = new();
-        RecentFiles recent = new(Path.Combine(dir.Path, "recent.json"));
+        RecentFiles recent = new(Path.Combine(dir.Path, "settings.json"));
         recent.Add(dir.Write("Views/MainView.axaml"));
 
         PickerWindow window = new(recent);
 
         Assert.False(VisibleText(window, PickerWindow.NoRecentFilesText));
+    }
+
+    [AvaloniaFact]
+    public void PickerWindow_SelectsTheLastOpenFile()
+    {
+        using TempDir dir = new();
+        RecentFiles recent = new(Path.Combine(dir.Path, "settings.json"));
+        recent.Add(dir.Write("Views/Old.axaml"));
+        string last = dir.Write("Views/Last.axaml");
+        recent.Add(last);
+
+        PickerWindow window = new(recent);
+
+        Assert.Equal(last, window.GetLogicalDescendants().OfType<ListBox>().Single().SelectedItem);
     }
 
     private static bool VisibleText(Window window, string text) =>

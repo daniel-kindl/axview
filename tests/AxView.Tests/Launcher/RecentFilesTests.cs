@@ -1,4 +1,5 @@
 using AxView.Picker;
+using AxView.Protocol;
 using AxView.Tests.Fixtures;
 
 namespace AxView.Tests.Launcher;
@@ -9,7 +10,7 @@ public sealed class RecentFilesTests
     public void Add_PutsTheFileFirst()
     {
         using TempDir dir = new();
-        RecentFiles recent = new(Path.Combine(dir.Path, "recent.json"));
+        RecentFiles recent = new(Path.Combine(dir.Path, "settings.json"));
 
         recent.Add("a.axaml");
         recent.Add("b.axaml");
@@ -21,7 +22,7 @@ public sealed class RecentFilesTests
     public void Add_MovesAKnownFileToTheTopWithoutADuplicate()
     {
         using TempDir dir = new();
-        RecentFiles recent = new(Path.Combine(dir.Path, "recent.json"));
+        RecentFiles recent = new(Path.Combine(dir.Path, "settings.json"));
 
         recent.Add("a.axaml");
         recent.Add("b.axaml");
@@ -34,7 +35,7 @@ public sealed class RecentFilesTests
     public void Add_KeepsOnlyTheNewestFiles()
     {
         using TempDir dir = new();
-        RecentFiles recent = new(Path.Combine(dir.Path, "recent.json"));
+        RecentFiles recent = new(Path.Combine(dir.Path, "settings.json"));
 
         for (int i = 0; i < RecentFiles.Capacity + 5; i++)
         {
@@ -49,7 +50,7 @@ public sealed class RecentFilesTests
     public void Files_SurviveANewInstance()
     {
         using TempDir dir = new();
-        string store = Path.Combine(dir.Path, "sub", "recent.json");
+        string store = Path.Combine(dir.Path, "sub", "settings.json");
         new RecentFiles(store).Add("a.axaml");
 
         RecentFiles reloaded = new(store);
@@ -61,8 +62,20 @@ public sealed class RecentFilesTests
     public void Files_AreEmptyWhenTheStoreIsCorrupt()
     {
         using TempDir dir = new();
-        string store = dir.Write("recent.json", "{ not json");
+        string store = dir.Write("settings.json", "{ not json");
 
         Assert.Empty(new RecentFiles(store).Files);
+    }
+
+    [Fact]
+    public void Add_KeepsTheOtherSettings()
+    {
+        using TempDir dir = new();
+        string store = Path.Combine(dir.Path, "settings.json");
+        (Settings.Default with { Theme = PreviewTheme.Dark }).Save(store);
+
+        new RecentFiles(store).Add("a.axaml");
+
+        Assert.Equal(PreviewTheme.Dark, Settings.Load(store).Theme);
     }
 }

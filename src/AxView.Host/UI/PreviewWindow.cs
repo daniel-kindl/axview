@@ -37,6 +37,8 @@ internal sealed class PreviewWindow : Window
     private readonly Border noDataContextBadge;
     private readonly TextBox filter;
     private readonly ListBox fileList;
+    private readonly ThemeSwitch themeSwitch;
+    private readonly WindowPlacementTracker? placementTracker;
     private readonly Action? unsubscribeErrors;
     private IReadOnlyList<string> catalog = [];
     private string currentPath;
@@ -52,6 +54,15 @@ internal sealed class PreviewWindow : Window
 
         Width = 1280;
         Height = 800;
+        Settings settings = options.SettingsFile is null ? Settings.Default : Settings.Load(options.SettingsFile);
+        if (settings.Window is not null)
+        {
+            WindowPlacementTracker.Apply(this, settings.Window);
+        }
+
+        // A snapshot has no settings file. Its window must not change the window of the user.
+        placementTracker = options.SettingsFile is null ? null : new WindowPlacementTracker(this);
+        themeSwitch = new ThemeSwitch(this) { SelectedItem = settings.Theme };
 
         status = new TextBlock { Margin = new Thickness(8, 4), FontSize = 12, TextTrimming = TextTrimming.CharacterEllipsis };
         ToolTip.SetTip(status, string.Join(Environment.NewLine, notes));
@@ -141,6 +152,16 @@ internal sealed class PreviewWindow : Window
         }
     }
 
+    // Save before the window closes. A closed window has no position.
+    protected override void OnClosing(WindowClosingEventArgs e)
+    {
+        base.OnClosing(e);
+        if (!e.Cancel)
+        {
+            SaveSettings();
+        }
+    }
+
     protected override void OnClosed(EventArgs e)
     {
         watcher?.Dispose();
@@ -204,13 +225,36 @@ internal sealed class PreviewWindow : Window
             {
                 Orientation = Orientation.Horizontal,
                 Margin = new Thickness(8, 4),
-                Children = { new ThemeSwitch(this) },
+                Children = { themeSwitch },
             },
             BorderThickness = new Thickness(0, 0, 0, 1),
             BorderBrush = Brushes.Gray,
         };
         DockPanel.SetDock(toolbar, Dock.Top);
         return new DockPanel { Children = { toolbar, preview } };
+    }
+
+    // The settings file must not stop the host. A failed write only loses the window and the theme.
+    private void SaveSettings()
+    {
+        if ((options.SettingsFile is null) || (placementTracker is null))
+        {
+            return;
+        }
+
+        try
+        {
+            Settings settings = Settings.Load(options.SettingsFile) with
+            {
+                Window = placementTracker.GetPlacement(),
+                Theme = themeSwitch.SelectedItem is PreviewTheme theme ? theme : PreviewTheme.Default,
+            };
+            settings.Save(options.SettingsFile);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            Console.Error.WriteLine($"axview: cannot save the settings: {ex.Message}");
+        }
     }
 
     private void RefreshCatalog()

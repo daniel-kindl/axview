@@ -7,6 +7,8 @@ namespace AxView.Tests.Launcher;
 
 public sealed class HostSessionTests
 {
+    private const string SettingsFile = "/tools/axview/settings.json";
+
     [Fact]
     public async Task RunAsync_ReturnsTheExitCodeOfTheHostAsync()
     {
@@ -24,6 +26,7 @@ public sealed class HostSessionTests
         HostOptions options = Assert.Single(hosts.Runs);
         Assert.Equal(view, options.AxamlPath);
         Assert.Equal("shot.png", options.SnapshotPath);
+        Assert.Null(options.SettingsFile);
     }
 
     [Fact]
@@ -46,6 +49,7 @@ public sealed class HostSessionTests
         Assert.Equal([first, second], hosts.Runs.Select(options => options.AxamlPath));
         Assert.Equal("Second", hosts.Runs[1].AssemblyName);
         Assert.False(File.Exists(hosts.Runs[0].HandOffFile));
+        Assert.All(hosts.Runs, options => Assert.Equal(SettingsFile, options.SettingsFile));
     }
 
     [Fact]
@@ -98,5 +102,5 @@ public sealed class HostSessionTests
     }
 
     private static HostSession Session(FakeHostProcess hosts) =>
-        new(new PreviewTargetResolver(new FakeLoaderSource()), hosts, TextWriter.Null);
+        new(new PreviewTargetResolver(new FakeLoaderSource()), hosts, TextWriter.Null, SettingsFile);
 }

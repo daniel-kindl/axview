@@ -5,6 +5,7 @@ using Avalonia.Headless.XUnit;
 using Avalonia.Styling;
 
 using host::AxView.Host.UI;
+using host::AxView.Protocol;
 
 namespace AxView.Tests.Host;
 

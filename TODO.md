@@ -34,7 +34,10 @@ When you finish an item, mark it `[x]` and add the commit hash.
 - [ ] **CI snapshot mode (S).** Render all files of a project. Write one PNG per file and a summary. Fail on error.
   Move the snapshot out of `PreviewWindow` into a snapshot runner that uses `PreviewRenderer`.
   Capture only the preview. Get the result from the renderer and the dispatcher errors, not from the error panel.
-- [ ] **Packaging (M).** Publish as a `dotnet tool` (`axview`). Bundle the host in the tool package.
+- [ ] **Packaging (M).** Publish AxView as one portable exe (`axview.exe`).
+  The host must be a `.dll` on disk, because `dotnet exec` starts it in the target runtime.
+  Thus the exe must unpack the host before it starts the host.
+  The settings file is next to the exe. It moves to `LocalApplicationData/AxView` only when the exe folder is not writable.
 - [ ] **Linux and macOS check (S).** Run the tests and one snapshot on each OS.
 
 ## Known issues
@@ -59,3 +62,4 @@ When you finish an item, mark it `[x]` and add the commit hash.
 - [x] Style and resource previews: `Design.PreviewWith` for a `Styles`, `Style`, or `ResourceDictionary` root. `efef44c`
 - [x] Theme switch: a toolbar switch for Default, Light, and Dark (`RequestedThemeVariant`). `b385a86`
 - [x] More DesignInstance forms: `Type={x:Type ...}`, and a `d:DataContext` with a `d:DesignInstance` on a child element. `086075a`
+- [x] Settings file: `settings.json` next to the app keeps the recent files, the window placement, and the theme.
