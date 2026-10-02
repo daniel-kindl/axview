@@ -23,8 +23,6 @@ Do not change or use again a number.
   Option A: the launcher shows a "Building" window.
   Option B: the host runs from a copy of the output. It stays open during the build and shows a build overlay.
 - [ ] #20 **Avalonia 12 (L).** Check the loader and host APIs. A second host build may be necessary.
-- [ ] #49 **App.axaml data templates (S).** A reload of App.axaml does not change the data templates or the theme variant of the copies.
-  Give each owner a way to replace its data templates. Then `TargetStyles.ReplaceWith` can move them too.
 - [ ] #51 **StaticResource from an include of a view (S).** The runtime loader resolves a `StaticResource` with the compiled include.
   The include walk replaces the include after the load. Thus the `StaticResource` keeps the value of the build.
   A `DynamicResource` and a style get the changed value.
@@ -81,3 +79,4 @@ Each known issue is now an item: #30 to #39.
 - [x] #36 View includes: `AppIncludes` walks a control, `Styles`, `Style`, or `ResourceDictionary` root after each render. `8a00e2a`
 - [x] #50 Nested includes after an App.axaml reload: no change necessary. The reload gives the compiled content, not include objects.
 - [x] #47 Packaging script: `pack.ps1 src|bin|all` writes the archives to `artifacts/`. A smoke check renders a new small app. `50bb0bf`
+- [x] #49 App.axaml data templates: `TargetStyles.ReplaceWith` replaces the data templates of each owner, and the theme variant. `ff65f2c`
