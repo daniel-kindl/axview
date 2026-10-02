@@ -47,6 +47,26 @@ _Avoid_: loader assembly, compiler
 All the facts that the launcher finds for one AXAML file before it starts a host.
 _Avoid_: target, config
 
+**View project**:
+The project that contains the shown AXAML file. It can be the app project or a library.
+_Avoid_: local project, current project
+
+**App project**:
+The project of the target app. For a library view, it is a different project from the view project.
+_Avoid_: exe project, startup project
+
+**Referenced project**:
+A project that the view project or the app project references. Its code and include files belong to the preview too.
+_Avoid_: dependency, library project
+
+**Project set**:
+The view project, the app project, and the referenced projects of one preview, each with its assembly.
+_Avoid_: solution, project list
+
+**App styles**:
+The styles, resources, data templates, and theme variant that App.axaml of the target app loads. Each place that shows them gets its own copy.
+_Avoid_: target styles, theme
+
 ## Preview
 
 **Preview**:
@@ -56,6 +76,18 @@ _Avoid_: view, render, page
 **Live preview**:
 The host module that shows one file, loads it again on each save, and keeps the last good preview on an error.
 _Avoid_: reloader, preview session
+
+**Project preview**:
+The host module that shows the files of one project. It decides when the host stops, and which file the next host shows.
+_Avoid_: preview session, controller, workspace
+
+**Stop request**:
+The exit reason and the next file that a project preview gives when the host must stop.
+_Avoid_: shutdown, quit
+
+**Host mode**:
+The kind of work that one host does: an interactive preview, one snapshot, or a snapshot of each file of the project.
+_Avoid_: run mode, flags
 
 **Project catalog**:
 The list of the AXAML files of one project that the host can show without a restart.
