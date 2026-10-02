@@ -188,6 +188,47 @@ public sealed class AppIncludesTests
         Assert.Null(AppIncludes.FindAppFile(dir.Path));
     }
 
+    [AvaloniaFact]
+    public void Find_LibraryProject_LoadsTheIncludesOfTheAppFileInTheAppProject()
+    {
+        using TempDir library = new();
+        using TempDir appProject = new();
+        _ = library.Write("Views/Main.axaml", $"""<UserControl {Xmlns} />""");
+        _ = WriteApp(appProject, styles: """<StyleInclude Source="/Styles/Main.axaml" />""");
+        string main = appProject.Write("Styles/Main.axaml", TagStyles("Before"));
+        Styles styles = [LoadStyles(appProject, main)];
+        AppIncludes? includes = AppIncludes.Find([Renderer(library), Renderer(appProject)], styles, new ResourceDictionary());
+
+        File.WriteAllText(main, TagStyles("After"));
+        IncludeUpdate? update = includes?.Update();
+
+        Assert.Equal(appProject.Path, includes?.ProjectDirectory);
+        Assert.True(update?.IsChanged);
+        Assert.Equal("After", TagOf(styles[0]));
+    }
+
+    [AvaloniaFact]
+    public void Find_BothProjectsHaveAnAppFile_UsesTheFirstProject()
+    {
+        using TempDir first = new();
+        using TempDir second = new();
+        _ = WriteApp(first);
+        _ = WriteApp(second);
+
+        AppIncludes? includes = AppIncludes.Find([Renderer(first), Renderer(second)], [], new ResourceDictionary());
+
+        Assert.Equal(first.Path, includes?.ProjectDirectory);
+    }
+
+    [AvaloniaFact]
+    public void Find_NoAppFile_GivesNull()
+    {
+        using TempDir dir = new();
+        _ = dir.Write("Views/Main.axaml", $"""<UserControl {Xmlns} />""");
+
+        Assert.Null(AppIncludes.Find([Renderer(dir)], [], new ResourceDictionary()));
+    }
+
     private static string WriteApp(TempDir dir, string styles = "", string resources = "") => dir.Write("App.axaml", $"""
         <Application {Xmlns} x:Class="AxView.Tests.App">
           <Application.Resources>{resources}</Application.Resources>

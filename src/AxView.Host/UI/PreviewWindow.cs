@@ -164,12 +164,17 @@ internal sealed class PreviewWindow : Window
             }
         }
 
-        // The app file of a library view is in another project. Its includes do not load again.
-        string? appFile = AppIncludes.FindAppFile(options.ProjectDirectory);
-        if (appFile is not null)
+        // The app file of a library view can be in the app project.
+        List<PreviewRenderer> appRenderers = [renderer];
+        if (options is { AppProjectDirectory: not null, AppAssemblyName: not null })
         {
-            appIncludes = new AppIncludes(renderer, appFile, scope.Styles, scope.Resources);
-            axamlWatcher = FileChangeWatcher.ForAxamlFiles(options.ProjectDirectory, UpdateIncludes);
+            appRenderers.Add(new PreviewRenderer(Assembly.Load(options.AppAssemblyName), options.AppProjectDirectory, services));
+        }
+
+        appIncludes = AppIncludes.Find(appRenderers, scope.Styles, scope.Resources);
+        if (appIncludes is not null)
+        {
+            axamlWatcher = FileChangeWatcher.ForAxamlFiles(appIncludes.ProjectDirectory, UpdateIncludes);
         }
 
         Show(options.AxamlPath);
