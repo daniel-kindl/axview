@@ -11,10 +11,6 @@ Do not change or use again a number.
 
 ## Next
 
-- [ ] #33 **Window styles on the frame (S).** Apply a `Style Selector="Window"` of the app to the preview frame.
-  Try `StyleKeyOverride => typeof(Window)` on `PreviewFrame`. Always set an explicit `Theme`, else the chrome Window theme applies.
-  Write a test for a setter of a window-only property, for example `Title`.
-  If that setter throws, copy only the frame setters of each matching style.
 - [ ] #34 **App startup services (S).** Document that `AxViewDesign.CreateServices` must set static services, for example `App.Services`.
   Then a `ViewLocator` with DI works.
   Add an opt-in setting that calls `OnFrameworkInitializationCompleted` of the imported app. Its `ApplicationLifetime` is null.
@@ -87,3 +83,4 @@ Each known issue is now an item: #30 to #39.
 - [x] #30 No DataContext badge on style roots: the renderer gives the root kind. The window hides the badge for a style root. `a7c2453`
 - [x] #31 App project watch: the launcher gives the app project folder in `--app-project`. The host watches its C# files. `6419032`
 - [x] #32 Library include reload: `AppIncludes.Find` looks for App.axaml in the view project, then in the app project. `c928c7a`
+- [x] #33 Window styles on the frame: the frame has the style key of a window, and always an explicit theme. `eb3d514`
