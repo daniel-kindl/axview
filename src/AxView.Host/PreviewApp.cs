@@ -32,6 +32,7 @@ internal sealed class PreviewApp(HostOptions options, List<string> notes) : Appl
     {
         services = LoadServices();
         target = TargetAppImporter.Import(options, notes, LoadSettings().RunAppStartup);
+        AddAppResources();
         IStyle? chromeTheme = ChromeTheme.Load();
         if (chromeTheme is not null)
         {
@@ -65,6 +66,11 @@ internal sealed class PreviewApp(HostOptions options, List<string> notes) : Appl
 
         base.OnFrameworkInitializationCompleted();
     }
+
+    // Code that reads Application.Current finds the app resources. For example, a StaticResource of a style root does.
+    // The resources come first in the styles. Thus the chrome theme wins when both define a key.
+    private void AddAppResources() =>
+        Styles.Add(new Styles { Resources = TargetAppImporter.Import(options, []).Resources });
 
     private Settings LoadSettings() => options.SettingsFile is null ? Settings.Default : Settings.Load(options.SettingsFile);
 

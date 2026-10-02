@@ -1,5 +1,6 @@
 extern alias host;
 
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 
@@ -422,6 +423,36 @@ public sealed class PreviewRendererTests
         _ = Assert.IsType<Border>(preview);
         Assert.True(preview.TryFindResource("Greeting", out object? greeting));
         Assert.Equal("Hello", greeting);
+    }
+
+    [AvaloniaFact]
+    public void Render_FindsAStaticResourceOfTheApplicationInAStylesRoot()
+    {
+        using TempDir dir = new();
+        string file = dir.Write("Styles/Texts.axaml", $$"""
+            <Styles {{AvaloniaXmlns}} {{XamlXmlns}}>
+              <Design.PreviewWith>
+                <Border Padding="20"><TextBlock Text="Sample" /></Border>
+              </Design.PreviewWith>
+              <Style Selector="TextBlock">
+                <Setter Property="Tag" Value="{StaticResource AppTag}" />
+              </Style>
+            </Styles>
+            """);
+        Application.Current!.Resources["AppTag"] = "from-app";
+        try
+        {
+            Control preview = Renderer(dir).Render(file).Control;
+
+            Window window = new() { Content = preview };
+            window.Show();
+            TextBlock text = Assert.IsType<TextBlock>(Assert.IsType<Border>(preview).Child);
+            Assert.Equal("from-app", text.Tag);
+        }
+        finally
+        {
+            _ = Application.Current.Resources.Remove("AppTag");
+        }
     }
 
     [AvaloniaTheory]
