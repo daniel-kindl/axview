@@ -17,8 +17,6 @@ When you finish an item, mark it `[x]` and add the commit hash.
 - [ ] **Rebuild on .cs change (M).** Watch the project's `.cs` files.
   Run `dotnet build` on the app project, then start the host again on the same file.
   Keep the window position and size.
-- [ ] **More DesignInstance forms (S).** Support `{d:DesignInstance Type={x:Type vm:Type}}`.
-  Apply a `d:DataContext` with a `d:DesignInstance` on a child element. Today the renderer only removes it.
 - [ ] **Preview size (S).** Presets (phone, tablet, desktop) and a custom width and height.
 - [ ] **Watch included files (M).** Reload when a `ResourceInclude` or `StyleInclude` file of the project changes.
   An `avares://` include loads the compiled XAML of the built assembly, not the file on disk.
@@ -60,3 +58,4 @@ When you finish an item, mark it `[x]` and add the commit hash.
 - [x] Design DataContext forms: `d:DataContext="{d:DesignInstance ...}"`, and a `Design.DataContext` with content. `37d9f7d`
 - [x] Style and resource previews: `Design.PreviewWith` for a `Styles`, `Style`, or `ResourceDictionary` root. `efef44c`
 - [x] Theme switch: a toolbar switch for Default, Light, and Dark (`RequestedThemeVariant`). `b385a86`
+- [x] More DesignInstance forms: `Type={x:Type ...}`, and a `d:DataContext` with a `d:DesignInstance` on a child element. `086075a`
