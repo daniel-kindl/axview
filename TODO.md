@@ -8,11 +8,6 @@ Do not change or use again a number.
 
 ## Now
 
-- [ ] #43 **Project set (S).** Make one host module that knows the project set from `HostOptions`.
-  It gives the view project, the app project, the referenced projects, their assemblies, and the code folders.
-  Use it in `PreviewWindow`, `PreviewApp`, `TargetAppImporter`, and `ProjectRenderers`.
-  Remove the duplicate `Assembly.Load` calls. Keep the host protocol fields (ADR 0001).
-  Test the module in-process with temp project folders and the test assemblies.
 
 ## Next
 
@@ -94,3 +89,4 @@ Each known issue is now an item: #30 to #39.
 - [x] #41 Project reference watch: the launcher gives the ProjectReference folders in `--referenced-projects`. A `.cs` change in one starts a rebuild. `819b070`
 - [x] #42 Includes into another project: `AppIncludes` finds the project of an include by its avares URI. The host watches the AXAML files of each project. `6f08f06`
 - [x] #25 About dialog: the picker and the preview window show the version, the build date, and the Avalonia version. `83b0fd3`
+- [x] #43 Project set: one host module loads the assemblies of the view, app, and referenced projects. It replaces `ProjectRenderers`. `b687af9`
