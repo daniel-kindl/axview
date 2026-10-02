@@ -12,11 +12,11 @@ namespace AxView.Hosting;
 /// <param name="resolver">Finds the preview target of each file.</param>
 /// <param name="hostProcess">Runs each host.</param>
 /// <param name="log">Receives a line for each host that the session starts.</param>
-/// <param name="settingsFile">The settings file that keeps the window and the theme of each preview host.</param>
+/// <param name="settingsFile">The settings file that keeps the window, the theme, and the preview size of each preview host.</param>
 internal sealed class HostSession(PreviewTargetResolver resolver, IHostProcess hostProcess, TextWriter log, string settingsFile)
 {
     /// <summary>Makes a session that runs the installed host and takes the XAML loader from NuGet.</summary>
-    /// <param name="settingsFile">The settings file that keeps the window and the theme of each preview host.</param>
+    /// <param name="settingsFile">The settings file that keeps the window, the theme, and the preview size of each preview host.</param>
     public static HostSession CreateDefault(string settingsFile)
     {
         PreviewTargetResolver resolver = new(new NuGetLoaderSource());

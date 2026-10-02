@@ -13,7 +13,7 @@ namespace AxView.Protocol;
 /// <param name="SnapshotPath">If set, the host saves one PNG to this path and exits.</param>
 /// <param name="HandOffFile">If set, the host writes a <see cref="HandOff"/> here before a project switch.</param>
 /// <param name="SetupError">If set, the host shows this error. The launcher cannot prepare the file that the user opened.</param>
-/// <param name="SettingsFile">If set, the host reads and writes its window and theme in this <see cref="Settings"/> file.</param>
+/// <param name="SettingsFile">If set, the host reads and writes its window, theme, and preview size in this <see cref="Settings"/> file.</param>
 internal sealed record HostOptions(
     string AxamlPath,
     string ProjectDirectory,

@@ -38,6 +38,7 @@ internal sealed class PreviewWindow : Window
     private readonly TextBox filter;
     private readonly ListBox fileList;
     private readonly ThemeSwitch themeSwitch;
+    private readonly PreviewSizeSwitch sizeSwitch;
     private readonly WindowPlacementTracker? placementTracker;
     private readonly Action? unsubscribeErrors;
     private IReadOnlyList<string> catalog = [];
@@ -63,6 +64,7 @@ internal sealed class PreviewWindow : Window
         // A snapshot has no settings file. Its window must not change the window of the user.
         placementTracker = options.SettingsFile is null ? null : new WindowPlacementTracker(this);
         themeSwitch = new ThemeSwitch(this) { SelectedItem = settings.Theme };
+        sizeSwitch = new PreviewSizeSwitch(host) { Size = settings.Size };
 
         status = new TextBlock { Margin = new Thickness(8, 4), FontSize = 12, TextTrimming = TextTrimming.CharacterEllipsis };
         ToolTip.SetTip(status, string.Join(Environment.NewLine, notes));
@@ -225,7 +227,8 @@ internal sealed class PreviewWindow : Window
             {
                 Orientation = Orientation.Horizontal,
                 Margin = new Thickness(8, 4),
-                Children = { themeSwitch },
+                Spacing = 8,
+                Children = { themeSwitch, sizeSwitch },
             },
             BorderThickness = new Thickness(0, 0, 0, 1),
             BorderBrush = Brushes.Gray,
@@ -234,7 +237,7 @@ internal sealed class PreviewWindow : Window
         return new DockPanel { Children = { toolbar, preview } };
     }
 
-    // The settings file must not stop the host. A failed write only loses the window and the theme.
+    // The settings file must not stop the host. A failed write only loses the window, the theme, and the size.
     private void SaveSettings()
     {
         if ((options.SettingsFile is null) || (placementTracker is null))
@@ -248,6 +251,7 @@ internal sealed class PreviewWindow : Window
             {
                 Window = placementTracker.GetPlacement(),
                 Theme = themeSwitch.SelectedItem is PreviewTheme theme ? theme : PreviewTheme.Default,
+                Size = sizeSwitch.Size,
             };
             settings.Save(options.SettingsFile);
         }

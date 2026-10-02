@@ -15,6 +15,7 @@ public sealed class SettingsTests
             RecentFiles = ["/src/Ui/Views/Main.axaml"],
             Window = new WindowPlacement(WindowMode.Maximized, 10, 20, 1000, 700),
             Theme = PreviewTheme.Dark,
+            Size = new PreviewSize(PreviewSizePreset.Custom, 500, 300),
         };
 
         settings.Save(file);
@@ -23,6 +24,7 @@ public sealed class SettingsTests
         Assert.Equal(settings.RecentFiles, loaded.RecentFiles);
         Assert.Equal(settings.Window, loaded.Window);
         Assert.Equal(PreviewTheme.Dark, loaded.Theme);
+        Assert.Equal(settings.Size, loaded.Size);
     }
 
     [Fact]
@@ -65,11 +67,12 @@ public sealed class SettingsTests
     {
         using TempDir dir = new();
 
-        Settings loaded = Settings.Load(dir.Write("settings.json", "{ \"Theme\": \"Dark\", \"RecentFiles\": null }"));
+        Settings loaded = Settings.Load(dir.Write("settings.json", "{ \"Theme\": \"Dark\", \"RecentFiles\": null, \"Size\": null }"));
 
         Assert.Equal(PreviewTheme.Dark, loaded.Theme);
         Assert.Empty(loaded.RecentFiles);
         Assert.Null(loaded.Window);
+        Assert.Equal(PreviewSize.Fit, loaded.Size);
     }
 
     private static void AssertDefault(Settings settings)
@@ -77,5 +80,6 @@ public sealed class SettingsTests
         Assert.Empty(settings.RecentFiles);
         Assert.Null(settings.Window);
         Assert.Equal(PreviewTheme.Default, settings.Theme);
+        Assert.Equal(PreviewSize.Fit, settings.Size);
     }
 }

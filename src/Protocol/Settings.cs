@@ -10,7 +10,8 @@ namespace AxView.Protocol;
 /// {
 ///   "RecentFiles": [ "/src/Ui/Views/Main.axaml" ],
 ///   "Window": { "Mode": "Maximized", "X": 10, "Y": 20, "Width": 1280, "Height": 800 },
-///   "Theme": "Dark"
+///   "Theme": "Dark",
+///   "Size": { "Preset": "Custom", "Width": 500, "Height": 300 }
 /// }
 /// </code>
 /// Each change loads the file again, changes one value, and saves the file.
@@ -36,6 +37,9 @@ internal sealed record Settings
     /// <summary>The theme variant that the user selected last.</summary>
     public PreviewTheme Theme { get; init; }
 
+    /// <summary>The preview size that the user selected last.</summary>
+    public PreviewSize Size { get; init; } = PreviewSize.Fit;
+
     /// <summary>Reads the settings file.</summary>
     /// <returns>The settings, or <see cref="Default"/> when the file is missing or not valid.</returns>
     public static Settings Load(string path)
@@ -50,7 +54,7 @@ internal sealed record Settings
             Settings? settings = JsonSerializer.Deserialize<Settings>(File.ReadAllText(path), jsonOptions);
 
             // JSON can set a value to null. The settings must not stop the app.
-            return settings is null ? Default : settings with { RecentFiles = settings.RecentFiles ?? [] };
+            return settings is null ? Default : settings with { RecentFiles = settings.RecentFiles ?? [], Size = settings.Size ?? PreviewSize.Fit };
         }
         catch (JsonException)
         {
