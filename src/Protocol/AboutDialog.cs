@@ -16,6 +16,7 @@ internal sealed class AboutDialog : Window
     public AboutDialog(AboutInfo info)
     {
         Title = "About AxView";
+        Icon = AppIcon.Get();
         SizeToContent = SizeToContent.WidthAndHeight;
         CanResize = false;
         MinWidth = MinimumWidth;

@@ -62,6 +62,7 @@ internal sealed class PreviewWindow : Window
         livePreview = new LivePreview(renderer);
         livePreview.Changed += (_, _) => ShowPreview();
 
+        Icon = AppIcon.Get();
         Width = 1280;
         Height = 800;
         Settings settings = options.SettingsFile is null ? Settings.Default : Settings.Load(options.SettingsFile);

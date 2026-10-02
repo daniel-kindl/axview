@@ -28,6 +28,7 @@ internal sealed class PickerWindow : Window
     {
         this.recent = recent;
         Title = "AxView";
+        Icon = AppIcon.Get();
         Width = 640;
         Height = 460;
         WindowStartupLocation = WindowStartupLocation.CenterScreen;
