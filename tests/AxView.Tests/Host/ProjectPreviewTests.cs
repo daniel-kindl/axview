@@ -1,5 +1,6 @@
 extern alias host;
 
+using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using Avalonia.Threading;
 
@@ -95,6 +96,41 @@ public sealed class ProjectPreviewTests
         Assert.Equal(typeof(FixtureOtherViewModel).FullName, preview.ViewModels[Path.GetFullPath(first)]);
     }
 
+    [AvaloniaFact]
+    public void IncludeChange_OfAChildControl_RendersTheChangedStaticResource()
+    {
+        using TempDir view = new();
+        string file = view.Write("Views/Main.axaml", """
+            <Decorator xmlns="https://github.com/avaloniaui">
+              <Border>
+                <Border.Resources>
+                  <ResourceDictionary>
+                    <ResourceDictionary.MergedDictionaries>
+                      <ResourceInclude Source="/Styles/Texts.axaml" />
+                    </ResourceDictionary.MergedDictionaries>
+                  </ResourceDictionary>
+                </Border.Resources>
+                <TextBlock Text="{StaticResource Text}" />
+              </Border>
+            </Decorator>
+            """);
+        string texts = view.Write("Styles/Texts.axaml", TextResources("Before"));
+        using ProjectPreview preview = Create(Options(view, file));
+        File.WriteAllText(texts, TextResources("First"));
+        preview.Show(file);
+
+        File.WriteAllText(texts, TextResources("Second"));
+
+        Assert.True(WaitForChange(preview));
+        Assert.Equal("Second", Assert.IsType<TextBlock>(Assert.IsType<Border>(Assert.IsType<Decorator>(preview.View).Child).Child).Text);
+    }
+
+    private static string TextResources(string text) => $"""
+        <ResourceDictionary xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+          <x:String x:Key="Text">{text}</x:String>
+        </ResourceDictionary>
+        """;
+
     private static ProjectPreview Create(HostOptions options)
     {
         ProjectSet projects = ProjectSet.Load(options);
@@ -127,5 +163,26 @@ public sealed class ProjectPreviewTests
 
         preview.StopRequested -= OnStopRequested;
         return request;
+    }
+
+    // Run the dispatcher loop until the preview changes, or until the timeout. True when the preview changed.
+    private static bool WaitForChange(ProjectPreview preview)
+    {
+        bool isChanged = false;
+        DispatcherFrame frame = new();
+        void OnChanged(object? sender, EventArgs e)
+        {
+            isChanged = true;
+            frame.Continue = false;
+        }
+
+        preview.Changed += OnChanged;
+        using (DispatcherTimer.RunOnce(() => frame.Continue = false, stopTimeout))
+        {
+            Dispatcher.UIThread.PushFrame(frame);
+        }
+
+        preview.Changed -= OnChanged;
+        return isChanged;
     }
 }

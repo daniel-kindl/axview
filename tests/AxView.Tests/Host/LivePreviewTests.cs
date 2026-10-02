@@ -49,14 +49,14 @@ public sealed class LivePreviewTests
     }
 
     [AvaloniaFact]
-    public void Show_GivesTheLoadedRootBeforeTheChange()
+    public void Show_GivesTheRenderedViewBeforeTheChange()
     {
         using TempDir dir = new();
         string file = dir.Write("Views/Hello.axaml", TextBlock("Hello"));
         using LivePreview preview = new(Renderer(dir));
         object? root = null;
         bool isChangedBeforeRender = false;
-        preview.Rendered += (_, view) => root = view.Root;
+        preview.Rendered += (_, view) => root = view.Control;
         preview.Changed += (_, _) => isChangedBeforeRender = root is null;
 
         preview.Show(file);

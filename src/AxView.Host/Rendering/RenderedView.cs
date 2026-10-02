@@ -8,7 +8,4 @@ namespace AxView.Host.Rendering;
 /// True when the root is a <c>Styles</c>, <c>Style</c>, or <c>ResourceDictionary</c>.
 /// Then the control is the <c>Design.PreviewWith</c> control, and it needs no DataContext.
 /// </param>
-/// <param name="Root">
-/// The root object that the file loads. For a window, the container that gets its styles and resources.
-/// </param>
-internal sealed record RenderedView(Control Control, bool IsStylePreview, object Root);
+internal sealed record RenderedView(Control Control, bool IsStylePreview);

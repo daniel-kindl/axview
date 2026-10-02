@@ -2,7 +2,6 @@ using System.Runtime.CompilerServices;
 using System.Xml;
 using System.Xml.Linq;
 
-using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Styling;
 
@@ -10,17 +9,13 @@ using AxView.Host.Catalog;
 
 namespace AxView.Host.Rendering;
 
-/// <summary>
-/// Loads the changed include files of the app styles or of a loaded root from disk.
-/// Puts the result in place of the compiled include.
-/// </summary>
+/// <summary>Loads the changed include files of the app styles from disk. Puts the result in place of the compiled include.</summary>
 /// <remarks>
 /// The XAML compiler puts the content of each <c>StyleInclude</c> and <c>ResourceInclude</c> in place of the include.
-/// The runtime loader also does this for a view. Thus the runtime objects do not know their source file.
-/// This class walks the XAML of the root file and of each include file side by side with the runtime objects:
+/// Thus the runtime objects do not know their source file.
+/// This class walks the XAML of App.axaml and of each include file side by side with the runtime objects:
 /// <list type="bullet">
-/// <item>The root file is App.axaml, a control, a <c>Styles</c>, a <c>Style</c>, or a <c>ResourceDictionary</c>.</item>
-/// <item>The walk looks only at the <c>Styles</c> and <c>Resources</c> of a control root, not into its children.</item>
+/// <item>An include file has a <c>Styles</c>, a <c>Style</c>, or a <c>ResourceDictionary</c> root.</item>
 /// <item>The children of <c>Application.Styles</c> and of a <c>Styles</c> root agree with the runtime styles by position.</item>
 /// <item>The children of <c>ResourceDictionary.MergedDictionaries</c> agree with the merged dictionaries by position.</item>
 /// <item>The children of <c>ResourceDictionary.ThemeDictionaries</c> agree with the theme dictionaries by <c>x:Key</c>.</item>
@@ -28,8 +23,8 @@ namespace AxView.Host.Rendering;
 /// When the counts are different, the walk skips that branch.
 /// The first text of each file is the text of the build.
 /// A file loads again when its text is different from the text of the object that is in its place.
-/// An include can point into another project of the app. Each project has its own renderer.
-/// The walk finds the project of an include by its avares URI. It resolves a relative URI against the project of its file.
+/// An include can point into another project of the app. See <see cref="IncludeFiles"/>.
+/// A view does not use this class. Its render loads the changed include files. See <see cref="ChangedIncludes"/>.
 /// </remarks>
 internal sealed class AppIncludes
 {
@@ -37,21 +32,14 @@ internal sealed class AppIncludes
     private const string StylesRoot = "Styles";
     private const string StyleRoot = "Style";
     private const string ResourceDictionaryRoot = "ResourceDictionary";
-    private const string SourceAttribute = "Source";
     private static readonly XName keyAttribute = XName.Get("Key", "http://schemas.microsoft.com/winfx/2006/xaml");
 
-    private readonly PreviewRenderer renderer;
-    private readonly List<PreviewRenderer> projects;
-    private readonly string rootPath;
-
-    // The loaded root of the file. For App.axaml, the styles of the app.
-    private readonly object root;
-
-    // The resources of the app. Null when the file is not App.axaml.
-    private readonly IResourceDictionary? appResources;
+    private readonly IncludeFiles files;
+    private readonly string appPath;
+    private readonly Styles styles;
+    private readonly IResourceDictionary resources;
     private readonly Dictionary<string, string> buildTexts;
     private readonly ConditionalWeakTable<object, string> loadedTexts = [];
-    private readonly List<string> errors = [];
     private bool isChanged;
 
     /// <summary>Reads App.axaml and each include file. Keeps their text as the text of the build.</summary>
@@ -71,43 +59,12 @@ internal sealed class AppIncludes
         IResourceDictionary resources,
         IEnumerable<PreviewRenderer>? otherProjects = null,
         Dictionary<string, string>? buildTexts = null)
-        : this(renderer, appPath, (object)styles, resources, otherProjects, buildTexts)
     {
-    }
-
-    /// <summary>Reads a project file and each include file. Keeps their text as the text of the build.</summary>
-    /// <param name="renderer">The renderer of the project. It loads the changed files.</param>
-    /// <param name="path">The file of the root.</param>
-    /// <param name="root">
-    /// The root that the file loads: a control, a <c>Styles</c>, a <c>Style</c>, or a <c>ResourceDictionary</c>.
-    /// It must agree with the build of the file.
-    /// </param>
-    /// <param name="otherProjects">The renderers of the other projects that an include can point into.</param>
-    /// <param name="buildTexts">The text of the build of each file, by full path.</param>
-    public AppIncludes(
-        PreviewRenderer renderer,
-        string path,
-        object root,
-        IEnumerable<PreviewRenderer>? otherProjects = null,
-        Dictionary<string, string>? buildTexts = null)
-        : this(renderer, path, root, null, otherProjects, buildTexts)
-    {
-    }
-
-    private AppIncludes(
-        PreviewRenderer renderer,
-        string path,
-        object root,
-        IResourceDictionary? appResources,
-        IEnumerable<PreviewRenderer>? otherProjects,
-        Dictionary<string, string>? buildTexts)
-    {
-        this.renderer = renderer;
+        files = new IncludeFiles([renderer, .. otherProjects ?? []]);
         this.buildTexts = buildTexts ?? new Dictionary<string, string>(StringComparer.Ordinal);
-        projects = [renderer, .. otherProjects ?? []];
-        rootPath = Path.GetFullPath(path);
-        this.root = root;
-        this.appResources = appResources;
+        this.appPath = Path.GetFullPath(appPath);
+        this.styles = styles;
+        this.resources = resources;
         _ = Update();
     }
 
@@ -121,18 +78,15 @@ internal sealed class AppIncludes
     public IncludeUpdate Update()
     {
         isChanged = false;
-        errors.Clear();
-        XElement? element = Parse(rootPath, Read(rootPath));
-        if (element is not null && appResources is not null && root is Styles appStyles)
+        files.ClearErrors();
+        XElement? element = files.Parse(appPath, files.Read(appPath));
+        if (element is not null)
         {
-            WalkOwner(element, rootPath, appStyles, appResources);
-        }
-        else if (element is not null)
-        {
-            WalkRoot(element, rootPath, root);
+            WalkStyles(Property(element, $"{ApplicationRoot}.Styles"), appPath, styles);
+            WalkResources(ResourceContent(Property(element, $"{ApplicationRoot}.Resources")), appPath, resources);
         }
 
-        return new IncludeUpdate(isChanged, errors.Count == 0 ? null : string.Join(Environment.NewLine, errors));
+        return new IncludeUpdate(isChanged, files.Error);
     }
 
     private static bool IsApplication(string path)
@@ -235,8 +189,8 @@ internal sealed class AppIncludes
 
     private void Include(XElement element, string file, IncludeSlot slot)
     {
-        (PreviewRenderer Project, string Path)? source = FindSource(element, file);
-        string? text = source is null ? null : Read(source.Value.Path);
+        (PreviewRenderer Project, string Path)? source = files.FindSource(element, file);
+        string? text = source is null ? null : files.Read(source.Value.Path);
         if (source is null || text is null)
         {
             return;
@@ -257,7 +211,7 @@ internal sealed class AppIncludes
             catch (Exception ex)
             {
                 // User XAML and its code can throw any exception. Keep the old include.
-                AddError(path, ex);
+                files.AddError(path, ex);
                 return;
             }
 
@@ -270,7 +224,7 @@ internal sealed class AppIncludes
 
     private void WalkFile(string path, string text, object loaded)
     {
-        XElement? element = Parse(path, text);
+        XElement? element = files.Parse(path, text);
         if (element is not null)
         {
             WalkRoot(element, path, loaded);
@@ -292,80 +246,5 @@ internal sealed class AppIncludes
         {
             WalkResources(ResourceContent(Property(element, "Style.Resources")), file, style.Resources);
         }
-        else if (loaded is StyledElement owner)
-        {
-            WalkOwner(element, file, owner.Styles, owner.Resources);
-        }
     }
-
-    // The root of App.axaml or of a control. Its styles and resources are property elements with the name of the root.
-    private void WalkOwner(XElement element, string file, Styles ownerStyles, IResourceDictionary ownerResources)
-    {
-        string name = element.Name.LocalName;
-        WalkStyles(Property(element, $"{name}.Styles"), file, ownerStyles);
-        WalkResources(ResourceContent(Property(element, $"{name}.Resources")), file, ownerResources);
-    }
-
-    private (PreviewRenderer Project, string Path)? FindSource(XElement element, string file)
-    {
-        string? source = element.Attribute(SourceAttribute)?.Value;
-        PreviewRenderer fileProject = ProjectOf(file);
-        Uri baseUri = AvaresUri.For(fileProject.AssemblyName, fileProject.ProjectDirectory, file);
-        if (source is null || !Uri.TryCreate(baseUri, source, out Uri? uri))
-        {
-            return null;
-        }
-
-        foreach (PreviewRenderer project in projects)
-        {
-            string? path = AvaresUri.ToPath(uri, project.AssemblyName, project.ProjectDirectory);
-            if (path is not null)
-            {
-                return (project, path);
-            }
-        }
-
-        return null;
-    }
-
-    // The project with the longest folder that contains the file. A referenced project can sit inside another project.
-    private PreviewRenderer ProjectOf(string file) =>
-        projects
-            .Where(p => file.StartsWith(Path.GetFullPath(p.ProjectDirectory) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
-            .OrderByDescending(p => p.ProjectDirectory.Length)
-            .FirstOrDefault() ?? renderer;
-
-    private string? Read(string path)
-    {
-        try
-        {
-            return PreviewRenderer.ReadWithRetry(path);
-        }
-        catch (IOException ex)
-        {
-            AddError(path, ex);
-            return null;
-        }
-    }
-
-    private XElement? Parse(string path, string? text)
-    {
-        if (text is null)
-        {
-            return null;
-        }
-
-        try
-        {
-            return XDocument.Parse(text).Root;
-        }
-        catch (XmlException ex)
-        {
-            AddError(path, ex);
-            return null;
-        }
-    }
-
-    private void AddError(string path, Exception ex) =>
-        errors.Add($"{Path.GetRelativePath(ProjectOf(path).ProjectDirectory, path)}: {ExceptionText.Describe(ex)}");
 }

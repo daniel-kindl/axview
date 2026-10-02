@@ -77,17 +77,6 @@ public sealed class PreviewRendererTests
     }
 
     [AvaloniaFact]
-    public void Render_Window_GivesTheContainerAsTheRoot()
-    {
-        using TempDir dir = new();
-        string file = dir.Write("Views/Main.axaml", $"""<Window {AvaloniaXmlns}><TextBlock /></Window>""");
-
-        RenderedView rendered = Renderer(dir).Render(file);
-
-        Assert.Same(rendered.Control, rendered.Root);
-    }
-
-    [AvaloniaFact]
     public void Render_FindsALocalTypeInABindingPath()
     {
         using TempDir dir = new();

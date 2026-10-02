@@ -71,11 +71,9 @@ internal sealed class AppStyles(
         return copy;
     }
 
-    /// <summary>Loads the changed include files of a loaded root from disk. Puts the result in place of the compiled include.</summary>
-    /// <param name="path">The file of the root.</param>
-    /// <param name="root">The root that the file loads. See <see cref="AppIncludes"/>.</param>
-    /// <returns>The includes of the root. Call <see cref="AppIncludes.Update"/> after a change of an AXAML file.</returns>
-    public AppIncludes CreateIncludes(string path, object root) => new(renderers[0], path, root, renderers, buildTexts);
+    /// <summary>Gives the search for the include files of a view that changed after the build.</summary>
+    /// <remarks>A render of a view with it loads the changed include files in place of the compiled includes.</remarks>
+    public ChangedIncludes CreateViewIncludes() => new(renderers, buildTexts);
 
     /// <summary>Gives the app a live copy of the app resources only.</summary>
     /// <remarks>Code that reads Application.Current finds them. For example, a StaticResource of a style root does.</remarks>

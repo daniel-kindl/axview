@@ -29,7 +29,7 @@ internal sealed class ProjectPreview : IDisposable
     private readonly LivePreview livePreview;
     private readonly Dictionary<string, string> viewModels;
     private readonly List<FileChangeWatcher> watchers = [];
-    private AppIncludes? viewIncludes;
+    private readonly ChangedIncludes viewIncludes;
 
     // The include error of the last load. The window clears its error after a load, so report it after the change.
     private string? viewIncludeError;
@@ -49,8 +49,9 @@ internal sealed class ProjectPreview : IDisposable
         this.appStyles = appStyles;
         this.viewModels = new Dictionary<string, string>(viewModels, StringComparer.FromComparison(pathComparison));
         ViewModelTypes = ViewModelCatalog.List(projects.ViewAssembly, services);
-        livePreview = new LivePreview(projects.CreateViewRenderer(services));
-        livePreview.Rendered += (_, view) => LoadViewIncludes(view);
+        viewIncludes = appStyles.CreateViewIncludes();
+        livePreview = new LivePreview(projects.CreateViewRenderer(services), viewIncludes);
+        livePreview.Rendered += (_, _) => viewIncludeError = viewIncludes.Error;
         livePreview.Changed += (_, _) => OnChanged();
 
         if (options.HandOffFile is not null)
@@ -162,13 +163,6 @@ internal sealed class ProjectPreview : IDisposable
         livePreview.Dispose();
     }
 
-    // The loaded root has the compiled includes. Thus load the changed include files before the window shows the root.
-    private void LoadViewIncludes(RenderedView view)
-    {
-        viewIncludes = appStyles.CreateIncludes(FilePath, view.Root);
-        viewIncludeError = viewIncludes.Update().Error;
-    }
-
     private void OnChanged()
     {
         Changed?.Invoke(this, EventArgs.Empty);
@@ -185,17 +179,14 @@ internal sealed class ProjectPreview : IDisposable
     private void UpdateIncludes()
     {
         IncludeUpdate appUpdate = appStyles.Update();
-        IncludeUpdate viewUpdate = viewIncludes?.Update() ?? new IncludeUpdate(IsChanged: false, Error: null);
-        bool isReloaded = appUpdate.IsChanged || viewUpdate.IsChanged;
-        if (isReloaded)
+        if (appUpdate.IsChanged || viewIncludes.IsOutdated())
         {
             livePreview.Reload();
         }
 
-        string[] errors = [.. new[] { appUpdate.Error, isReloaded ? null : viewUpdate.Error }.OfType<string>().Distinct()];
-        if (errors.Length > 0)
+        if (appUpdate.Error is not null)
         {
-            Failed?.Invoke(this, string.Join(Environment.NewLine, errors));
+            Failed?.Invoke(this, appUpdate.Error);
         }
     }
 

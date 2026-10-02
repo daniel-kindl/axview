@@ -13,15 +13,18 @@ namespace AxView.Host.Rendering;
 internal sealed class LivePreview : IDisposable
 {
     private readonly PreviewRenderer renderer;
+    private readonly IChangedIncludes? includes;
     private readonly Action? unsubscribeErrors;
     private FileChangeWatcher? watcher;
     private Type? viewModelType;
 
     /// <summary>Starts to catch the dispatcher errors. Call <see cref="Show"/> to show a file.</summary>
     /// <param name="renderer">The renderer of the project.</param>
-    public LivePreview(PreviewRenderer renderer)
+    /// <param name="includes">Finds the include files that changed after the build. Null to use only the compiled includes.</param>
+    public LivePreview(PreviewRenderer renderer, IChangedIncludes? includes = null)
     {
         this.renderer = renderer;
+        this.includes = includes;
         unsubscribeErrors = DispatcherErrors.Subscribe(OnUnhandledException);
     }
 
@@ -75,7 +78,7 @@ internal sealed class LivePreview : IDisposable
     {
         try
         {
-            RenderedView rendered = renderer.Render(path, viewModelType);
+            RenderedView rendered = renderer.Render(path, viewModelType, includes);
             Rendered?.Invoke(this, rendered);
             View = rendered.Control;
             IsStylePreview = rendered.IsStylePreview;

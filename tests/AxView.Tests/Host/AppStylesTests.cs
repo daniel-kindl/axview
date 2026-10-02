@@ -151,7 +151,7 @@ public sealed class AppStylesTests
     }
 
     [AvaloniaFact]
-    public void CreateIncludes_IncludeChangedBeforeTheFirstUse_LoadsTheIncludeFromDisk()
+    public void CreateViewIncludes_IncludeChangedBeforeTheFirstUse_FindsTheChangedFile()
     {
         using TempDir dir = new();
         string view = dir.Write("Views/Main.axaml", $"""
@@ -163,11 +163,9 @@ public sealed class AppStylesTests
             """);
         string main = dir.Write("Styles/Main.axaml", TagStyles("Before"));
         AppStyles appStyles = new(TargetStyles.None, () => TargetStyles.None, [Renderer(dir)]);
-        IStyle compiled = Assert.IsAssignableFrom<IStyle>(Renderer(dir).Load(main, File.ReadAllText(main)));
-        UserControl root = new() { Styles = { compiled } };
         File.WriteAllText(main, TagStyles("After"));
 
-        _ = appStyles.CreateIncludes(view, root);
+        UserControl root = Assert.IsType<UserControl>(Renderer(dir).Render(view, includes: appStyles.CreateViewIncludes()).Control);
 
         Assert.Equal("After", TagOf(root.Styles[0]));
     }

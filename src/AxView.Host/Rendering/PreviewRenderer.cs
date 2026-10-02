@@ -44,11 +44,15 @@ internal sealed class PreviewRenderer(Assembly localAssembly, string projectDire
     /// <exception cref="NotSupportedException">
     /// The root is a top-level other than a window, a style or resource root without <c>Design.PreviewWith</c>, or another non-control.
     /// </exception>
+    /// <param name="includes">
+    /// Finds the include files that changed after the build. The load uses them in place of the compiled includes.
+    /// Null to use only the compiled includes.
+    /// </param>
     /// <remarks>The user's XAML and its code can throw any other exception.</remarks>
-    public RenderedView Render(string axamlPath, Type? viewModelType = null)
+    public RenderedView Render(string axamlPath, Type? viewModelType = null, IChangedIncludes? includes = null)
     {
         string xaml = ReadWithRetry(axamlPath);
-        object root = Load(axamlPath, xaml);
+        object root = Load(axamlPath, xaml, includes: includes?.FindChanged(axamlPath, xaml));
         if (root is Control loaded)
         {
             DesignDataContext.Apply(loaded, xaml, FindType, services);
@@ -62,10 +66,10 @@ internal sealed class PreviewRenderer(Assembly localAssembly, string projectDire
         {
             Window window => FromWindow(window),
             TopLevel => throw new NotSupportedException($"Cannot preview a {root.GetType().Name} root."),
-            Control control => new RenderedView(control, IsStylePreview: false, root),
-            Styles styles => new RenderedView(WithStyle(styles), IsStylePreview: true, root),
-            Style style => new RenderedView(WithStyle(style), IsStylePreview: true, root),
-            ResourceDictionary resources => new RenderedView(WithResources(resources), IsStylePreview: true, root),
+            Control control => new RenderedView(control, IsStylePreview: false),
+            Styles styles => new RenderedView(WithStyle(styles), IsStylePreview: true),
+            Style style => new RenderedView(WithStyle(style), IsStylePreview: true),
+            ResourceDictionary resources => new RenderedView(WithResources(resources), IsStylePreview: true),
             _ => throw new NotSupportedException($"The root is a {root.GetType().Name}, not a control."),
         };
     }
@@ -74,14 +78,28 @@ internal sealed class PreviewRenderer(Assembly localAssembly, string projectDire
     /// <param name="axamlPath">The file of the XAML. Relative URIs in the XAML resolve against its avares URI.</param>
     /// <param name="xaml">The content of the file.</param>
     /// <param name="rootInstance">The object that the XAML fills, or null to create a new root object.</param>
+    /// <param name="includes">The documents that the load uses in place of the compiled includes with the same avares URI.</param>
     /// <remarks>The user's XAML and its code can throw any exception.</remarks>
-    public object Load(string axamlPath, string xaml, object? rootInstance = null)
+    public object Load(
+        string axamlPath, string xaml, object? rootInstance = null, IEnumerable<RuntimeXamlLoaderDocument>? includes = null)
+    {
+        RuntimeXamlLoaderConfiguration configuration = new() { LocalAssembly = localAssembly, DesignMode = true };
+        IReadOnlyList<object?> roots = AvaloniaRuntimeXamlLoader.LoadGroup(
+            [Prepare(axamlPath, xaml, rootInstance), .. includes ?? []], configuration);
+        return roots[0] ?? throw new NotSupportedException($"The XAML of '{axamlPath}' gives no root object.");
+    }
+
+    /// <summary>Makes a loader document of a project file. Another load can use it in place of a compiled include.</summary>
+    /// <param name="axamlPath">The file of the XAML. Its avares URI is the URI of the document.</param>
+    /// <param name="xaml">The content of the file.</param>
+    /// <param name="rootInstance">The object that the XAML fills, or null to create a new root object.</param>
+    public RuntimeXamlLoaderDocument Prepare(string axamlPath, string xaml, object? rootInstance = null)
     {
         Uri baseUri = AvaresUri.For(AssemblyName, projectDirectory, axamlPath);
         string withClass = CodeBehindClass.RemoveIfNotCreatable(xaml, localAssembly);
         string creatable = DesignDataContext.PrepareForLoader(withClass, FindType);
         string qualified = XmlnsQualifier.Qualify(creatable, namespaces.FindOwner);
-        return AvaloniaRuntimeXamlLoader.Load(qualified, localAssembly, rootInstance, baseUri, designMode: true);
+        return new RuntimeXamlLoaderDocument(baseUri, rootInstance, qualified);
     }
 
     private static Control WithStyle<TStyle>(TStyle style)
@@ -115,12 +133,7 @@ internal sealed class PreviewRenderer(Assembly localAssembly, string projectDire
     private static NotSupportedException NoPreviewWith(object root) =>
         new($"Add a Design.PreviewWith control to the {root.GetType().Name} root to preview it.");
 
-    // The container gets the styles and resources of the window. Thus it is the root for the include walk.
-    private static RenderedView FromWindow(Window window)
-    {
-        Border container = Detach(window);
-        return new RenderedView(container, IsStylePreview: false, container);
-    }
+    private static RenderedView FromWindow(Window window) => new(Detach(window), IsStylePreview: false);
 
     // A Window cannot be a child. Move its content, styles, and resources into a plain container.
     private static Border Detach(Window window)
