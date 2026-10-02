@@ -52,8 +52,10 @@ internal static class TargetAppImporter
             IResourceDictionary resources = source.Resources;
             source.Resources = new ResourceDictionary();
 
-            List<IStyle> styles = [.. source.Styles];
+            // A style can have only one owner. Thus remove the styles from the app before the new list gets them.
+            List<IStyle> appStyles = [.. source.Styles];
             source.Styles.Clear();
+            Styles styles = [.. appStyles];
 
             List<IDataTemplate> templates = [.. source.DataTemplates];
             source.DataTemplates.Clear();

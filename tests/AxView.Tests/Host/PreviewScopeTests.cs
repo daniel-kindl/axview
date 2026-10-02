@@ -132,7 +132,7 @@ public sealed class PreviewScopeTests
     }
 
     private static TargetStyles Target(IReadOnlyList<IStyle> styles) =>
-        new(styles, new ResourceDictionary(), [], null);
+        new([.. styles], new ResourceDictionary(), [], null);
 
     private static Style TagStyle() => new(x => x.OfType<TextBlock>())
     {

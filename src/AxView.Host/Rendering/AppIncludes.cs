@@ -66,34 +66,6 @@ internal sealed class AppIncludes
         _ = Update();
     }
 
-    /// <summary>Gets the folder of the project that contains the app file.</summary>
-    public string ProjectDirectory => renderer.ProjectDirectory;
-
-    /// <summary>Gets the folders of all projects that an include can point into. The folder of the app file is first.</summary>
-    public IEnumerable<string> ProjectDirectories => projects.Select(p => p.ProjectDirectory).Distinct();
-
-    /// <summary>Finds the app file in the project of the first renderer that has one, and reads its includes.</summary>
-    /// <param name="renderers">
-    /// The renderers of the project set, in order of preference: the view project, the app project, and the referenced projects.
-    /// An include can point into each of them.
-    /// </param>
-    /// <param name="styles">The styles of the app. They must agree with the build of App.axaml.</param>
-    /// <param name="resources">The resources of the app. They must agree with the build of App.axaml.</param>
-    /// <returns>The includes of the app file, or null when no project has an app file.</returns>
-    public static AppIncludes? Find(IReadOnlyList<PreviewRenderer> renderers, Styles styles, IResourceDictionary resources)
-    {
-        foreach (PreviewRenderer renderer in renderers)
-        {
-            string? appPath = FindAppFile(renderer.ProjectDirectory);
-            if (appPath is not null)
-            {
-                return new AppIncludes(renderer, appPath, styles, resources, renderers);
-            }
-        }
-
-        return null;
-    }
-
     /// <summary>Gives the AXAML file of the project with an <c>Application</c> root.</summary>
     /// <param name="projectDirectory">The folder of the project.</param>
     /// <returns>The full path of the file, or null when the project has no such file.</returns>

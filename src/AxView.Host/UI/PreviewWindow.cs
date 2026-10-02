@@ -46,21 +46,19 @@ internal sealed class PreviewWindow : Window
     private readonly Dictionary<string, string> viewModels;
     private readonly WindowPlacementTracker? placementTracker;
     private readonly List<FileChangeWatcher> codeWatchers = [];
-    private readonly AppIncludes? appIncludes;
+    private readonly AppStyles appStyles;
     private readonly List<FileChangeWatcher> axamlWatchers = [];
     private IReadOnlyList<string> catalog = [];
     private bool isSyncingSelection;
 
-    public PreviewWindow(HostOptions options, ProjectSet projects, IReadOnlyList<string> notes, DesignServices services, TargetStyles target)
+    public PreviewWindow(HostOptions options, ProjectSet projects, IReadOnlyList<string> notes, DesignServices services, AppStyles appStyles)
     {
         this.options = options;
         this.projects = projects;
-        scope = new PreviewScope(target);
+        this.appStyles = appStyles;
+        scope = new PreviewScope(appStyles.CreateCopy());
         host.Content = scope;
-
-        // The renderer of the view project is first.
-        IReadOnlyList<PreviewRenderer> renderers = projects.CreateRenderers(services);
-        livePreview = new LivePreview(renderers[0]);
+        livePreview = new LivePreview(projects.CreateViewRenderer(services));
         livePreview.Changed += (_, _) => ShowPreview();
 
         Icon = AppIcon.Get();
@@ -161,8 +159,7 @@ internal sealed class PreviewWindow : Window
         }
 
         // The app file of a library view can be in the app project.
-        appIncludes = AppIncludes.Find(renderers, scope.Styles, scope.Resources);
-        foreach (string directory in appIncludes?.ProjectDirectories ?? [])
+        foreach (string directory in appStyles.ProjectDirectories)
         {
             axamlWatchers.Add(FileChangeWatcher.ForAxamlFiles(directory, UpdateIncludes));
         }
@@ -340,7 +337,7 @@ internal sealed class PreviewWindow : Window
     // A StaticResource does not follow a change of the app resources. Thus render the preview again.
     private void UpdateIncludes()
     {
-        IncludeUpdate update = appIncludes!.Update();
+        IncludeUpdate update = appStyles.Update();
         if (update.IsChanged)
         {
             livePreview.Reload();

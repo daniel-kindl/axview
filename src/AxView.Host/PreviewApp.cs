@@ -25,7 +25,7 @@ internal sealed class PreviewApp(HostOptions options, List<string> notes) : Appl
 
     private ProjectSet? projects;
     private DesignServices services = DesignServices.None;
-    private TargetStyles target = TargetStyles.None;
+    private AppStyles? appStyles;
 
     // Load the services first. The factory can initialize static services that App.axaml needs.
     // The target styles go only to the preview. The AxView chrome gets its own theme.
@@ -33,18 +33,22 @@ internal sealed class PreviewApp(HostOptions options, List<string> notes) : Appl
     {
         projects = ProjectSet.Load(options);
         services = LoadServices();
-        target = TargetAppImporter.Import(Projects, notes, LoadSettings().RunAppStartup);
-        AddAppResources();
+        appStyles = AppStyles.Import(Projects, services, notes, LoadSettings().RunAppStartup);
+
+        // The app gets the first copy. It is the import that ran the startup.
+        // The preview finds Application.Current resources too. Thus it finds the resources that the startup adds.
         IStyle? chromeTheme = ChromeTheme.Load();
         if (chromeTheme is not null)
         {
+            // The resources come first in the styles. Thus the chrome theme wins when both define a key.
+            appStyles.AddResourcesTo(this);
             Styles.Add(chromeTheme);
             notes.Add($"AxView theme: {chromeTheme.GetType().Name}.");
             return;
         }
 
-        // Without a theme, the chrome has no control templates. A second instance of the app styles gives it templates.
-        TargetAppImporter.Import(Projects, []).ApplyTo(this);
+        // Without a theme, the chrome has no control templates. A copy of the app styles gives it templates.
+        appStyles.AddTo(this);
         notes.Add("No Fluent or Simple theme in the app. The AxView chrome uses the app styles.");
     }
 
@@ -61,7 +65,7 @@ internal sealed class PreviewApp(HostOptions options, List<string> notes) : Appl
             else
             {
                 desktop.MainWindow = options.SnapshotPath is null
-                    ? new PreviewWindow(options, Projects, notes, services, target)
+                    ? new PreviewWindow(options, Projects, notes, services, ImportedAppStyles)
                     : CreateSnapshotWindow(desktop, options.SnapshotPath);
             }
         }
@@ -69,13 +73,10 @@ internal sealed class PreviewApp(HostOptions options, List<string> notes) : Appl
         base.OnFrameworkInitializationCompleted();
     }
 
-    // Code that reads Application.Current finds the app resources. For example, a StaticResource of a style root does.
-    // The resources come first in the styles. Thus the chrome theme wins when both define a key.
-    private void AddAppResources() =>
-        Styles.Add(new Styles { Resources = TargetAppImporter.Import(Projects, []).Resources });
-
-    // Initialize loads the projects. The framework calls it before each other member.
+    // Initialize loads the projects and the app styles. The framework calls it before each other member.
     private ProjectSet Projects => projects ?? throw new InvalidOperationException("The app is not initialized.");
+
+    private AppStyles ImportedAppStyles => appStyles ?? throw new InvalidOperationException("The app is not initialized.");
 
     private Settings LoadSettings() => options.SettingsFile is null ? Settings.Default : Settings.Load(options.SettingsFile);
 
@@ -99,7 +100,7 @@ internal sealed class PreviewApp(HostOptions options, List<string> notes) : Appl
     {
         ProjectSnapshots snapshots = new(
             Projects.CreateViewRenderer(services),
-            () => TargetAppImporter.Import(Projects, []),
+            ImportedAppStyles.CreateCopy,
             options.ProjectDirectory,
             directory,
             snapshotDelay);
@@ -135,7 +136,7 @@ internal sealed class PreviewApp(HostOptions options, List<string> notes) : Appl
             }
         }
 
-        SnapshotWindow window = new(renderer, options.AxamlPath, target, viewModelType);
+        SnapshotWindow window = new(renderer, options.AxamlPath, ImportedAppStyles.CreateCopy(), viewModelType);
         window.Opened += (_, _) => _ = DispatcherTimer.RunOnce(() => desktop.Shutdown((int)window.Save(pngPath)), snapshotDelay);
         return window;
     }

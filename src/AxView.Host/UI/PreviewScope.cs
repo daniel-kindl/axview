@@ -18,7 +18,7 @@ internal sealed class PreviewScope : ThemeVariantScope
     /// <param name="target">The styles of the target app. The scope becomes their owner.</param>
     public PreviewScope(TargetStyles target)
     {
-        Styles.AddRange(target.Styles);
+        Styles.Add(target.Styles);
         Resources = target.Resources;
         DataTemplates.AddRange(target.DataTemplates);
         AppThemeVariant = target.ThemeVariant ?? ThemeVariant.Default;
