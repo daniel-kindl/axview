@@ -5,9 +5,10 @@ using Avalonia.Controls;
 
 namespace AxView.Host.Rendering;
 
-/// <summary>Gives the root control of a preview a DataContext from its XAML.</summary>
+/// <summary>Gives the controls of a preview a DataContext from their XAML.</summary>
 /// <remarks>
-/// The sources, in order of priority:
+/// A control with a <c>d:DataContext</c> with a <c>d:DesignInstance</c> gets an instance of that type.
+/// The sources for the root, in order of priority:
 /// <list type="number">
 /// <item><description>
 /// The <c>Design.DataContext</c> of the root, or its <c>d:DataContext</c> with a <c>d:DesignInstance</c>.
@@ -18,27 +19,47 @@ namespace AxView.Host.Rendering;
 /// </remarks>
 internal static partial class DesignDataContext
 {
-    private static readonly XNamespace xamlNamespace = "http://schemas.microsoft.com/winfx/2006/xaml";
-    private static readonly XNamespace blendNamespace = "http://schemas.microsoft.com/expression/blend/2008";
+    private const string ExtensionPrefix = "axview";
+    private const string XamlPrefix = "axviewx";
 
-    /// <summary>Removes the design DataContexts that the loader cannot create.</summary>
+    private static readonly XNamespace xamlNamespace = "http://schemas.microsoft.com/winfx/2006/xaml";
+
+    /// <summary>Changes the design DataContexts into a form that the loader can create.</summary>
     /// <param name="xaml">The AXAML text.</param>
     /// <param name="findType">Returns the type with a CLR namespace and a name, or null.</param>
-    /// <returns>The text with no change, or the text with blank text in place of the removed parts.</returns>
+    /// <returns>The changed text.</returns>
     /// <remarks>
-    /// The loader has no <c>d:DesignInstance</c>, so each <c>d:DataContext</c> with it goes.
-    /// <see cref="Apply"/> creates the type of the <c>d:DesignInstance</c>.
-    /// A <c>Design.DataContext</c> element goes when its type has no parameterless constructor.
-    /// The blank text keeps the line numbers and positions of later load errors correct.
+    /// The loader has no <c>d:DesignInstance</c>. A <c>d:DataContext</c> with it becomes a
+    /// <c>DataContext</c> with a <see cref="DesignInstanceExtension"/>. The root then declares the extension namespace.
+    /// These parts go when their type has no parameterless constructor:
+    /// <list type="bullet">
+    /// <item><description>A <c>d:DataContext</c> with a <c>d:DesignInstance</c>.</description></item>
+    /// <item><description>A <c>Design.DataContext</c> element.</description></item>
+    /// </list>
+    /// Blank text replaces a removed part. This keeps the line numbers of later load errors correct.
     /// </remarks>
-    public static string RemoveIfNotCreatable(string xaml, Func<string, string, Type?> findType)
+    public static string PrepareForLoader(string xaml, Func<string, string, Type?> findType)
     {
-        string withoutInstances = DesignInstanceAttribute().Replace(xaml, match => new string(' ', match.Length));
-        return DesignElement().Replace(withoutInstances, match =>
+        bool hasInstance = false;
+        string withInstances = DesignInstanceAttribute().Replace(xaml, match =>
+        {
+            Match value = DesignInstanceType().Match(match.Groups["arguments"].Value);
+            Type? type = value.Success ? FindClrType(xaml, value.Groups["prefix"].Value, value.Groups["name"].Value, findType) : null;
+            if (type is null || !IsCreatable(type))
+            {
+                return new string(' ', match.Length);
+            }
+
+            hasInstance = true;
+            string quote = match.Groups["q"].Value;
+            return $"DataContext={quote}{{{ExtensionPrefix}:DesignInstance {{{XamlPrefix}:Type {value.Value}}}}}{quote}";
+        });
+        string creatable = DesignElement().Replace(withInstances, match =>
         {
             Type? type = FindClrType(xaml, match.Groups["prefix"].Value, match.Groups["name"].Value, findType);
             return type is null || IsCreatable(type) ? match.Value : new string('\n', match.Value.Count(c => c == '\n'));
         });
+        return hasInstance ? DeclareExtensionNamespaces(creatable) : creatable;
     }
 
     /// <summary>Sets the DataContext of the root control.</summary>
@@ -51,13 +72,6 @@ internal static partial class DesignDataContext
         // Also applies Design.Width, Design.Height, and Design.DesignStyle.
         Design.ApplyDesignModeProperties(root, root);
         XElement element = XDocument.Parse(xaml).Root!;
-        object? designInstance = CreateOrNull(FindDesignInstanceType(element, xaml, findType));
-        if (designInstance is not null)
-        {
-            root.DataContext = designInstance;
-            return;
-        }
-
         root.DataContext ??= CreateOrNull(FindDataType(element, xaml, findType));
     }
 
@@ -65,14 +79,6 @@ internal static partial class DesignDataContext
 
     private static object? CreateOrNull(Type? type) =>
         type is not null && IsCreatable(type) ? Activator.CreateInstance(type) : null;
-
-    // Reads d:DataContext="{d:DesignInstance prefix:Name}" of the root element.
-    private static Type? FindDesignInstanceType(XElement root, string xaml, Func<string, string, Type?> findType)
-    {
-        string value = (string?)root.Attribute(blendNamespace + "DataContext") ?? string.Empty;
-        Match match = DesignInstanceValue().Match(value);
-        return match.Success ? FindClrType(xaml, match.Groups["prefix"].Value, match.Groups["name"].Value, findType) : null;
-    }
 
     // Reads x:DataType="prefix:Name" of the root element. A DataTemplate can have its own x:DataType.
     private static Type? FindDataType(XElement root, string xaml, Func<string, string, Type?> findType)
@@ -87,6 +93,14 @@ internal static partial class DesignDataContext
         return declaration is null ? null : findType(declaration.Groups["ns"].Value, name);
     }
 
+    private static string DeclareExtensionNamespaces(string xaml)
+    {
+        Type extension = typeof(DesignInstanceExtension);
+        string extensionNamespace = $"clr-namespace:{extension.Namespace};assembly={extension.Assembly.GetName().Name}";
+        string declarations = $" xmlns:{ExtensionPrefix}=\"{extensionNamespace}\" xmlns:{XamlPrefix}=\"{xamlNamespace.NamespaceName}\"";
+        return RootElementName().Replace(xaml, match => match.Value + declarations, 1);
+    }
+
     // <Design.DataContext><prefix:Name ... /></Design.DataContext>, also with content in the prefix:Name element.
     [GeneratedRegex(
         """<Design\.DataContext>\s*<(?<prefix>[\w.-]+):(?<name>[\w.]+)\b.*?</Design\.DataContext>""",
@@ -94,12 +108,17 @@ internal static partial class DesignDataContext
     private static partial Regex DesignElement();
 
     // The d:DataContext="{d:DesignInstance ...}" attribute of any element.
-    [GeneratedRegex("""(?<d>[\w.-]+):DataContext\s*=\s*(?<q>["'])\{\k<d>:DesignInstance\b[^"']*\k<q>""")]
+    [GeneratedRegex("""(?<d>[\w.-]+):DataContext\s*=\s*(?<q>["'])\{\k<d>:DesignInstance\b(?<arguments>[^"']*)\k<q>""")]
     private static partial Regex DesignInstanceAttribute();
 
-    // {d:DesignInstance prefix:Name, ...} or {d:DesignInstance Type=prefix:Name, ...}
-    [GeneratedRegex("""^\{[\w.-]+:DesignInstance\s+(?:Type\s*=\s*)?(?<prefix>[\w.-]+):(?<name>[\w.]+)""")]
-    private static partial Regex DesignInstanceValue();
+    // The type in the arguments of a d:DesignInstance. These forms are possible:
+    // prefix:Name, Type=prefix:Name, Type={x:Type prefix:Name}, Type={x:Type TypeName=prefix:Name}
+    [GeneratedRegex("""(?<=^\s+(?:Type\s*=\s*)?(?:\{[\w.-]+:Type\s+(?:TypeName\s*=\s*)?)?)(?<prefix>[\w.-]+):(?<name>[\w.]+)""")]
+    private static partial Regex DesignInstanceType();
+
+    // The name of the root element, after the XML declaration and comments.
+    [GeneratedRegex("""\A(?:\s|<\?.*?\?>|<!--.*?-->)*<[\w.:-]+""", RegexOptions.Singleline)]
+    private static partial Regex RootElementName();
 
     [GeneratedRegex("""xmlns:(?<prefix>[\w.-]+)\s*=\s*(?<q>["'])(?:using|clr-namespace):(?<ns>[\w.]+)[^"']*\k<q>""")]
     private static partial Regex ClrNamespaceDeclaration();

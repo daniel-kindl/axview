@@ -37,7 +37,7 @@ internal sealed class PreviewRenderer(Assembly localAssembly, string projectDire
         string xaml = ReadWithRetry(axamlPath);
         Uri baseUri = AvaresUri.For(localAssembly.GetName().Name!, projectDirectory, axamlPath);
         string withClass = CodeBehindClass.RemoveIfNotCreatable(xaml, localAssembly);
-        string creatable = DesignDataContext.RemoveIfNotCreatable(withClass, FindType);
+        string creatable = DesignDataContext.PrepareForLoader(withClass, FindType);
         string qualified = XmlnsQualifier.Qualify(creatable, namespaces.FindOwner);
         object root = AvaloniaRuntimeXamlLoader.Load(qualified, localAssembly, null, baseUri, designMode: true);
         if (root is Control loaded)

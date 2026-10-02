@@ -172,17 +172,52 @@ public sealed class PreviewRendererTests
     [AvaloniaTheory]
     [InlineData("{d:DesignInstance Type=vm:FixtureViewModel, IsDesignTimeCreatable=True}")]
     [InlineData("{d:DesignInstance vm:FixtureViewModel}")]
+    [InlineData("{d:DesignInstance Type={x:Type vm:FixtureViewModel}}")]
+    [InlineData("{d:DesignInstance Type={x:Type TypeName=vm:FixtureViewModel}, IsDesignTimeCreatable=True}")]
     public void Render_CreatesTheTypeOfADesignInstance(string designInstance)
     {
         using TempDir dir = new();
         string file = dir.Write("Views/DesignInstance.axaml", $"""
-            <UserControl {AvaloniaXmlns} {DesignXmlns} xmlns:vm="using:AxView.Tests.Fixtures"
+            <UserControl {AvaloniaXmlns} {XamlXmlns} {DesignXmlns} xmlns:vm="using:AxView.Tests.Fixtures"
                          d:DataContext="{designInstance}" />
             """);
 
         Control preview = Renderer(dir).Render(file);
 
         _ = Assert.IsType<FixtureViewModel>(preview.DataContext);
+    }
+
+    [AvaloniaFact]
+    public void Render_CreatesTheDesignInstanceOfAChildElement()
+    {
+        using TempDir dir = new();
+        string file = dir.Write("Views/ChildDesignInstance.axaml", $"""
+            <UserControl {AvaloniaXmlns} {DesignXmlns} xmlns:vm="using:AxView.Tests.Fixtures">
+              <TextBlock d:DataContext="{"{"}d:DesignInstance vm:FixtureViewModel{"}"}" Text="{"{"}Binding Greeting{"}"}" />
+            </UserControl>
+            """);
+
+        Control preview = Renderer(dir).Render(file);
+
+        TextBlock child = Assert.IsType<TextBlock>(Assert.IsType<UserControl>(preview).Content);
+        _ = Assert.IsType<FixtureViewModel>(child.DataContext);
+    }
+
+    [AvaloniaFact]
+    public void Render_LetsAChildInheritTheDataContextWhenItsDesignInstanceHasNoParameterlessConstructor()
+    {
+        using TempDir dir = new();
+        string file = dir.Write("Views/DependentChildDesignInstance.axaml", $"""
+            <UserControl {AvaloniaXmlns} {XamlXmlns} {DesignXmlns} xmlns:vm="using:AxView.Tests.Fixtures"
+                         x:DataType="vm:FixtureViewModel">
+              <TextBlock d:DataContext="{"{"}d:DesignInstance vm:FixtureDependentViewModel{"}"}" />
+            </UserControl>
+            """);
+
+        Control preview = Renderer(dir).Render(file);
+
+        TextBlock child = Assert.IsType<TextBlock>(Assert.IsType<UserControl>(preview).Content);
+        _ = Assert.IsType<FixtureViewModel>(child.DataContext);
     }
 
     [AvaloniaFact]
