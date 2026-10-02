@@ -62,4 +62,4 @@ When you finish an item, mark it `[x]` and add the commit hash.
 - [x] Style and resource previews: `Design.PreviewWith` for a `Styles`, `Style`, or `ResourceDictionary` root. `efef44c`
 - [x] Theme switch: a toolbar switch for Default, Light, and Dark (`RequestedThemeVariant`). `b385a86`
 - [x] More DesignInstance forms: `Type={x:Type ...}`, and a `d:DataContext` with a `d:DesignInstance` on a child element. `086075a`
-- [x] Settings file: `settings.json` next to the app keeps the recent files, the window placement, and the theme.
+- [x] Settings file: `settings.json` next to the app keeps the recent files, the window placement, and the theme. `f3df631`
