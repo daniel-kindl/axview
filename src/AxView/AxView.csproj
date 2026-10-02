@@ -36,4 +36,9 @@
     <Copy SourceFiles="@(HostAssembly);@(HostAssembly->'%(RootDir)%(Directory)%(Filename).pdb')" DestinationFolder="$(OutDir)host" SkipUnchangedFiles="true" />
   </Target>
 
+  <!-- The launcher looks for the host in the host folder next to it. -->
+  <Target Name="PublishHost" AfterTargets="Publish" DependsOnTargets="CopyHost">
+    <Copy SourceFiles="@(HostAssembly);@(HostAssembly->'%(RootDir)%(Directory)%(Filename).pdb')" DestinationFolder="$(PublishDir)host" SkipUnchangedFiles="true" />
+  </Target>
+
 </Project>
