@@ -9,13 +9,15 @@ namespace AxView.Resolution;
 /// <param name="Output">The app output that the host runs in.</param>
 /// <param name="LoaderPath">The XAML loader assembly.</param>
 /// <param name="AppProjectDirectory">The folder of the app project of a library view. Null for an app view, or when no app project is found.</param>
+/// <param name="ReferencedProjectDirectories">The folders of the projects that the view project and the app project reference.</param>
 internal sealed record PreviewTarget(
     string AxamlPath,
     string ProjectDirectory,
     string AssemblyName,
     AppOutput Output,
     string LoaderPath,
-    string? AppProjectDirectory = null)
+    string? AppProjectDirectory,
+    IReadOnlyList<string> ReferencedProjectDirectories)
 {
     /// <summary>Makes the options that tell the host to show this target.</summary>
     /// <param name="snapshotPath">If set, the host saves one PNG to this path and exits.</param>
@@ -26,5 +28,6 @@ internal sealed record PreviewTarget(
         {
             AppProjectDirectory = AppProjectDirectory,
             SnapshotAllDirectory = snapshotAllDirectory,
+            ReferencedProjects = ReferencedProjectDirectories.Count > 0 ? string.Join(Path.PathSeparator, ReferencedProjectDirectories) : null,
         };
 }

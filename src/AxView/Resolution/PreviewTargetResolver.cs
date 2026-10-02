@@ -23,6 +23,7 @@ internal sealed class PreviewTargetResolver(ILoaderSource loaderSource)
             ? OutputFinder.Find(project, assemblyName)
             : OutputFinder.FromDirectory(outputDir, assemblyName);
         string version = output.ReadAvaloniaVersion();
+        string? appProjectDirectory = FindAppProjectDirectory(output, assemblyName);
 
         return new PreviewTarget(
             fullPath,
@@ -30,7 +31,20 @@ internal sealed class PreviewTargetResolver(ILoaderSource loaderSource)
             assemblyName,
             output,
             loaderSource.Find(version),
-            FindAppProjectDirectory(output, assemblyName));
+            appProjectDirectory,
+            FindReferencedProjectDirectories(project, appProjectDirectory));
+    }
+
+    // A change of the code of a referenced project needs a rebuild. Its AXAML files can be includes of the app.
+    private static IReadOnlyList<string> FindReferencedProjectDirectories(string project, string? appProjectDirectory)
+    {
+        List<string> projects = [project];
+        if (appProjectDirectory is not null)
+        {
+            projects.AddRange(Directory.EnumerateFiles(appProjectDirectory, "*.csproj"));
+        }
+
+        return ProjectReferences.FindDirectories(projects);
     }
 
     // The app of a library view is in another project. Without that project, only the build reports the problem.

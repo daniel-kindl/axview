@@ -25,6 +25,10 @@ namespace AxView.Protocol;
 /// <param name="ViewModelName">
 /// If set, the full name of the ViewModel type for the DataContext of a snapshot. The type is one of the ViewModel catalog.
 /// </param>
+/// <param name="ReferencedProjects">
+/// If set, the folders of the projects that the view project and the app project reference. They are in one list, with
+/// <see cref="Path.PathSeparator"/> between them. A change of their C# files also starts a rebuild.
+/// </param>
 internal sealed record HostOptions(
     string AxamlPath,
     string ProjectDirectory,
@@ -37,7 +41,8 @@ internal sealed record HostOptions(
     string? SettingsFile = null,
     string? AppProjectDirectory = null,
     string? SnapshotAllDirectory = null,
-    string? ViewModelName = null)
+    string? ViewModelName = null,
+    string? ReferencedProjects = null)
 {
     private const string AxamlKey = "--axaml";
     private const string ProjectKey = "--project";
@@ -51,9 +56,14 @@ internal sealed record HostOptions(
     private const string AppProjectKey = "--app-project";
     private const string SnapshotAllKey = "--snapshot-all";
     private const string ViewModelKey = "--view-model";
+    private const string ReferencedProjectsKey = "--referenced-projects";
 
     private static readonly string[] keys =
-        [AxamlKey, ProjectKey, AssemblyKey, AppAssemblyKey, LoaderKey, SnapshotKey, HandOffKey, SetupErrorKey, SettingsKey, AppProjectKey, SnapshotAllKey, ViewModelKey];
+        [AxamlKey, ProjectKey, AssemblyKey, AppAssemblyKey, LoaderKey, SnapshotKey, HandOffKey, SetupErrorKey, SettingsKey, AppProjectKey, SnapshotAllKey, ViewModelKey, ReferencedProjectsKey];
+
+    /// <summary>Gets the folders of the referenced projects. The list is empty when there are none.</summary>
+    public IReadOnlyList<string> ReferencedProjectDirectories =>
+        ReferencedProjects?.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries) ?? [];
 
     /// <summary>Reads the options from the host command line.</summary>
     /// <exception cref="ArgumentException">The arguments are not valid.</exception>
@@ -94,7 +104,8 @@ internal sealed record HostOptions(
             values.GetValueOrDefault(SettingsKey),
             values.GetValueOrDefault(AppProjectKey),
             values.GetValueOrDefault(SnapshotAllKey),
-            values.GetValueOrDefault(ViewModelKey));
+            values.GetValueOrDefault(ViewModelKey),
+            values.GetValueOrDefault(ReferencedProjectsKey));
     }
 
     /// <summary>Writes the options as the host command line.</summary>
@@ -115,6 +126,7 @@ internal sealed record HostOptions(
         AddOptional(args, AppProjectKey, AppProjectDirectory);
         AddOptional(args, SnapshotAllKey, SnapshotAllDirectory);
         AddOptional(args, ViewModelKey, ViewModelName);
+        AddOptional(args, ReferencedProjectsKey, ReferencedProjects);
         return args;
     }
 

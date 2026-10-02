@@ -44,6 +44,25 @@ public sealed class PreviewTargetResolverTests
     }
 
     [Fact]
+    public void Resolve_GivesTheReferencedProjectsOfTheViewProjectAndTheAppProject()
+    {
+        using TempDir dir = new();
+        _ = dir.Write("Repo.sln");
+        _ = dir.Write("src/Ui/Ui.csproj", "<Project><ItemGroup><ProjectReference Include=\"../Core/Core.csproj\" /></ItemGroup></Project>");
+        string axaml = dir.Write("src/Ui/Views/Main.axaml");
+        _ = dir.Write("src/Core/Core.csproj", "<Project />");
+        _ = dir.Write("src/Desktop/Desktop.csproj", "<Project><ItemGroup><ProjectReference Include=\"../Theme/Theme.csproj\" /></ItemGroup></Project>");
+        _ = dir.Write("src/Theme/Theme.csproj", "<Project />");
+        _ = AppFixture.WriteAppOutput(dir, "src/Desktop/bin/Debug/net9.0", "Desktop", "Ui");
+
+        PreviewTarget target = new PreviewTargetResolver(new FakeLoaderSource()).Resolve(axaml, outputDir: null);
+
+        string[] expected = [Path.Combine(dir.Path, "src", "Core"), Path.Combine(dir.Path, "src", "Theme")];
+        Assert.Equal(expected, target.ReferencedProjectDirectories);
+        Assert.Equal(expected, target.ToHostOptions(snapshotPath: null, handOffFile: null).ReferencedProjectDirectories);
+    }
+
+    [Fact]
     public void Resolve_AppView_GivesNoAppProject()
     {
         using TempDir dir = new();

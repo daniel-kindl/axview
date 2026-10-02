@@ -17,7 +17,8 @@ public sealed class HostProtocolTests
         SettingsFile: "/tools/axview/settings.json",
         AppProjectDirectory: "/src/Desktop",
         SnapshotAllDirectory: "/out/shots",
-        ViewModelName: "Ui.ViewModels.MainViewModel");
+        ViewModelName: "Ui.ViewModels.MainViewModel",
+        ReferencedProjects: string.Join(Path.PathSeparator, "/src/Core", "/src/Common"));
 
     [Fact]
     public void Parse_ReadsTheArgumentsThatToArgumentsWrites()
@@ -40,11 +41,19 @@ public sealed class HostProtocolTests
             AppProjectDirectory = null,
             SnapshotAllDirectory = null,
             ViewModelName = null,
+            ReferencedProjects = null,
         };
 
         HostOptions parsed = HostOptions.Parse(options.ToArguments());
 
         Assert.Equal(options, parsed);
+    }
+
+    [Fact]
+    public void ReferencedProjectDirectories_SplitsTheOption()
+    {
+        Assert.Equal(["/src/Core", "/src/Common"], full.ReferencedProjectDirectories);
+        Assert.Empty((full with { ReferencedProjects = null }).ReferencedProjectDirectories);
     }
 
     [Fact]

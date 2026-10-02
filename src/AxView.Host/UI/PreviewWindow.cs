@@ -46,8 +46,7 @@ internal sealed class PreviewWindow : Window
     private readonly ViewModelSwitch viewModelSwitch;
     private readonly Dictionary<string, string> viewModels;
     private readonly WindowPlacementTracker? placementTracker;
-    private readonly FileChangeWatcher? codeWatcher;
-    private readonly FileChangeWatcher? appCodeWatcher;
+    private readonly List<FileChangeWatcher> codeWatchers = [];
     private readonly AppIncludes? appIncludes;
     private readonly FileChangeWatcher? axamlWatcher;
     private IReadOnlyList<string> catalog = [];
@@ -151,16 +150,18 @@ internal sealed class PreviewWindow : Window
         // Only the launcher can build the app and start a new host.
         if (options.HandOffFile is not null)
         {
-            codeWatcher = FileChangeWatcher.ForCodeFiles(
-                options.ProjectDirectory,
-                () => StopWithHandOff(livePreview.FilePath, ExitReason.Rebuild));
-
-            // A library view also needs a rebuild when the code of the app changes.
+            // A library view also needs a rebuild when the code of the app or of a referenced project changes.
+            List<string> codeDirectories = [options.ProjectDirectory];
             if (options.AppProjectDirectory is not null)
             {
-                appCodeWatcher = FileChangeWatcher.ForCodeFiles(
-                    options.AppProjectDirectory,
-                    () => StopWithHandOff(livePreview.FilePath, ExitReason.Rebuild));
+                codeDirectories.Add(options.AppProjectDirectory);
+            }
+
+            codeDirectories.AddRange(options.ReferencedProjectDirectories);
+            foreach (string directory in codeDirectories)
+            {
+                codeWatchers.Add(
+                    FileChangeWatcher.ForCodeFiles(directory, () => StopWithHandOff(livePreview.FilePath, ExitReason.Rebuild)));
             }
         }
 
@@ -197,8 +198,11 @@ internal sealed class PreviewWindow : Window
 
     protected override void OnClosed(EventArgs e)
     {
-        codeWatcher?.Dispose();
-        appCodeWatcher?.Dispose();
+        foreach (FileChangeWatcher watcher in codeWatchers)
+        {
+            watcher.Dispose();
+        }
+
         axamlWatcher?.Dispose();
         livePreview.Dispose();
         base.OnClosed(e);

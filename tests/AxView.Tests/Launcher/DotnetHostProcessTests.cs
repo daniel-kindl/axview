@@ -11,7 +11,7 @@ public sealed class DotnetHostProcessTests
     {
         string outDir = Path.Combine(Path.GetTempPath(), "out");
         AppOutput output = AppOutput.FromRuntimeConfig(Path.Combine(outDir, "Desktop.runtimeconfig.json"));
-        PreviewTarget target = new("/src/Ui/Views/Main.axaml", "/src/Ui", "Ui", output, "/nuget/loader.dll");
+        PreviewTarget target = new("/src/Ui/Views/Main.axaml", "/src/Ui", "Ui", output, "/nuget/loader.dll", null, []);
         HostOptions options = target.ToHostOptions(snapshotPath: null, handOffFile: null);
 
         IReadOnlyList<string> args = DotnetHostProcess.Arguments("/tool/host/AxView.Host.dll", target, options);
