@@ -12,7 +12,8 @@ namespace AxView.Host.Startup;
 /// <summary>Takes the target app's themes, styles, resources, and data templates out of a new instance of the target app.</summary>
 /// <remarks>
 /// The importer calls only the target app's Initialize, which loads App.axaml.
-/// It does not call OnFrameworkInitializationCompleted, so the target's windows and services do not start.
+/// It calls OnFrameworkInitializationCompleted only when the user opts in. The ApplicationLifetime is null then,
+/// so the target's windows do not start. The target can set up static services there, for example for a ViewLocator.
 /// Each call creates a new instance. Thus each call gives new style objects.
 /// </remarks>
 internal static class TargetAppImporter
@@ -20,8 +21,9 @@ internal static class TargetAppImporter
     /// <summary>Creates the target app and takes its styles.</summary>
     /// <param name="options">The options of the host. They name the assemblies to search for the app.</param>
     /// <param name="notes">Gets a note about the result.</param>
+    /// <param name="runStartup">True to call OnFrameworkInitializationCompleted of the app.</param>
     /// <returns>The styles of the app, or <see cref="TargetStyles.None"/> when the app is missing or fails.</returns>
-    public static TargetStyles Import(HostOptions options, List<string> notes)
+    public static TargetStyles Import(HostOptions options, List<string> notes, bool runStartup = false)
     {
         Type? appType = FindAppType(options.AssemblyName) ?? FindAppType(options.AppAssemblyName);
         if (appType is null)
@@ -30,10 +32,24 @@ internal static class TargetAppImporter
             return TargetStyles.None;
         }
 
+        return ImportFrom(appType, runStartup, notes);
+    }
+
+    /// <summary>Creates an app of the given type and takes its styles.</summary>
+    /// <param name="appType">The type of the target app.</param>
+    /// <param name="runStartup">True to call OnFrameworkInitializationCompleted of the app.</param>
+    /// <param name="notes">Gets a note about the result.</param>
+    /// <returns>The styles of the app, or <see cref="TargetStyles.None"/> when the app fails.</returns>
+    public static TargetStyles ImportFrom(Type appType, bool runStartup, List<string> notes)
+    {
         try
         {
             Application source = (Application)Activator.CreateInstance(appType)!;
             source.Initialize();
+            if (runStartup)
+            {
+                source.OnFrameworkInitializationCompleted();
+            }
 
             IResourceDictionary resources = source.Resources;
             source.Resources = new ResourceDictionary();

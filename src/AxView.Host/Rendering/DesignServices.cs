@@ -12,7 +12,9 @@ namespace AxView.Host.Rendering;
 /// }
 /// </code>
 /// The class can be in any namespace of the project assembly.
-/// The factory can also initialize static services, for example a logger.
+/// The factory must set the static services that the app reads, for example <c>App.Services</c>.
+/// Then a ViewLocator that uses dependency injection works in the preview.
+/// To run <c>OnFrameworkInitializationCompleted</c> of the app too, set <c>"RunAppStartup": true</c> in the settings file.
 /// Register stub services in it, so that the preview makes no network calls.
 /// </remarks>
 /// <param name="provider">The design services, or null when the target app has no factory.</param>

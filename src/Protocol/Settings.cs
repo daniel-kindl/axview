@@ -12,7 +12,8 @@ namespace AxView.Protocol;
 ///   "Window": { "Mode": "Maximized", "X": 10, "Y": 20, "Width": 1280, "Height": 800 },
 ///   "Theme": "Dark",
 ///   "Size": { "Preset": "Custom", "Width": 500, "Height": 300 },
-///   "ViewModels": { "/src/Ui/Views/Main.axaml": "Ui.ViewModels.MainViewModel" }
+///   "ViewModels": { "/src/Ui/Views/Main.axaml": "Ui.ViewModels.MainViewModel" },
+///   "RunAppStartup": true
 /// }
 /// </code>
 /// Each change loads the file again, changes one value, and saves the file.
@@ -44,6 +45,10 @@ internal sealed record Settings
     /// <summary>The ViewModel type that the user selected for each AXAML file: full file path to full type name.</summary>
     /// <remarks>A file with no item uses the DataContext from its XAML.</remarks>
     public IReadOnlyDictionary<string, string> ViewModels { get; init; } = new Dictionary<string, string>();
+
+    /// <summary>True to call OnFrameworkInitializationCompleted of the target app. Its ApplicationLifetime is null.</summary>
+    /// <remarks>The user sets this value in the file. The default is false.</remarks>
+    public bool RunAppStartup { get; init; }
 
     /// <summary>Reads the settings file.</summary>
     /// <returns>The settings, or <see cref="Default"/> when the file is missing or not valid.</returns>

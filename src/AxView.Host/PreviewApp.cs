@@ -29,7 +29,7 @@ internal sealed class PreviewApp(HostOptions options, List<string> notes) : Appl
     public override void Initialize()
     {
         services = LoadServices();
-        target = TargetAppImporter.Import(options, notes);
+        target = TargetAppImporter.Import(options, notes, LoadSettings().RunAppStartup);
         IStyle? chromeTheme = ChromeTheme.Load();
         if (chromeTheme is not null)
         {
@@ -54,6 +54,8 @@ internal sealed class PreviewApp(HostOptions options, List<string> notes) : Appl
 
         base.OnFrameworkInitializationCompleted();
     }
+
+    private Settings LoadSettings() => options.SettingsFile is null ? Settings.Default : Settings.Load(options.SettingsFile);
 
     private DesignServices LoadServices()
     {
