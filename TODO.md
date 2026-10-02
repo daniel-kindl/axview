@@ -23,11 +23,6 @@ Do not change or use again a number.
   Option A: the launcher shows a "Building" window.
   Option B: the host runs from a copy of the output. It stays open during the build and shows a build overlay.
 - [ ] #20 **Avalonia 12 (L).** Check the loader and host APIs. A second host build may be necessary.
-- [ ] #51 **StaticResource from an include of a view (S).** The runtime loader resolves a `StaticResource` with the compiled include.
-  The include walk replaces the include after the load. Thus the `StaticResource` keeps the value of the build.
-  A `DynamicResource` and a style get the changed value.
-- [ ] #52 **Includes in the children of a view (S).** `AppIncludes` walks only the `Styles` and `Resources` of the root control.
-  An include in a child control goes back to the build. Match the child controls of the XAML with the logical tree.
 
 
 ## Known issues
@@ -82,3 +77,5 @@ Each known issue is now an item: #30 to #39.
 - [x] #49 App.axaml data templates: `TargetStyles.ReplaceWith` replaces the data templates of each owner, and the theme variant. `ff65f2c`
 - [x] #53 Versions from git tags: MinVer gives the version from a `v<semver>` tag. `docs/RELEASE.md` has the tag rules. `14369a7`
 - [x] #54 Pack only: `pack.ps1` publishes and writes the archives. It has no smoke check. `9e98ff6`
+- [x] #51 StaticResource from an include of a view: `ChangedIncludes` gives the changed include files to `LoadGroup`. Then the load uses them. `1c69607`
+- [x] #52 Includes in the children of a view: `ChangedIncludes` finds each include element of the file, also in child controls. `1c69607`
