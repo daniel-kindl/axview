@@ -20,9 +20,10 @@ internal sealed class PreviewScope : ThemeVariantScope
     {
         Styles.Add(target.Styles);
         Resources = target.Resources;
-        DataTemplates.AddRange(target.DataTemplates);
+        target.AddDataTemplatesTo(DataTemplates);
         AppThemeVariant = target.ThemeVariant ?? ThemeVariant.Default;
         RequestedThemeVariant = AppThemeVariant;
+        target.ThemeVariantChanged += (_, _) => ChangeAppThemeVariant(target.ThemeVariant ?? ThemeVariant.Default);
         // The scope has no parent yet. Thus the search finds only the Window theme of the target app.
         bool hasWindowTheme = this.TryFindResource(typeof(Window), out object? found) && found is ControlTheme;
         frame = new PreviewFrame(hasWindowTheme ? (ControlTheme)found! : null);
@@ -30,12 +31,23 @@ internal sealed class PreviewScope : ThemeVariantScope
     }
 
     /// <summary>Gets the theme variant of the target app. <see cref="ThemeVariant.Default"/> when the app requests none.</summary>
-    public ThemeVariant AppThemeVariant { get; }
+    public ThemeVariant AppThemeVariant { get; private set; }
 
     /// <summary>Gets or sets the preview.</summary>
     public object? Content
     {
         get => frame.Content;
         set => frame.Content = value;
+    }
+
+    // A variant that the user selects stays. The scope follows the app only when it shows the app variant.
+    private void ChangeAppThemeVariant(ThemeVariant variant)
+    {
+        bool isAppVariantShown = RequestedThemeVariant == AppThemeVariant;
+        AppThemeVariant = variant;
+        if (isAppVariantShown)
+        {
+            RequestedThemeVariant = variant;
+        }
     }
 }

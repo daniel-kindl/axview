@@ -192,6 +192,31 @@ public sealed class AppStylesTests
     }
 
     [AvaloniaFact]
+    public void Update_AppFileWithDataTemplatesAndThemeVariant_ChangesThemInTheScope()
+    {
+        using TempDir dir = new();
+        string appPath = dir.Write("App.axaml", InlineApp("Before"));
+        AppStyles appStyles = CreateWithAppType(dir, appPath);
+        PreviewScope scope = new(appStyles.CreateCopy());
+
+        File.WriteAllText(appPath, $"""
+            <Application {Xmlns} RequestedThemeVariant="Dark">
+              <Application.DataTemplates>
+                <DataTemplate DataType="x:String">
+                  <TextBlock />
+                </DataTemplate>
+              </Application.DataTemplates>
+            </Application>
+            """);
+        IncludeUpdate update = appStyles.Update();
+
+        Assert.True(update.IsChanged);
+        Assert.Null(update.Error);
+        _ = Assert.Single(scope.DataTemplates);
+        Assert.Equal(ThemeVariant.Dark, scope.AppThemeVariant);
+    }
+
+    [AvaloniaFact]
     public void Update_BrokenAppFile_KeepsTheOldStylesAndGivesTheError()
     {
         using TempDir dir = new();

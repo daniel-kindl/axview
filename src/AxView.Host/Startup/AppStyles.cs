@@ -14,8 +14,8 @@ namespace AxView.Host.Startup;
 /// A style object can have only one owner. Thus each owner gets its own copy:
 /// the preview scope, <c>Application.Current</c>, the chrome fallback, and each snapshot window.
 /// A copy stays live while its owner keeps its resources. A closed snapshot window does not stay in memory.
-/// A changed app file loads into a new instance of the app type. The styles and resources of the copies change.
-/// Their data templates and theme variant stay the same.
+/// A changed app file loads into a new instance of the app type.
+/// The styles, resources, data templates, and theme variant of the copies change.
 /// </remarks>
 /// <param name="firstImport">The import that ran the startup of the app. The first copy is this import.</param>
 /// <param name="import">Gives a new import of the app styles for each further copy.</param>

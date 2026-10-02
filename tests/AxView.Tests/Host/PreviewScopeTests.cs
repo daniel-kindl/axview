@@ -131,6 +131,43 @@ public sealed class PreviewScopeTests
         Assert.Equal(ThemeVariant.Default, scope.AppThemeVariant);
     }
 
+    [AvaloniaFact]
+    public void ReplaceWith_ChangesTheDataTemplatesOfTheScope()
+    {
+        IDataTemplate before = new FuncDataTemplate<string>((_, _) => new TextBlock());
+        IDataTemplate after = new FuncDataTemplate<string>((_, _) => new TextBlock());
+        TargetStyles target = new([], new ResourceDictionary(), [before], null);
+        PreviewScope scope = new(target);
+
+        target.ReplaceWith(new TargetStyles([], new ResourceDictionary(), [after], null));
+
+        Assert.Equal([after], scope.DataTemplates);
+    }
+
+    [AvaloniaFact]
+    public void ReplaceWith_ChangesTheAppThemeVariantOfTheScope()
+    {
+        TargetStyles target = new([], new ResourceDictionary(), [], ThemeVariant.Light);
+        PreviewScope scope = new(target);
+
+        target.ReplaceWith(new TargetStyles([], new ResourceDictionary(), [], ThemeVariant.Dark));
+
+        Assert.Equal(ThemeVariant.Dark, scope.AppThemeVariant);
+        Assert.Equal(ThemeVariant.Dark, scope.RequestedThemeVariant);
+    }
+
+    [AvaloniaFact]
+    public void ReplaceWith_SelectedThemeVariant_KeepsTheSelectedVariant()
+    {
+        TargetStyles target = TargetStyles.None;
+        PreviewScope scope = new(target) { RequestedThemeVariant = ThemeVariant.Light };
+
+        target.ReplaceWith(new TargetStyles([], new ResourceDictionary(), [], ThemeVariant.Dark));
+
+        Assert.Equal(ThemeVariant.Dark, scope.AppThemeVariant);
+        Assert.Equal(ThemeVariant.Light, scope.RequestedThemeVariant);
+    }
+
     private static TargetStyles Target(IReadOnlyList<IStyle> styles) =>
         new([.. styles], new ResourceDictionary(), [], null);
 

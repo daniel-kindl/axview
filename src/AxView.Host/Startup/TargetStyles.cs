@@ -19,8 +19,20 @@ internal sealed record TargetStyles(
     IReadOnlyList<IDataTemplate> DataTemplates,
     ThemeVariant? ThemeVariant)
 {
+    // The data template collections of the owners. A replace changes the data templates in each one.
+    private readonly List<DataTemplates> templateOwners = [];
+
     /// <summary>Gets an empty set, for a target app that has no Application class.</summary>
     public static TargetStyles None => new([], new ResourceDictionary(), [], null);
+
+    /// <summary>Gets the data templates of the app.</summary>
+    public IReadOnlyList<IDataTemplate> DataTemplates { get; private set; } = DataTemplates;
+
+    /// <summary>Gets the theme variant that the app requests. Null when the app requests none.</summary>
+    public ThemeVariant? ThemeVariant { get; private set; } = ThemeVariant;
+
+    /// <summary>Occurs when <see cref="ReplaceWith"/> changes <see cref="ThemeVariant"/>.</summary>
+    public event EventHandler? ThemeVariantChanged;
 
     /// <summary>Moves the styles, resources, and data templates into the app.</summary>
     /// <param name="app">The app that gets them.</param>
@@ -28,11 +40,22 @@ internal sealed record TargetStyles(
     {
         app.Styles.Add(Styles);
         app.Resources = Resources;
-        app.DataTemplates.AddRange(DataTemplates);
+        AddDataTemplatesTo(app.DataTemplates);
     }
 
-    /// <summary>Moves the styles and resources of another set into this set. The owners of this set see the change.</summary>
-    /// <remarks>The data templates and the theme variant stay the same.</remarks>
+    /// <summary>Adds the data templates to the data templates of an owner.</summary>
+    /// <remarks>A later <see cref="ReplaceWith"/> replaces them in the owner too.</remarks>
+    /// <param name="owner">The data templates of the owner.</param>
+    public void AddDataTemplatesTo(DataTemplates owner)
+    {
+        owner.AddRange(DataTemplates);
+        templateOwners.Add(owner);
+    }
+
+    /// <summary>
+    /// Moves the styles, resources, and data templates of another set into this set, and takes its theme variant.
+    /// The owners of this set see the change.
+    /// </summary>
     /// <param name="source">The set that gives its styles and resources. It is empty after the call.</param>
     public void ReplaceWith(TargetStyles source)
     {
@@ -43,6 +66,28 @@ internal sealed record TargetStyles(
         Styles.AddRange(styles);
 
         ReplaceResources(source.Resources);
+        ReplaceDataTemplates(source.DataTemplates);
+        if (ThemeVariant != source.ThemeVariant)
+        {
+            ThemeVariant = source.ThemeVariant;
+            ThemeVariantChanged?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    // An owner can have other data templates too. Thus remove only the templates of this set.
+    private void ReplaceDataTemplates(IReadOnlyList<IDataTemplate> templates)
+    {
+        foreach (DataTemplates owner in templateOwners)
+        {
+            foreach (IDataTemplate template in DataTemplates)
+            {
+                _ = owner.Remove(template);
+            }
+
+            owner.AddRange(templates);
+        }
+
+        DataTemplates = [.. templates];
     }
 
     private void ReplaceResources(IResourceDictionary source)
