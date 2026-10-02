@@ -37,7 +37,7 @@ Do not change or use again a number.
   Thus the exe must unpack the host before it starts the host.
   The settings file is next to the exe. It moves to `LocalApplicationData/AxView` only when the exe folder is not writable.
 - [ ] #24 **Linux and macOS check (S).** Run the tests and one snapshot on each OS.
-- [ ] #26 **ViewModel in snapshot mode (S).** A snapshot ignores the ViewModel that the user selected for the file.
+- [ ] #28 **ViewModel in snapshot mode (S).** A snapshot ignores the ViewModel that the user selected for the file.
   Use the choice from the settings file, or add a `--view-model <type>` option.
 - [ ] #25 **About dialog (S).** Add a simple About dialog to the picker and the preview window.
   Show the AxView version, the build date, and the Avalonia version of the host.
