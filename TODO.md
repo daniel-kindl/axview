@@ -29,12 +29,6 @@ Do not change or use again a number.
   Option A: the launcher shows a "Building" window.
   Option B: the host runs from a copy of the output. It stays open during the build and shows a build overlay.
 - [ ] #20 **Avalonia 12 (L).** Check the loader and host APIs. A second host build may be necessary.
-- [ ] #22 **CI snapshot mode (S).** Render all files of a project. Write one PNG per file and a summary. Fail on error.
-  Use `SnapshotWindow` for each file.
-- [ ] #23 **Packaging (M).** Publish AxView as one portable exe (`axview.exe`).
-  The host must be a `.dll` on disk, because `dotnet exec` starts it in the target runtime.
-  Thus the exe must unpack the host before it starts the host.
-  The settings file is next to the exe. It moves to `LocalApplicationData/AxView` only when the exe folder is not writable.
 - [ ] #24 **Linux and macOS check (S).** Run the tests and one snapshot on each OS.
 - [ ] #28 **ViewModel in snapshot mode (S).** A snapshot ignores the ViewModel that the user selected for the file.
   Use the choice from the settings file, or add a `--view-model <type>` option.
@@ -81,3 +75,4 @@ Each known issue is now an item: #30 to #39.
 - [x] #33 Window styles on the frame: the frame has the style key of a window, and always an explicit theme. `eb3d514`
 - [x] #34 App startup services: `RunAppStartup` in `settings.json` calls `OnFrameworkInitializationCompleted` of the app. `AxViewDesign` docs name `App.Services`. `c58e640`
 - [x] #21 Output choice: a Debug output wins over a newer Release output. The status bar shows the output folder. `e8652ea`
+- [x] #22 CI snapshot mode: `--snapshot-all <dir>` writes one PNG per project file and `summary.txt`. The exit code is 1 when a file fails. `HASH`

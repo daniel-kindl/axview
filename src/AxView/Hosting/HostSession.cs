@@ -40,22 +40,23 @@ internal sealed class HostSession(
     /// <param name="outputDir">The app output to use, or null to find it.</param>
     /// <param name="snapshotPath">If set, the host saves one PNG and exits.</param>
     /// <param name="opened">Called with each file that the session opens.</param>
+    /// <param name="snapshotAllDirectory">If set, the host saves a PNG of each file of the project in this folder and exits.</param>
     /// <returns>The exit code of the last host.</returns>
     /// <exception cref="PreviewSetupException">The launcher cannot prepare the first file.</exception>
-    public async Task<int> RunAsync(string axamlPath, string? outputDir, string? snapshotPath, Action<string> opened)
+    public async Task<int> RunAsync(string axamlPath, string? outputDir, string? snapshotPath, Action<string> opened, string? snapshotAllDirectory = null)
     {
         string handOffFile = Path.Combine(Path.GetTempPath(), $"axview-hand-off-{Guid.NewGuid():N}.json");
         PreviewTarget target = Open(axamlPath, outputDir, opened);
         string? setupError = null;
 
         // A snapshot must not depend on the last window of the user.
-        string? hostSettingsFile = snapshotPath is null ? settingsFile : null;
+        string? hostSettingsFile = snapshotPath is null && snapshotAllDirectory is null ? settingsFile : null;
         try
         {
             while (true)
             {
                 await log.WriteLineAsync($"axview: {target.AssemblyName} in '{target.Output.Directory}'");
-                HostOptions options = target.ToHostOptions(snapshotPath, handOffFile) with
+                HostOptions options = target.ToHostOptions(snapshotPath, handOffFile, snapshotAllDirectory) with
                 {
                     SetupError = setupError,
                     SettingsFile = hostSettingsFile,

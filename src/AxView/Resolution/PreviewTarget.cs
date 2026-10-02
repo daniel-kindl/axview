@@ -20,9 +20,11 @@ internal sealed record PreviewTarget(
     /// <summary>Makes the options that tell the host to show this target.</summary>
     /// <param name="snapshotPath">If set, the host saves one PNG to this path and exits.</param>
     /// <param name="handOffFile">If set, the host writes a hand-off here before a project switch.</param>
-    public HostOptions ToHostOptions(string? snapshotPath, string? handOffFile) =>
+    /// <param name="snapshotAllDirectory">If set, the host saves a PNG of each file of the project in this folder and exits.</param>
+    public HostOptions ToHostOptions(string? snapshotPath, string? handOffFile, string? snapshotAllDirectory = null) =>
         new(AxamlPath, ProjectDirectory, AssemblyName, Output.AppName, LoaderPath, snapshotPath, handOffFile)
         {
             AppProjectDirectory = AppProjectDirectory,
+            SnapshotAllDirectory = snapshotAllDirectory,
         };
 }

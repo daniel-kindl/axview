@@ -30,6 +30,22 @@ public sealed class HostSessionTests
     }
 
     [Fact]
+    public async Task RunAsync_GivesTheSnapshotFolderToTheHostAndIgnoresTheSettingsAsync()
+    {
+        using TempDir dir = new();
+        _ = dir.Write("Repo.sln");
+        string view = AppFixture.WriteProject(dir, "Ui");
+        FakeHostProcess hosts = new();
+        hosts.Enqueue(ExitReason.Ok);
+
+        _ = await Session(hosts).RunAsync(view, null, null, _ => { }, snapshotAllDirectory: "/out/shots");
+
+        HostOptions options = Assert.Single(hosts.Runs);
+        Assert.Equal("/out/shots", options.SnapshotAllDirectory);
+        Assert.Null(options.SettingsFile);
+    }
+
+    [Fact]
     public async Task RunAsync_StartsANewHostForTheFileOfTheHandOffAsync()
     {
         using TempDir dir = new();

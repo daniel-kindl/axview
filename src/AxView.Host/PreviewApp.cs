@@ -1,6 +1,7 @@
 using System.Reflection;
 
 using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Styling;
 using Avalonia.Threading;
@@ -47,9 +48,18 @@ internal sealed class PreviewApp(HostOptions options, List<string> notes) : Appl
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            desktop.MainWindow = options.SnapshotPath is null
-                ? new PreviewWindow(options, notes, services, target)
-                : CreateSnapshotWindow(desktop, options.SnapshotPath);
+            if (options.SnapshotAllDirectory is not null)
+            {
+                // The run opens and closes one window per file. Thus the app must not exit at the first close.
+                desktop.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+                _ = SnapshotAllAsync(desktop, options.SnapshotAllDirectory);
+            }
+            else
+            {
+                desktop.MainWindow = options.SnapshotPath is null
+                    ? new PreviewWindow(options, notes, services, target)
+                    : CreateSnapshotWindow(desktop, options.SnapshotPath);
+            }
         }
 
         base.OnFrameworkInitializationCompleted();
@@ -71,6 +81,26 @@ internal sealed class PreviewApp(HostOptions options, List<string> notes) : Appl
             notes.Add($"Cannot create the design services: {ex.GetBaseException().Message}");
             return DesignServices.None;
         }
+    }
+
+    private async Task SnapshotAllAsync(IClassicDesktopStyleApplicationLifetime desktop, string directory)
+    {
+        PreviewRenderer renderer = new(Assembly.Load(options.AssemblyName), options.ProjectDirectory, services);
+        ProjectSnapshots snapshots = new(
+            renderer, () => TargetAppImporter.Import(options, []), options.ProjectDirectory, directory, snapshotDelay);
+        ExitReason reason;
+        try
+        {
+            reason = await snapshots.RunAsync();
+        }
+        catch (Exception ex)
+        {
+            // The run must not end silently. Without a shutdown, the host would wait forever.
+            Console.Error.WriteLine($"axview: error: {ex.Message}");
+            reason = ExitReason.RenderFailed;
+        }
+
+        desktop.Shutdown((int)reason);
     }
 
     private SnapshotWindow CreateSnapshotWindow(IClassicDesktopStyleApplicationLifetime desktop, string pngPath)

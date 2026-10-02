@@ -32,6 +32,9 @@ internal sealed class SnapshotWindow : Window
         livePreview.Show(axamlPath);
     }
 
+    /// <summary>Gets the error of the load or of a dispatcher job, or null.</summary>
+    public string? Error => livePreview.Error;
+
     /// <summary>Writes a PNG of the window. Writes the error, if any, to the standard error stream.</summary>
     /// <param name="pngPath">The path of the PNG.</param>
     /// <returns><see cref="ExitReason.RenderFailed"/> when the load or a dispatcher job failed, else <see cref="ExitReason.Ok"/>.</returns>

@@ -15,7 +15,8 @@ public sealed class HostProtocolTests
         HandOffFile: "/tmp/hand-off.json",
         SetupError: "The app is not built.",
         SettingsFile: "/tools/axview/settings.json",
-        AppProjectDirectory: "/src/Desktop");
+        AppProjectDirectory: "/src/Desktop",
+        SnapshotAllDirectory: "/out/shots");
 
     [Fact]
     public void Parse_ReadsTheArgumentsThatToArgumentsWrites()
@@ -36,6 +37,7 @@ public sealed class HostProtocolTests
             SetupError = null,
             SettingsFile = null,
             AppProjectDirectory = null,
+            SnapshotAllDirectory = null,
         };
 
         HostOptions parsed = HostOptions.Parse(options.ToArguments());

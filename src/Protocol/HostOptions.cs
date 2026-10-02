@@ -19,6 +19,9 @@ namespace AxView.Protocol;
 /// <param name="AppProjectDirectory">
 /// The folder of the app project, if it is not the project folder. A change of its C# files also starts a rebuild.
 /// </param>
+/// <param name="SnapshotAllDirectory">
+/// If set, the host saves one PNG for each AXAML file of the project, and a summary file, in this folder. Then it exits.
+/// </param>
 internal sealed record HostOptions(
     string AxamlPath,
     string ProjectDirectory,
@@ -29,7 +32,8 @@ internal sealed record HostOptions(
     string? HandOffFile,
     string? SetupError = null,
     string? SettingsFile = null,
-    string? AppProjectDirectory = null)
+    string? AppProjectDirectory = null,
+    string? SnapshotAllDirectory = null)
 {
     private const string AxamlKey = "--axaml";
     private const string ProjectKey = "--project";
@@ -41,9 +45,10 @@ internal sealed record HostOptions(
     private const string SetupErrorKey = "--setup-error";
     private const string SettingsKey = "--settings";
     private const string AppProjectKey = "--app-project";
+    private const string SnapshotAllKey = "--snapshot-all";
 
     private static readonly string[] keys =
-        [AxamlKey, ProjectKey, AssemblyKey, AppAssemblyKey, LoaderKey, SnapshotKey, HandOffKey, SetupErrorKey, SettingsKey, AppProjectKey];
+        [AxamlKey, ProjectKey, AssemblyKey, AppAssemblyKey, LoaderKey, SnapshotKey, HandOffKey, SetupErrorKey, SettingsKey, AppProjectKey, SnapshotAllKey];
 
     /// <summary>Reads the options from the host command line.</summary>
     /// <exception cref="ArgumentException">The arguments are not valid.</exception>
@@ -82,7 +87,8 @@ internal sealed record HostOptions(
             values.GetValueOrDefault(HandOffKey),
             values.GetValueOrDefault(SetupErrorKey),
             values.GetValueOrDefault(SettingsKey),
-            values.GetValueOrDefault(AppProjectKey));
+            values.GetValueOrDefault(AppProjectKey),
+            values.GetValueOrDefault(SnapshotAllKey));
     }
 
     /// <summary>Writes the options as the host command line.</summary>
@@ -101,6 +107,7 @@ internal sealed record HostOptions(
         AddOptional(args, SetupErrorKey, SetupError);
         AddOptional(args, SettingsKey, SettingsFile);
         AddOptional(args, AppProjectKey, AppProjectDirectory);
+        AddOptional(args, SnapshotAllKey, SnapshotAllDirectory);
         return args;
     }
 
