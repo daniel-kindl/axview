@@ -19,7 +19,6 @@ When you finish an item, mark it `[x]` and add the commit hash.
   Keep the window position and size.
 - [ ] **More DesignInstance forms (S).** Support `{d:DesignInstance Type={x:Type vm:Type}}`.
   Apply a `d:DataContext` with a `d:DesignInstance` on a child element. Today the renderer only removes it.
-- [ ] **Theme switch (S).** Toolbar toggle for Light, Dark, and Default (`RequestedThemeVariant`).
 - [ ] **Preview size (S).** Presets (phone, tablet, desktop) and a custom width and height.
 - [ ] **Watch included files (M).** Reload when a `ResourceInclude` or `StyleInclude` file of the project changes.
   An `avares://` include loads the compiled XAML of the built assembly, not the file on disk.
@@ -60,3 +59,4 @@ When you finish an item, mark it `[x]` and add the commit hash.
 - [x] Project switch recovery: a failed switch starts the host again on the previous file and shows the setup error. `b374865`
 - [x] Design DataContext forms: `d:DataContext="{d:DesignInstance ...}"`, and a `Design.DataContext` with content. `37d9f7d`
 - [x] Style and resource previews: `Design.PreviewWith` for a `Styles`, `Style`, or `ResourceDictionary` root. `efef44c`
+- [x] Theme switch: a toolbar switch for Default, Light, and Dark (`RequestedThemeVariant`). `b385a86`
