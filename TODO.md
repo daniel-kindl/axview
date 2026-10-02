@@ -11,15 +11,6 @@ Do not change or use again a number.
 
 ## Next
 
-- [ ] #45 **Project preview (M).** Move the host logic out of `PreviewWindow` into a project preview module.
-  The module owns the project catalog, the live preview, the include reload, the rebuild watch, and the ViewModel of each file.
-  It gives a stop request: the exit reason and the next file. It does not call `Shutdown`.
-  The window keeps the layout, the bindings, the settings file, the hand-off file, and the shutdown.
-  Tests:
-  - A code change in a referenced project gives `Rebuild` and the current file.
-  - A file of another project gives `SwitchProject` and that file.
-  - Without a hand-off file, a file of another project gives an error.
-  - The ViewModel of a file stays after a switch to another file and back.
 
 ## Later
 

@@ -6,7 +6,6 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
 
-using AxView.Host.Catalog;
 using AxView.Host.Rendering;
 using AxView.Host.Startup;
 using AxView.Protocol;
@@ -18,8 +17,8 @@ namespace AxView.Host.UI;
 /// Keeps the last good render when a load fails.
 /// </summary>
 /// <remarks>
-/// When a code file of the project changes, the host stops. The launcher then builds the app and starts a new host.
-/// When an include file of the app styles or resources changes, the window loads it from disk and renders the preview again.
+/// The <see cref="ProjectPreview"/> owns the preview logic. The window keeps the layout, the settings file, and the shutdown.
+/// On a stop request of the preview, the window writes the hand-off file and stops the host.
 /// </remarks>
 internal sealed class PreviewWindow : Window
 {
@@ -31,7 +30,7 @@ internal sealed class PreviewWindow : Window
 
     private readonly HostOptions options;
     private readonly ProjectSet projects;
-    private readonly LivePreview livePreview;
+    private readonly ProjectPreview preview;
     private readonly ContentControl host = new();
     private readonly PreviewScope scope;
     private readonly Border errorPanel;
@@ -43,23 +42,15 @@ internal sealed class PreviewWindow : Window
     private readonly ThemeSwitch themeSwitch;
     private readonly PreviewSizeSwitch sizeSwitch;
     private readonly ViewModelSwitch viewModelSwitch;
-    private readonly Dictionary<string, string> viewModels;
     private readonly WindowPlacementTracker? placementTracker;
-    private readonly List<FileChangeWatcher> codeWatchers = [];
-    private readonly AppStyles appStyles;
-    private readonly List<FileChangeWatcher> axamlWatchers = [];
-    private IReadOnlyList<string> catalog = [];
     private bool isSyncingSelection;
 
     public PreviewWindow(HostOptions options, ProjectSet projects, IReadOnlyList<string> notes, DesignServices services, AppStyles appStyles)
     {
         this.options = options;
         this.projects = projects;
-        this.appStyles = appStyles;
         scope = new PreviewScope(appStyles.CreateCopy());
         host.Content = scope;
-        livePreview = new LivePreview(projects.CreateViewRenderer(services));
-        livePreview.Changed += (_, _) => ShowPreview();
 
         Icon = AppIcon.Get();
         Width = 1280;
@@ -74,8 +65,11 @@ internal sealed class PreviewWindow : Window
         placementTracker = options.SettingsFile is null ? null : new WindowPlacementTracker(this);
         themeSwitch = new ThemeSwitch(scope) { SelectedItem = settings.Theme };
         sizeSwitch = new PreviewSizeSwitch(host) { Size = settings.Size };
-        viewModels = new Dictionary<string, string>(settings.ViewModels, StringComparer.FromComparison(pathComparison));
-        viewModelSwitch = new ViewModelSwitch(ViewModelCatalog.List(projects.ViewAssembly, services));
+        preview = new ProjectPreview(options, projects, services, appStyles, settings.ViewModels);
+        preview.Changed += (_, _) => ShowPreview();
+        preview.Failed += (_, message) => ShowError(message);
+        preview.StopRequested += (_, request) => StopWithHandOff(request);
+        viewModelSwitch = new ViewModelSwitch(preview.ViewModelTypes);
         viewModelSwitch.SelectionChanged += (_, _) => OnViewModelSelected();
 
         status = new TextBlock { Margin = new Thickness(8, 4), FontSize = 12, TextTrimming = TextTrimming.CharacterEllipsis };
@@ -147,23 +141,6 @@ internal sealed class PreviewWindow : Window
         // The user can add files while the window is open.
         Activated += (_, _) => RefreshCatalog();
 
-        // Only the launcher can build the app and start a new host.
-        if (options.HandOffFile is not null)
-        {
-            // A library view also needs a rebuild when the code of the app or of a referenced project changes.
-            foreach (string directory in projects.CodeDirectories)
-            {
-                codeWatchers.Add(
-                    FileChangeWatcher.ForCodeFiles(directory, () => StopWithHandOff(livePreview.FilePath, ExitReason.Rebuild)));
-            }
-        }
-
-        // The app file of a library view can be in the app project.
-        foreach (string directory in appStyles.ProjectDirectories)
-        {
-            axamlWatchers.Add(FileChangeWatcher.ForAxamlFiles(directory, UpdateIncludes));
-        }
-
         Show(options.AxamlPath);
         RefreshCatalog();
         if (options.SetupError is not null)
@@ -184,17 +161,7 @@ internal sealed class PreviewWindow : Window
 
     protected override void OnClosed(EventArgs e)
     {
-        foreach (FileChangeWatcher watcher in codeWatchers)
-        {
-            watcher.Dispose();
-        }
-
-        foreach (FileChangeWatcher watcher in axamlWatchers)
-        {
-            watcher.Dispose();
-        }
-
-        livePreview.Dispose();
+        preview.Dispose();
         base.OnClosed(e);
     }
 
@@ -320,51 +287,26 @@ internal sealed class PreviewWindow : Window
             return;
         }
 
-        string? typeName = viewModelSwitch.SelectedTypeName;
-        if (typeName is null)
-        {
-            _ = viewModels.Remove(livePreview.FilePath);
-        }
-        else
-        {
-            viewModels[livePreview.FilePath] = typeName;
-        }
-
-        UpdateSettings(settings => settings with { ViewModels = new Dictionary<string, string>(viewModels) });
-        livePreview.Show(livePreview.FilePath, viewModelSwitch.SelectedType);
-    }
-
-    // A StaticResource does not follow a change of the app resources. Thus render the preview again.
-    private void UpdateIncludes()
-    {
-        IncludeUpdate update = appStyles.Update();
-        if (update.IsChanged)
-        {
-            livePreview.Reload();
-        }
-
-        if (update.Error is not null)
-        {
-            ShowError(update.Error);
-        }
+        preview.SelectViewModel(viewModelSwitch.SelectedType);
+        UpdateSettings(settings => settings with { ViewModels = new Dictionary<string, string>(preview.ViewModels) });
     }
 
     private void RefreshCatalog()
     {
-        catalog = AxamlCatalog.List(options.ProjectDirectory);
+        preview.RefreshCatalog();
         ShowCatalog();
     }
 
     private void ShowCatalog()
     {
         string text = filter.Text ?? string.Empty;
-        List<string> items = [.. catalog
+        List<string> items = [.. preview.Catalog
             .Select(RelativePath)
             .Where(p => p.Contains(text, StringComparison.OrdinalIgnoreCase))];
 
         isSyncingSelection = true;
         fileList.ItemsSource = items;
-        string shown = RelativePath(livePreview.FilePath);
+        string shown = RelativePath(preview.FilePath);
         fileList.SelectedItem = items.FirstOrDefault(p => string.Equals(p, shown, pathComparison));
         isSyncingSelection = false;
     }
@@ -388,67 +330,54 @@ internal sealed class PreviewWindow : Window
             FileTypeFilter = [new FilePickerFileType("AXAML") { Patterns = ["*.axaml"] }],
         });
         string? path = picked.Count == 1 ? picked[0].TryGetLocalPath() : null;
-        if (path is null)
+        if (path is not null)
         {
-            return;
+            preview.Open(path);
+            ShowShownFile();
         }
-
-        if (catalog.Any(f => string.Equals(f, Path.GetFullPath(path), pathComparison)))
-        {
-            Show(path);
-            return;
-        }
-
-        SwitchProject(path);
-    }
-
-    // A file of another project needs that project's app runtime. Only the launcher can start it.
-    private void SwitchProject(string path)
-    {
-        if (options.HandOffFile is null)
-        {
-            ShowError($"'{path}' belongs to another project. Start axview with that file.");
-            return;
-        }
-
-        StopWithHandOff(path, ExitReason.SwitchProject);
     }
 
     // The shutdown does not close the window. Thus save the settings first, so the next host opens at the same place.
-    private void StopWithHandOff(string nextFile, ExitReason reason)
+    // The preview gives a stop request only when the options have a hand-off file.
+    private void StopWithHandOff(StopRequest request)
     {
         SaveSettings();
-        new HandOff(Path.GetFullPath(nextFile)).Save(options.HandOffFile!);
+        new HandOff(request.NextFile).Save(options.HandOffFile!);
         if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            desktop.Shutdown((int)reason);
+            desktop.Shutdown((int)request.Reason);
         }
     }
 
     private void Show(string path)
     {
-        Title = $"AxView - {RelativePath(path)}";
-        string fullPath = Path.GetFullPath(path);
+        preview.Show(path);
+        ShowShownFile();
+    }
+
+    // Show the title, the ViewModel, and the list selection of the shown file.
+    private void ShowShownFile()
+    {
+        Title = $"AxView - {RelativePath(preview.FilePath)}";
         isSyncingSelection = true;
-        viewModelSwitch.SelectedTypeName = viewModels.GetValueOrDefault(fullPath);
+        viewModelSwitch.SelectedTypeName = preview.ViewModelName;
         isSyncingSelection = false;
-        livePreview.Show(fullPath, viewModelSwitch.SelectedType);
         ShowCatalog();
     }
 
     private void ShowPreview()
     {
-        scope.Content = livePreview.View;
-        noDataContextBadge.IsVisible = livePreview.View is { DataContext: null } && !livePreview.IsStylePreview;
-        if (livePreview.Error is not null)
+        scope.Content = preview.View;
+        noDataContextBadge.IsVisible = preview.View is { DataContext: null } && !preview.IsStylePreview;
+        if (preview.Error is not null)
         {
-            ShowError(livePreview.Error);
+            ShowError(preview.Error);
             return;
         }
 
         HideError();
-        status.Text = $"Rendered {DateTime.Now:HH:mm:ss}   {livePreview.FilePath}   Output: {OutputDirectory()}";
-        Console.WriteLine($"axview: rendered {RelativePath(livePreview.FilePath)}");
+        status.Text = $"Rendered {DateTime.Now:HH:mm:ss}   {preview.FilePath}   Output: {OutputDirectory()}";
+        Console.WriteLine($"axview: rendered {RelativePath(preview.FilePath)}");
     }
 
     private void ShowError(string message)
@@ -456,9 +385,9 @@ internal sealed class PreviewWindow : Window
         errorText.Text = message;
         errorPanel.IsVisible = true;
         Console.Error.WriteLine($"axview: error: {errorText.Text}");
-        status.Text = livePreview.View is null
-            ? $"Error {DateTime.Now:HH:mm:ss}   {livePreview.FilePath}"
-            : $"Error {DateTime.Now:HH:mm:ss}. Showing the last good render.   {livePreview.FilePath}";
+        status.Text = preview.View is null
+            ? $"Error {DateTime.Now:HH:mm:ss}   {preview.FilePath}"
+            : $"Error {DateTime.Now:HH:mm:ss}. Showing the last good render.   {preview.FilePath}";
     }
 
     // The app output folder shows which build the preview uses, for example Debug or Release.
