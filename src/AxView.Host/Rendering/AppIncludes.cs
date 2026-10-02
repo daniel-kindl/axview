@@ -40,7 +40,7 @@ internal sealed class AppIncludes
     private readonly string appPath;
     private readonly Styles styles;
     private readonly IResourceDictionary resources;
-    private readonly Dictionary<string, string> buildTexts = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, string> buildTexts;
     private readonly ConditionalWeakTable<object, string> loadedTexts = [];
     private readonly List<string> errors = [];
     private bool isChanged;
@@ -51,14 +51,20 @@ internal sealed class AppIncludes
     /// <param name="styles">The styles of the app. They must agree with the build of App.axaml.</param>
     /// <param name="resources">The resources of the app. They must agree with the build of App.axaml.</param>
     /// <param name="otherProjects">The renderers of the other projects that an include can point into.</param>
+    /// <param name="buildTexts">
+    /// The text of the build of each file, by full path. Give the same dictionary to each copy of the app styles.
+    /// Then a copy that starts after a change of a file knows that its include of the file is old.
+    /// </param>
     public AppIncludes(
         PreviewRenderer renderer,
         string appPath,
         Styles styles,
         IResourceDictionary resources,
-        IEnumerable<PreviewRenderer>? otherProjects = null)
+        IEnumerable<PreviewRenderer>? otherProjects = null,
+        Dictionary<string, string>? buildTexts = null)
     {
         this.renderer = renderer;
+        this.buildTexts = buildTexts ?? new Dictionary<string, string>(StringComparer.Ordinal);
         projects = [renderer, .. otherProjects ?? []];
         this.appPath = Path.GetFullPath(appPath);
         this.styles = styles;

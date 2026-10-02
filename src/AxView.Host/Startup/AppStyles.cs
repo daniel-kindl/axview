@@ -8,22 +8,30 @@ using AxView.Host.Rendering;
 
 namespace AxView.Host.Startup;
 
-/// <summary>Owns the import of the app styles and each live copy. An include reload updates all live copies.</summary>
+/// <summary>Owns the import of the app styles and each live copy. A reload of the app file or of an include updates all live copies.</summary>
 /// <remarks>
 /// A style object can have only one owner. Thus each owner gets its own copy:
 /// the preview scope, <c>Application.Current</c>, the chrome fallback, and each snapshot window.
 /// A copy stays live while its owner keeps its resources. A closed snapshot window does not stay in memory.
+/// A changed app file loads into a new instance of the app type. The styles and resources of the copies change.
+/// Their data templates and theme variant stay the same.
 /// </remarks>
 /// <param name="firstImport">The import that ran the startup of the app. The first copy is this import.</param>
 /// <param name="import">Gives a new import of the app styles for each further copy.</param>
 /// <param name="renderers">
 /// The renderers of the project set, in order of preference: the view project, the app project, and the referenced projects.
 /// </param>
-internal sealed class AppStyles(TargetStyles firstImport, Func<TargetStyles> import, IReadOnlyList<PreviewRenderer> renderers)
+/// <param name="appType">The type of the target app. Null when there is none. Then a change of the app file does not load.</param>
+internal sealed class AppStyles(
+    TargetStyles firstImport, Func<TargetStyles> import, IReadOnlyList<PreviewRenderer> renderers, Type? appType = null)
 {
     private readonly (PreviewRenderer Renderer, string Path)? appFile = FindAppFile(renderers);
-    private readonly ConditionalWeakTable<IResourceDictionary, AppIncludes> liveCopies = [];
+    private readonly ConditionalWeakTable<IResourceDictionary, LiveCopy> liveCopies = [];
+    private readonly Dictionary<string, string> buildTexts = new(StringComparer.Ordinal);
     private TargetStyles? unclaimedImport = firstImport;
+
+    // The text of the app file that the copies show. Null until the first copy.
+    private string? appText;
 
     /// <summary>Gets the folders whose AXAML files can be includes of the app. Empty when no project has an app file.</summary>
     public IEnumerable<string> ProjectDirectories =>
@@ -38,17 +46,26 @@ internal sealed class AppStyles(TargetStyles firstImport, Func<TargetStyles> imp
         new(
             TargetAppImporter.Import(projects, notes, runStartup),
             () => TargetAppImporter.Import(projects, []),
-            projects.CreateRenderers(services));
+            projects.CreateRenderers(services),
+            TargetAppImporter.FindAppType(projects));
 
     /// <summary>Gives a live copy of the app styles. The caller becomes its owner.</summary>
+    /// <remarks>After a change of the app file, the copy shows the changed app file and the changed includes.</remarks>
     public TargetStyles CreateCopy()
     {
-        TargetStyles copy = unclaimedImport ?? import();
+        TargetStyles copy = unclaimedImport ?? ImportCopy();
         unclaimedImport = null;
         if (appFile is not null)
         {
-            AppIncludes includes = new(appFile.Value.Renderer, appFile.Value.Path, copy.Styles, copy.Resources, renderers);
-            liveCopies.Add(copy.Resources, includes);
+            (PreviewRenderer renderer, string path) = appFile.Value;
+            if (appText is null)
+            {
+                appText = PreviewRenderer.ReadWithRetry(path);
+                buildTexts[path] = appText;
+            }
+
+            AppIncludes includes = new(renderer, path, copy.Styles, copy.Resources, renderers, buildTexts);
+            liveCopies.Add(copy.Resources, new LiveCopy(copy, includes));
         }
 
         return copy;
@@ -63,15 +80,16 @@ internal sealed class AppStyles(TargetStyles firstImport, Func<TargetStyles> imp
     /// <param name="app">The app that gets the copy.</param>
     public void AddTo(Application app) => CreateCopy().ApplyTo(app);
 
-    /// <summary>Loads each changed include file into each live copy.</summary>
+    /// <summary>Loads a changed app file and each changed include file into each live copy.</summary>
+    /// <remarks>An app file that does not load keeps the old styles in all copies.</remarks>
     /// <returns>The result for all copies. Each error occurs only once.</returns>
     public IncludeUpdate Update()
     {
-        bool isChanged = false;
         List<string> errors = [];
-        foreach (KeyValuePair<IResourceDictionary, AppIncludes> copy in liveCopies)
+        bool isChanged = LoadAppFile(errors);
+        foreach (KeyValuePair<IResourceDictionary, LiveCopy> copy in liveCopies)
         {
-            IncludeUpdate update = copy.Value.Update();
+            IncludeUpdate update = copy.Value.Includes.Update();
             isChanged |= update.IsChanged;
             if (update.Error is not null && !errors.Contains(update.Error))
             {
@@ -80,6 +98,66 @@ internal sealed class AppStyles(TargetStyles firstImport, Func<TargetStyles> imp
         }
 
         return new IncludeUpdate(isChanged, errors.Count == 0 ? null : string.Join(Environment.NewLine, errors));
+    }
+
+    // A copy after a change of the app file shows the changed text, not the text of the build.
+    private TargetStyles ImportCopy()
+    {
+        if (appFile is null || appType is null || appText is null || appText == buildTexts[appFile.Value.Path])
+        {
+            return import();
+        }
+
+        return TargetAppImporter.ImportXaml(appType, appFile.Value.Renderer, appFile.Value.Path, appText);
+    }
+
+    // Loads all copies before it changes one. Thus a failure keeps the same styles in all copies.
+    private bool LoadAppFile(List<string> errors)
+    {
+        if (appFile is null || appType is null || appText is null)
+        {
+            return false;
+        }
+
+        (PreviewRenderer renderer, string path) = appFile.Value;
+        string text;
+        try
+        {
+            text = PreviewRenderer.ReadWithRetry(path);
+        }
+        catch (IOException)
+        {
+            // The include update of each copy reads the app file too, and reports the error.
+            return false;
+        }
+
+        if (text == appText)
+        {
+            return false;
+        }
+
+        List<(TargetStyles Copy, TargetStyles Loaded)> loads = [];
+        try
+        {
+            foreach (KeyValuePair<IResourceDictionary, LiveCopy> copy in liveCopies)
+            {
+                loads.Add((copy.Value.Styles, TargetAppImporter.ImportXaml(appType, renderer, path, text)));
+            }
+        }
+        catch (Exception ex)
+        {
+            // User XAML and its code can throw any exception. Keep the old styles.
+            errors.Add($"{Path.GetRelativePath(renderer.ProjectDirectory, path)}: {ExceptionText.Describe(ex)}");
+            return false;
+        }
+
+        foreach ((TargetStyles copy, TargetStyles loaded) in loads)
+        {
+            copy.ReplaceWith(loaded);
+        }
+
+        appText = text;
+        return true;
     }
 
     private static (PreviewRenderer Renderer, string Path)? FindAppFile(IEnumerable<PreviewRenderer> renderers)

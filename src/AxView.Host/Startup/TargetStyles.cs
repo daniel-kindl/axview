@@ -30,4 +30,53 @@ internal sealed record TargetStyles(
         app.Resources = Resources;
         app.DataTemplates.AddRange(DataTemplates);
     }
+
+    /// <summary>Moves the styles and resources of another set into this set. The owners of this set see the change.</summary>
+    /// <remarks>The data templates and the theme variant stay the same.</remarks>
+    /// <param name="source">The set that gives its styles and resources. It is empty after the call.</param>
+    public void ReplaceWith(TargetStyles source)
+    {
+        // A style or a dictionary can have only one owner. Thus remove each one from the source before this set gets it.
+        List<IStyle> styles = [.. source.Styles];
+        source.Styles.Clear();
+        Styles.Clear();
+        Styles.AddRange(styles);
+
+        ReplaceResources(source.Resources);
+    }
+
+    private void ReplaceResources(IResourceDictionary source)
+    {
+        // The value of a deferred resource is created on a read. Thus read each value through the dictionary.
+        List<(object Key, object? Value)> entries = [];
+        foreach (object key in source.Keys.ToList())
+        {
+            _ = source.TryGetValue(key, out object? value);
+            entries.Add((key, value));
+        }
+
+        List<IResourceProvider> merged = [.. source.MergedDictionaries];
+        List<KeyValuePair<ThemeVariant, IThemeVariantProvider>> themes = [.. source.ThemeDictionaries];
+        source.Clear();
+        source.MergedDictionaries.Clear();
+        source.ThemeDictionaries.Clear();
+
+        Resources.Clear();
+        Resources.MergedDictionaries.Clear();
+        Resources.ThemeDictionaries.Clear();
+        foreach ((object key, object? value) in entries)
+        {
+            Resources.Add(key, value);
+        }
+
+        foreach (IResourceProvider provider in merged)
+        {
+            Resources.MergedDictionaries.Add(provider);
+        }
+
+        foreach (KeyValuePair<ThemeVariant, IThemeVariantProvider> theme in themes)
+        {
+            Resources.ThemeDictionaries.Add(theme.Key, theme.Value);
+        }
+    }
 }

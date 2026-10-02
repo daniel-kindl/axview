@@ -73,14 +73,15 @@ internal sealed class PreviewRenderer(Assembly localAssembly, string projectDire
     /// <summary>Loads the XAML of a project file in design mode, and returns its root object.</summary>
     /// <param name="axamlPath">The file of the XAML. Relative URIs in the XAML resolve against its avares URI.</param>
     /// <param name="xaml">The content of the file.</param>
+    /// <param name="rootInstance">The object that the XAML fills, or null to create a new root object.</param>
     /// <remarks>The user's XAML and its code can throw any exception.</remarks>
-    public object Load(string axamlPath, string xaml)
+    public object Load(string axamlPath, string xaml, object? rootInstance = null)
     {
         Uri baseUri = AvaresUri.For(AssemblyName, projectDirectory, axamlPath);
         string withClass = CodeBehindClass.RemoveIfNotCreatable(xaml, localAssembly);
         string creatable = DesignDataContext.PrepareForLoader(withClass, FindType);
         string qualified = XmlnsQualifier.Qualify(creatable, namespaces.FindOwner);
-        return AvaloniaRuntimeXamlLoader.Load(qualified, localAssembly, null, baseUri, designMode: true);
+        return AvaloniaRuntimeXamlLoader.Load(qualified, localAssembly, rootInstance, baseUri, designMode: true);
     }
 
     private static Control WithStyle<TStyle>(TStyle style)
