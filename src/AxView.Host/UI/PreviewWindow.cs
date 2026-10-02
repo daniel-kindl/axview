@@ -263,19 +263,30 @@ internal sealed class PreviewWindow : Window
         });
         preview.Children.Add(errorPanel);
 
+        Button aboutButton = new() { Content = "About" };
+        aboutButton.Click += async (_, _) => await new AboutDialog(AboutInfo.Read(typeof(AboutInfo).Assembly)).ShowDialog(this);
+        DockPanel.SetDock(aboutButton, Dock.Right);
+
         Border toolbar = new()
         {
-            Child = new StackPanel
+            Child = new DockPanel
             {
-                Orientation = Orientation.Horizontal,
                 Margin = new Thickness(8, 4),
-                Spacing = 8,
                 Children =
                 {
-                    themeSwitch,
-                    sizeSwitch,
-                    new TextBlock { Text = "DataContext", Margin = new Thickness(8, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center },
-                    viewModelSwitch,
+                    aboutButton,
+                    new StackPanel
+                    {
+                        Orientation = Orientation.Horizontal,
+                        Spacing = 8,
+                        Children =
+                        {
+                            themeSwitch,
+                            sizeSwitch,
+                            new TextBlock { Text = "DataContext", Margin = new Thickness(8, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center },
+                            viewModelSwitch,
+                        },
+                    },
                 },
             },
             BorderThickness = new Thickness(0, 0, 0, 1),

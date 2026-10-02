@@ -7,6 +7,7 @@ using Avalonia.Media;
 using Avalonia.Platform.Storage;
 
 using AxView.Hosting;
+using AxView.Protocol;
 using AxView.Resolution;
 
 namespace AxView.Picker;
@@ -34,6 +35,9 @@ internal sealed class PickerWindow : Window
         Button openButton = new() { Content = "Open AXAML file...", HorizontalAlignment = HorizontalAlignment.Left };
         openButton.Click += async (_, _) => await PickAsync();
 
+        Button aboutButton = new() { Content = "About", HorizontalAlignment = HorizontalAlignment.Left };
+        aboutButton.Click += async (_, _) => await new AboutDialog(AboutInfo.Read(typeof(AboutInfo).Assembly)).ShowDialog(this);
+
         recentList = new ListBox
         {
             ItemTemplate = new FuncDataTemplate<string>((path, _) => new RecentFileItem(path ?? string.Empty)),
@@ -55,9 +59,10 @@ internal sealed class PickerWindow : Window
         TextBlock title = new() { Text = "AxView", FontSize = 28, FontWeight = FontWeight.SemiBold };
         TextBlock subtitle = new() { Text = "Render any Avalonia AXAML file. It reloads when you save.", Opacity = 0.7 };
         recentHeader = new TextBlock { Text = "Recent (double-click to open)", FontWeight = FontWeight.SemiBold };
+        StackPanel buttons = new() { Orientation = Orientation.Horizontal, Spacing = 8, Children = { openButton, aboutButton } };
 
         DockPanel layout = new() { Margin = new Thickness(24) };
-        foreach (Control top in new Control[] { title, subtitle, openButton, message, recentHeader })
+        foreach (Control top in new Control[] { title, subtitle, buttons, message, recentHeader })
         {
             top.Margin = new Thickness(0, 0, 0, 12);
             DockPanel.SetDock(top, Dock.Top);
