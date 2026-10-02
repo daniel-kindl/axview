@@ -54,19 +54,22 @@ internal sealed class PreviewApp(HostOptions options, List<string> notes) : Appl
 
     public override void OnFrameworkInitializationCompleted()
     {
+        // The mode of the options guarantees the path of each snapshot mode.
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            if (options.SnapshotAllDirectory is not null)
+            switch (options.Mode)
             {
-                // The run opens and closes one window per file. Thus the app must not exit at the first close.
-                desktop.ShutdownMode = ShutdownMode.OnExplicitShutdown;
-                _ = SnapshotAllAsync(desktop, options.SnapshotAllDirectory);
-            }
-            else
-            {
-                desktop.MainWindow = options.SnapshotPath is null
-                    ? new PreviewWindow(options, Projects, notes, services, ImportedAppStyles)
-                    : CreateSnapshotWindow(desktop, options.SnapshotPath);
+                case HostMode.SnapshotAll:
+                    // The run opens and closes one window per file. Thus the app must not exit at the first close.
+                    desktop.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+                    _ = SnapshotAllAsync(desktop, options.SnapshotAllDirectory!);
+                    break;
+                case HostMode.Snapshot:
+                    desktop.MainWindow = CreateSnapshotWindow(desktop, options.SnapshotPath!);
+                    break;
+                default:
+                    desktop.MainWindow = new PreviewWindow(options, Projects, notes, services, ImportedAppStyles);
+                    break;
             }
         }
 

@@ -50,9 +50,6 @@ internal sealed class HostSession(
         string handOffFile = Path.Combine(Path.GetTempPath(), $"axview-hand-off-{Guid.NewGuid():N}.json");
         PreviewTarget target = Open(axamlPath, outputDir, opened);
         string? setupError = null;
-
-        // A snapshot must not depend on the last window of the user.
-        string? hostSettingsFile = snapshotPath is null && snapshotAllDirectory is null ? settingsFile : null;
         try
         {
             while (true)
@@ -61,9 +58,11 @@ internal sealed class HostSession(
                 HostOptions options = target.ToHostOptions(snapshotPath, handOffFile, snapshotAllDirectory) with
                 {
                     SetupError = setupError,
-                    SettingsFile = hostSettingsFile,
                     ViewModelName = viewModelName,
                 };
+
+                // A snapshot must not depend on the last window of the user.
+                options = options with { SettingsFile = options.Mode == HostMode.Preview ? settingsFile : null };
                 int exitCode = await hostProcess.RunAsync(target, options);
                 bool isHandOff = exitCode is (int)ExitReason.SwitchProject or (int)ExitReason.Rebuild;
                 HandOff? handOff = isHandOff ? HandOff.Load(handOffFile) : null;

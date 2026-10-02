@@ -3,7 +3,7 @@ namespace AxView.Protocol;
 /// <summary>The options that the launcher gives to the host.</summary>
 /// <remarks>
 /// The command line is a list of <c>--key value</c> pairs. Each key has a value. The order of the pairs is free.
-/// <see cref="Parse"/> rejects an unknown key, a missing value, and a duplicate key.
+/// <see cref="Parse"/> rejects an unknown key, a missing value, a duplicate key, and options with no single <see cref="HostMode"/>.
 /// </remarks>
 /// <param name="AxamlPath">The first file to show.</param>
 /// <param name="ProjectDirectory">The folder of the project that contains the file.</param>
@@ -61,9 +61,31 @@ internal sealed record HostOptions(
     private static readonly string[] keys =
         [AxamlKey, ProjectKey, AssemblyKey, AppAssemblyKey, LoaderKey, SnapshotKey, HandOffKey, SetupErrorKey, SettingsKey, AppProjectKey, SnapshotAllKey, ViewModelKey, ReferencedProjectsKey];
 
+    /// <summary>Gets the host mode. A snapshot folder selects <see cref="HostMode.SnapshotAll"/>, a snapshot path <see cref="HostMode.Snapshot"/>.</summary>
+    public HostMode Mode =>
+        SnapshotAllDirectory is not null ? HostMode.SnapshotAll : SnapshotPath is null ? HostMode.Preview : HostMode.Snapshot;
+
     /// <summary>Gets the folders of the referenced projects. The list is empty when there are none.</summary>
     public IReadOnlyList<string> ReferencedProjectDirectories =>
         ReferencedProjects?.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries) ?? [];
+
+    /// <summary>Makes sure that the snapshot options select one host mode. The launcher and the host use the same check.</summary>
+    /// <param name="snapshotPath">The value of <c>--snapshot</c>, or null.</param>
+    /// <param name="snapshotAllDirectory">The value of <c>--snapshot-all</c>, or null.</param>
+    /// <param name="viewModelName">The value of <c>--view-model</c>, or null.</param>
+    /// <exception cref="ArgumentException">The options select more than one mode, or a ViewModel without a snapshot.</exception>
+    public static void ValidateMode(string? snapshotPath, string? snapshotAllDirectory, string? viewModelName)
+    {
+        if (snapshotPath is not null && snapshotAllDirectory is not null)
+        {
+            throw new ArgumentException($"Use {SnapshotKey} or {SnapshotAllKey}, not both.");
+        }
+
+        if (viewModelName is not null && snapshotPath is null)
+        {
+            throw new ArgumentException($"{ViewModelKey} needs {SnapshotKey}.");
+        }
+    }
 
     /// <summary>Reads the options from the host command line.</summary>
     /// <exception cref="ArgumentException">The arguments are not valid.</exception>
@@ -92,6 +114,7 @@ internal sealed record HostOptions(
         string Required(string key) =>
             values.TryGetValue(key, out string? value) ? value : throw new ArgumentException($"Missing {key}.", nameof(args));
 
+        ValidateMode(values.GetValueOrDefault(SnapshotKey), values.GetValueOrDefault(SnapshotAllKey), values.GetValueOrDefault(ViewModelKey));
         return new HostOptions(
             Required(AxamlKey),
             Required(ProjectKey),

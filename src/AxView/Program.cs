@@ -10,7 +10,8 @@ namespace AxView;
 /// <summary>Starts the picker UI, or previews a file given on the command line.</summary>
 internal static class Program
 {
-    private const string Usage = "usage: axview [<file.axaml> [--output <app-bin-dir>] [--snapshot <file.png> | --snapshot-all <dir>] [--view-model <type>]]";
+    private const string Usage =
+        "usage: axview [<file.axaml> [--output <app-bin-dir>] [--snapshot <file.png> [--view-model <type>] | --snapshot-all <dir>]]";
 
     [STAThread]
     public static int Main(string[] args)
@@ -43,6 +44,17 @@ internal static class Program
                     axaml ??= args[i];
                     break;
             }
+        }
+
+        try
+        {
+            HostOptions.ValidateMode(snapshot, snapshotAll, viewModel);
+        }
+        catch (ArgumentException ex)
+        {
+            Console.Error.WriteLine($"axview: {ex.Message}");
+            Console.Error.WriteLine(Usage);
+            return (int)ExitReason.BadArguments;
         }
 
         if (axaml is null)

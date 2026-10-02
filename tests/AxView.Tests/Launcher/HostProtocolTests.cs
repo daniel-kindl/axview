@@ -16,7 +16,6 @@ public sealed class HostProtocolTests
         SetupError: "The app is not built.",
         SettingsFile: "/tools/axview/settings.json",
         AppProjectDirectory: "/src/Desktop",
-        SnapshotAllDirectory: "/out/shots",
         ViewModelName: "Ui.ViewModels.MainViewModel",
         ReferencedProjects: string.Join(Path.PathSeparator, "/src/Core", "/src/Common"));
 
@@ -39,7 +38,6 @@ public sealed class HostProtocolTests
             SetupError = null,
             SettingsFile = null,
             AppProjectDirectory = null,
-            SnapshotAllDirectory = null,
             ViewModelName = null,
             ReferencedProjects = null,
         };
@@ -47,6 +45,54 @@ public sealed class HostProtocolTests
         HostOptions parsed = HostOptions.Parse(options.ToArguments());
 
         Assert.Equal(options, parsed);
+    }
+
+    [Fact]
+    public void Parse_ReadsTheSnapshotFolder()
+    {
+        HostOptions options = full with { SnapshotPath = null, ViewModelName = null, SnapshotAllDirectory = "/out/shots" };
+
+        HostOptions parsed = HostOptions.Parse(options.ToArguments());
+
+        Assert.Equal(options, parsed);
+    }
+
+    [Fact]
+    public void Mode_GivesTheHostModeOfTheOptions()
+    {
+        Assert.Equal(HostMode.Snapshot, full.Mode);
+        Assert.Equal(HostMode.Preview, (full with { SnapshotPath = null, ViewModelName = null }).Mode);
+        Assert.Equal(HostMode.SnapshotAll, (full with { SnapshotPath = null, ViewModelName = null, SnapshotAllDirectory = "/out" }).Mode);
+    }
+
+    [Fact]
+    public void Parse_RejectsASnapshotWithASnapshotFolder()
+    {
+        string[] args = [.. full.ToArguments(), "--snapshot-all", "/out/shots"];
+
+        ArgumentException ex = Assert.Throws<ArgumentException>(() => HostOptions.Parse(args));
+
+        Assert.Contains("--snapshot-all", ex.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Parse_RejectsAViewModelWithoutASnapshot()
+    {
+        string[] args = [.. (full with { SnapshotPath = null }).ToArguments()];
+
+        ArgumentException ex = Assert.Throws<ArgumentException>(() => HostOptions.Parse(args));
+
+        Assert.Contains("--view-model", ex.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Parse_RejectsAViewModelWithASnapshotFolder()
+    {
+        string[] args = [.. (full with { SnapshotPath = null, SnapshotAllDirectory = "/out/shots" }).ToArguments()];
+
+        ArgumentException ex = Assert.Throws<ArgumentException>(() => HostOptions.Parse(args));
+
+        Assert.Contains("--view-model", ex.Message, StringComparison.Ordinal);
     }
 
     [Fact]
