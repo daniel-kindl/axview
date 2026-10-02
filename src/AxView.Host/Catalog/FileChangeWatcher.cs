@@ -64,6 +64,19 @@ internal sealed class FileChangeWatcher : IDisposable
             changed);
     }
 
+    /// <summary>Watches the AXAML files of a project. See <see cref="ProjectSources.IsAxamlFile"/>.</summary>
+    /// <param name="projectDirectory">The folder of the project.</param>
+    /// <param name="changed">Called on the UI thread after one or more AXAML files change.</param>
+    public static FileChangeWatcher ForAxamlFiles(string projectDirectory, Action changed)
+    {
+        string fullDirectory = Path.GetFullPath(projectDirectory);
+        return new FileChangeWatcher(
+            fullDirectory,
+            includeSubdirectories: true,
+            changedPath => ProjectSources.IsAxamlFile(fullDirectory, changedPath),
+            changed);
+    }
+
     public void Dispose()
     {
         watcher.Dispose();

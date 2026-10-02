@@ -30,6 +30,12 @@ internal sealed class PreviewRenderer(Assembly localAssembly, string projectDire
     private readonly DesignServices services = services;
     private readonly NamespaceIndex namespaces = new(localAssembly);
 
+    /// <summary>Gets the name of the assembly that the project builds.</summary>
+    public string AssemblyName { get; } = localAssembly.GetName().Name!;
+
+    /// <summary>Gets the folder of the project.</summary>
+    public string ProjectDirectory { get; } = projectDirectory;
+
     /// <summary>Loads the file and returns its root control.</summary>
     /// <param name="axamlPath">An AXAML file of the project.</param>
     /// <param name="viewModelType">
@@ -42,11 +48,7 @@ internal sealed class PreviewRenderer(Assembly localAssembly, string projectDire
     public Control Render(string axamlPath, Type? viewModelType = null)
     {
         string xaml = ReadWithRetry(axamlPath);
-        Uri baseUri = AvaresUri.For(localAssembly.GetName().Name!, projectDirectory, axamlPath);
-        string withClass = CodeBehindClass.RemoveIfNotCreatable(xaml, localAssembly);
-        string creatable = DesignDataContext.PrepareForLoader(withClass, FindType);
-        string qualified = XmlnsQualifier.Qualify(creatable, namespaces.FindOwner);
-        object root = AvaloniaRuntimeXamlLoader.Load(qualified, localAssembly, null, baseUri, designMode: true);
+        object root = Load(axamlPath, xaml);
         if (root is Control loaded)
         {
             DesignDataContext.Apply(loaded, xaml, FindType, services);
@@ -66,6 +68,19 @@ internal sealed class PreviewRenderer(Assembly localAssembly, string projectDire
             ResourceDictionary resources => WithResources(resources),
             _ => throw new NotSupportedException($"The root is a {root.GetType().Name}, not a control."),
         };
+    }
+
+    /// <summary>Loads the XAML of a project file in design mode, and returns its root object.</summary>
+    /// <param name="axamlPath">The file of the XAML. Relative URIs in the XAML resolve against its avares URI.</param>
+    /// <param name="xaml">The content of the file.</param>
+    /// <remarks>The user's XAML and its code can throw any exception.</remarks>
+    public object Load(string axamlPath, string xaml)
+    {
+        Uri baseUri = AvaresUri.For(AssemblyName, projectDirectory, axamlPath);
+        string withClass = CodeBehindClass.RemoveIfNotCreatable(xaml, localAssembly);
+        string creatable = DesignDataContext.PrepareForLoader(withClass, FindType);
+        string qualified = XmlnsQualifier.Qualify(creatable, namespaces.FindOwner);
+        return AvaloniaRuntimeXamlLoader.Load(qualified, localAssembly, null, baseUri, designMode: true);
     }
 
     private static Control WithStyle<TStyle>(TStyle style)
@@ -119,8 +134,10 @@ internal sealed class PreviewRenderer(Assembly localAssembly, string projectDire
         return localAssembly.GetType(fullName) ?? (owner is null ? null : Assembly.Load(owner).GetType(fullName));
     }
 
-    // An editor can hold the file open for a short time while it saves.
-    private static string ReadWithRetry(string path)
+    /// <summary>Reads a text file. Tries again when an editor holds the file open for a short time while it saves.</summary>
+    /// <param name="path">The file to read.</param>
+    /// <exception cref="IOException">The file does not exist, or stays locked.</exception>
+    public static string ReadWithRetry(string path)
     {
         for (int attempt = 1; ; attempt++)
         {

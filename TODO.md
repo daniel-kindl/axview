@@ -11,13 +11,6 @@ Do not change or use again a number.
 
 ## Next
 
-- [ ] #19 **Watch included files (M).** Reload when a `ResourceInclude` or `StyleInclude` file of the project changes.
-  An `avares://` include loads the compiled XAML of the built assembly, not the file on disk.
-  So a watcher alone is not sufficient. The host must:
-  - Watch all AXAML files of the project.
-  - Find the include in the app styles and resources whose `Source` is the changed file.
-  - Load the file from disk with the runtime loader. Replace the include with the result.
-  - Render the view again. Keep the old include when the load fails.
 
 ## Later
 
@@ -44,6 +37,8 @@ Do not change or use again a number.
 - A style or resource preview shows the "No DataContext" badge. The badge is not applicable to these roots.
 - A rebuild watches only the `.cs` files of the project of the file. A change in the app project of a library view starts no rebuild.
 - During a rebuild, no window is open. The user sees no build progress.
+- An include file reloads only when App.axaml is in the project of the file. A library view gets no include reload.
+- A change of App.axaml itself does not reload. An include in a view or in a `Style` root loads the compiled file.
 
 ## Done
 
@@ -67,3 +62,4 @@ Do not change or use again a number.
 - [x] #16 ViewModel picker: a toolbar switch selects a `*ViewModel` type. The settings file keeps the choice per file. `2a33eb3`
 - [x] #17 Design services: the target app's `AxViewDesign.CreateServices()` gives the constructor parameters of the ViewModels. `13f2102`
 - [x] #18 Rebuild: a change of a `.cs` file of the project stops the host. The launcher builds the app and starts the host again. `2faa127`
+- [x] #19 Include reload: a changed `StyleInclude` or `ResourceInclude` file of the app loads from disk and replaces the compiled include.

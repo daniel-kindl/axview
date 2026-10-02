@@ -5,6 +5,7 @@ namespace AxView.Host.Catalog;
 internal static class ProjectSources
 {
     private const string CodeExtension = ".cs";
+    private const string AxamlExtension = ".axaml";
 
     private static readonly HashSet<string> skippedFolders = new(StringComparer.OrdinalIgnoreCase) { "bin", "obj", "node_modules" };
 
@@ -15,9 +16,16 @@ internal static class ProjectSources
     /// <summary>Tells if the file is a C# file of the project, and not in build output.</summary>
     /// <param name="projectDirectory">The folder of the project.</param>
     /// <param name="path">The full path of the file.</param>
-    public static bool IsCodeFile(string projectDirectory, string path)
+    public static bool IsCodeFile(string projectDirectory, string path) => IsSourceFile(projectDirectory, path, CodeExtension);
+
+    /// <summary>Tells if the file is an AXAML file of the project, and not in build output.</summary>
+    /// <param name="projectDirectory">The folder of the project.</param>
+    /// <param name="path">The full path of the file.</param>
+    public static bool IsAxamlFile(string projectDirectory, string path) => IsSourceFile(projectDirectory, path, AxamlExtension);
+
+    private static bool IsSourceFile(string projectDirectory, string path, string extension)
     {
-        if (!path.EndsWith(CodeExtension, StringComparison.OrdinalIgnoreCase))
+        if (!path.EndsWith(extension, StringComparison.OrdinalIgnoreCase))
         {
             return false;
         }

@@ -20,6 +20,7 @@ namespace AxView.Host.UI;
 /// </summary>
 /// <remarks>
 /// When a code file of the project changes, the host stops. The launcher then builds the app and starts a new host.
+/// When an include file of the app styles or resources changes, the window loads it from disk and renders the preview again.
 /// </remarks>
 internal sealed class PreviewWindow : Window
 {
@@ -44,6 +45,8 @@ internal sealed class PreviewWindow : Window
     private readonly Dictionary<string, string> viewModels;
     private readonly WindowPlacementTracker? placementTracker;
     private readonly FileChangeWatcher? codeWatcher;
+    private readonly AppIncludes? appIncludes;
+    private readonly FileChangeWatcher? axamlWatcher;
     private IReadOnlyList<string> catalog = [];
     private bool isSyncingSelection;
 
@@ -51,7 +54,8 @@ internal sealed class PreviewWindow : Window
     {
         this.options = options;
         Assembly localAssembly = Assembly.Load(options.AssemblyName);
-        livePreview = new LivePreview(new PreviewRenderer(localAssembly, options.ProjectDirectory, services));
+        PreviewRenderer renderer = new(localAssembly, options.ProjectDirectory, services);
+        livePreview = new LivePreview(renderer);
         livePreview.Changed += (_, _) => ShowPreview();
 
         Width = 1280;
@@ -147,6 +151,14 @@ internal sealed class PreviewWindow : Window
                 () => StopWithHandOff(livePreview.FilePath, ExitReason.Rebuild));
         }
 
+        // The app file of a library view is in another project. Its includes do not load again.
+        string? appFile = AppIncludes.FindAppFile(options.ProjectDirectory);
+        if (appFile is not null && Application.Current is { } app)
+        {
+            appIncludes = new AppIncludes(renderer, appFile, app.Styles, app.Resources);
+            axamlWatcher = FileChangeWatcher.ForAxamlFiles(options.ProjectDirectory, UpdateIncludes);
+        }
+
         Show(options.AxamlPath);
         RefreshCatalog();
         if (options.SetupError is not null)
@@ -168,6 +180,7 @@ internal sealed class PreviewWindow : Window
     protected override void OnClosed(EventArgs e)
     {
         codeWatcher?.Dispose();
+        axamlWatcher?.Dispose();
         livePreview.Dispose();
         base.OnClosed(e);
     }
@@ -295,6 +308,21 @@ internal sealed class PreviewWindow : Window
 
         UpdateSettings(settings => settings with { ViewModels = new Dictionary<string, string>(viewModels) });
         livePreview.Show(livePreview.FilePath, viewModelSwitch.SelectedType);
+    }
+
+    // A StaticResource does not follow a change of the app resources. Thus render the preview again.
+    private void UpdateIncludes()
+    {
+        IncludeUpdate update = appIncludes!.Update();
+        if (update.IsChanged)
+        {
+            livePreview.Reload();
+        }
+
+        if (update.Error is not null)
+        {
+            ShowError(update.Error);
+        }
     }
 
     private void RefreshCatalog()

@@ -1,5 +1,3 @@
-using System.Reflection;
-
 using Avalonia.Controls;
 
 using AxView.Host.Catalog;
@@ -53,18 +51,16 @@ internal sealed class LivePreview : IDisposable
         Load(fullPath);
     }
 
+    /// <summary>Loads the shown file again with the same ViewModel. For example, after a change of the app styles.</summary>
+    /// <remarks>A failed load keeps the last good preview.</remarks>
+    public void Reload() => Load(FilePath);
+
     /// <summary>Stops the file watch and the dispatcher error handler.</summary>
     public void Dispose()
     {
         watcher?.Dispose();
         watcher = null;
         unsubscribeErrors?.Invoke();
-    }
-
-    private static string Describe(Exception ex)
-    {
-        Exception shown = ex is TargetInvocationException { InnerException: { } inner } ? inner : ex;
-        return $"{shown.GetType().Name}: {shown.Message}";
     }
 
     private void Load(string path)
@@ -77,7 +73,7 @@ internal sealed class LivePreview : IDisposable
         catch (Exception ex)
         {
             // User XAML and its code can throw any exception. Keep the last good preview.
-            Error = Describe(ex);
+            Error = ExceptionText.Describe(ex);
         }
 
         Changed?.Invoke(this, EventArgs.Empty);
@@ -85,7 +81,7 @@ internal sealed class LivePreview : IDisposable
 
     private void OnUnhandledException(Exception ex)
     {
-        Error = Describe(ex);
+        Error = ExceptionText.Describe(ex);
         Changed?.Invoke(this, EventArgs.Empty);
     }
 }

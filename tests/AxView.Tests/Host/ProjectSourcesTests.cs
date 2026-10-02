@@ -22,4 +22,14 @@ public sealed class ProjectSourcesTests
     [InlineData("node_modules/Tool.cs")]
     public void IsCodeFile_RejectsOtherFilesAndBuildOutput(string relativePath) =>
         Assert.False(ProjectSources.IsCodeFile(project, Path.Combine(project, relativePath)));
+
+    [Fact]
+    public void IsAxamlFile_AcceptsAnAxamlFileOfTheProject() =>
+        Assert.True(ProjectSources.IsAxamlFile(project, Path.Combine(project, "Styles", "Main.axaml")));
+
+    [Theory]
+    [InlineData("Views/MainView.axaml.cs")]
+    [InlineData("obj/Debug/net9.0/Avalonia/Main.axaml")]
+    public void IsAxamlFile_RejectsOtherFilesAndBuildOutput(string relativePath) =>
+        Assert.False(ProjectSources.IsAxamlFile(project, Path.Combine(project, relativePath)));
 }

@@ -88,6 +88,21 @@ public sealed class LivePreviewTests
     }
 
     [AvaloniaFact]
+    public void Reload_KeepsTheSelectedViewModel()
+    {
+        using TempDir dir = new();
+        string file = dir.Write("Views/Hello.axaml", TextBlock("Hello"));
+        using LivePreview preview = new(Renderer(dir));
+        preview.Show(file, typeof(FixtureOtherViewModel));
+        Control first = preview.View!;
+
+        preview.Reload();
+
+        Assert.NotSame(first, preview.View);
+        _ = Assert.IsType<FixtureOtherViewModel>(preview.View!.DataContext);
+    }
+
+    [AvaloniaFact]
     public void Save_BrokenXaml_KeepsTheLastGoodPreviewAndGivesAnError()
     {
         using TempDir dir = new();

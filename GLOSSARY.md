@@ -73,6 +73,10 @@ _Avoid_: reopen, reload
 The build of the target app after a code file of the project changes. A new host then shows the same file.
 _Avoid_: recompile, restart
 
+**Include reload**:
+The load of a changed `StyleInclude` or `ResourceInclude` file of the app from disk. The result replaces the compiled include.
+_Avoid_: style reload, hot reload
+
 **Design services**:
 The service provider that the target app gives through `AxViewDesign.CreateServices()`. The host creates the ViewModels with it.
 _Avoid_: DI container, mocks, stubs
