@@ -13,9 +13,6 @@ Do not change or use again a number.
 
 UI overhaul. Goal: a modern, consistent look. Each item must work on Fluent and Simple, Light and Dark, and Avalonia 11 and 12.
 
-- [ ] #70 **Preview toolbar (M).** Put the controls in groups with a label or an icon: theme, size, DataContext.
-  Use separators between the groups. Give each icon button a tooltip.
-  Move About to the right edge as an icon button.
 - [ ] #71 **Preview stage (M).** Show a neutral backdrop around the preview.
   For a size preset, show the preview as a card with a border and a shadow, centered, and the size below it.
   Fit fills the stage with no card.
@@ -44,6 +41,7 @@ UI overhaul. Goal: a modern, consistent look. Each item must work on Fluent and 
 
 ## Done
 
+- [x] #70 Preview toolbar: theme, size, and DataContext groups with an icon or a label, and separators. About is an icon button at the right edge. `ChromeControls` gives the icon button and the separator. `45601b1`
 - [x] #69 Chrome icons: `ChromeIcons` gives a path geometry for each `ChromeIcon`, also a search icon for #73. The `icons` chrome shot shows all icons. `e25c012`
 - [x] #68 Chrome style module: `ChromeStyle` gives a spacing scale, font sizes, a corner radius, and theme brushes per variant. The picker and the preview window use it. `290aea1`
 - [x] #67 Chrome shots: `ChromeShotTests` write a PNG of each window in Fluent and Simple, Light and Dark. The headless tests draw with Skia. `b3c3ebb`
