@@ -75,6 +75,9 @@ internal static class ChromeStyle
     /// <summary>The resource key of the brush of text on a warning or an error fill.</summary>
     public const string StatusForegroundBrushKey = "AxView.Chrome.StatusForegroundBrush";
 
+    /// <summary>Gets the font family of monospace text, for example an error or a build line.</summary>
+    public static FontFamily Monospace { get; } = new("Cascadia Mono, Consolas, Menlo, DejaVu Sans Mono, monospace");
+
     /// <summary>Gets the shadow of a card, for example the preview card or the error panel.</summary>
     public static BoxShadows CardShadow { get; } = new(new BoxShadow { OffsetY = 2, Blur = 12, Color = Color.FromArgb(0x40, 0, 0, 0) });
 

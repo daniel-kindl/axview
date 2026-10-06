@@ -20,7 +20,6 @@ internal sealed class ErrorPanel : Border
     private const string CollapseTip = "Collapse the error";
     private const string ExpandTip = "Expand the error";
 
-    private static readonly FontFamily monospace = new("Cascadia Mono, Consolas, Menlo, DejaVu Sans Mono, monospace");
 
     private readonly SelectableTextBlock errorText;
     private readonly TextBlock note;
@@ -44,7 +43,7 @@ internal sealed class ErrorPanel : Border
         ChromeStyle.SetBrush(this, BackgroundProperty, ChromeStyle.CardBrushKey);
         ChromeStyle.SetBrush(this, BorderBrushProperty, ChromeStyle.ErrorBrushKey);
 
-        errorText = new SelectableTextBlock { TextWrapping = TextWrapping.Wrap, FontFamily = monospace, FontSize = ChromeStyle.FontSizeNormal };
+        errorText = new SelectableTextBlock { TextWrapping = TextWrapping.Wrap, FontFamily = ChromeStyle.Monospace, FontSize = ChromeStyle.FontSizeNormal };
         note = new TextBlock { Text = LastGoodRenderNote, FontSize = ChromeStyle.FontSizeSmall };
         ChromeStyle.SetBrush(note, TextBlock.ForegroundProperty, ChromeStyle.MutedTextBrushKey);
         DockPanel.SetDock(note, Dock.Top);
