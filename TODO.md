@@ -13,9 +13,6 @@ Do not change or use again a number.
 
 UI overhaul. Goal: a modern, consistent look. Each item must work on Fluent and Simple, Light and Dark, and Avalonia 11 and 12.
 
-- [ ] #72 **Error panel (M).** Show the error as a theme card at the bottom of the stage, not a red overlay.
-  The card has a header, a "Last good render" note, a copy button, and a collapse button.
-  Keep the monospace text selectable.
 - [ ] #73 **Sidebar (M).** Restyle the sidebar:
   - a project header with the project path as a tooltip, and the Open button as an icon button,
   - a filter box with a search icon,
@@ -38,6 +35,7 @@ UI overhaul. Goal: a modern, consistent look. Each item must work on Fluent and 
 
 ## Done
 
+- [x] #72 Error panel: `ErrorPanel` is a card with the error brush border, a header, copy and collapse buttons, and a last good render note. `1dfdca3`
 - [x] #71 Preview stage: `PreviewStage` shows a size preset as a centered card with a shadow on the stage brush, and the size below it. Fit has no card and no backdrop. `0b2a2db`
 - [x] #70 Preview toolbar: theme, size, and DataContext groups with an icon or a label, and separators. About is an icon button at the right edge. `ChromeControls` gives the icon button and the separator. `45601b1`
 - [x] #69 Chrome icons: `ChromeIcons` gives a path geometry for each `ChromeIcon`, also a search icon for #73. The `icons` chrome shot shows all icons. `e25c012`
