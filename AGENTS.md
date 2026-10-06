@@ -56,3 +56,5 @@ A task is done only when all of these conditions are true:
 - Run `dotnet build` and `dotnet test`.
 - For a host change, render a real view: `dotnet src/AxView/bin/Debug/net10.0/axview.dll <file.axaml> --snapshot <file.png>`.
 - Look at the PNG. A non-zero exit code means the render failed.
+- For a chrome change, run `dotnet test --filter ChromeShot`.
+  Look at the PNGs in `tests/AxView.Tests/bin/Debug/net10.0/chrome-shots`.

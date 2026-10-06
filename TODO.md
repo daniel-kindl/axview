@@ -9,14 +9,6 @@ Do not change or use again a number.
 
 ## Now
 
-- [ ] #67 **Chrome snapshots (S).** An agent cannot see the chrome. `--snapshot` captures only the preview.
-  Add a headless test helper that writes a PNG of each window:
-  - the preview window, with a view, with an error, and with no DataContext,
-  - the picker, with recent files and with none,
-  - the build window.
-
-  Write the PNGs to a folder that git ignores. Use them to check #68 to #76.
-
 ## Next
 
 UI overhaul. Goal: a modern, consistent look. Each item must work on Fluent and Simple, Light and Dark, and Avalonia 11 and 12.
@@ -58,6 +50,7 @@ UI overhaul. Goal: a modern, consistent look. Each item must work on Fluent and 
 
 ## Done
 
+- [x] #67 Chrome shots: `ChromeShotTests` write a PNG of each window in Fluent and Simple, Light and Dark. The headless tests draw with Skia. `HASH`
 - [x] #66 Include update in one call: no change. `AppStyles` must then track each view search with a weak reference. That adds more code than the one check that it removes from `ProjectPreview`.
 - [x] #65 Snapshot runner: `SnapshotRunner` runs `--snapshot` and `--snapshot-all` and gives the exit reason. The shutdown waits for the main loop. `9859a40`
 - [x] #64 Window model: `PreviewWindowModel` owns the file list, the shown item, the status, and the settings. `ProjectPreview` gives `Error` and `StylesError`, and saves the hand-off. `9069225`
