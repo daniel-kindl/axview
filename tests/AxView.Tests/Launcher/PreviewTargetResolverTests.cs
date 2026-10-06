@@ -13,7 +13,7 @@ public sealed class PreviewTargetResolverTests
         _ = dir.Write("src/Ui/Ui.csproj", "<Project><PropertyGroup><AssemblyName>My.Ui</AssemblyName></PropertyGroup></Project>");
         string axaml = dir.Write("src/Ui/Views/Main.axaml");
         string output = AppFixture.WriteAppOutput(dir, "src/Desktop/bin/Debug/net9.0", "Desktop", "My.Ui");
-        FakeLoaderSource loaders = new();
+        FakePackageSource loaders = new();
 
         PreviewTarget target = new PreviewTargetResolver(loaders).Resolve(axaml, outputDir: null);
 
@@ -22,8 +22,39 @@ public sealed class PreviewTargetResolverTests
         Assert.Equal("My.Ui", target.AssemblyName);
         Assert.Equal(output, target.Output.Directory);
         Assert.Equal("Desktop", target.Output.AppName);
-        Assert.Equal(["11.3.22"], loaders.RequestedVersions);
-        Assert.Equal(FakeLoaderSource.LoaderPath, target.LoaderPath);
+        Assert.Equal(["Avalonia.Markup.Xaml.Loader/11.3.22", "Avalonia.Themes.Simple/11.3.22"], loaders.Requests);
+        Assert.Equal(FakePackageSource.LoaderPath, target.LoaderPath);
+    }
+
+    [Fact]
+    public void Resolve_AppWithoutATheme_GivesTheSimpleThemeOfTheAppVersionToTheHost()
+    {
+        using TempDir dir = new();
+        string axaml = AppFixture.WriteProject(dir, "Desktop");
+
+        PreviewTarget target = new PreviewTargetResolver(new FakePackageSource()).Resolve(axaml, outputDir: null);
+
+        Assert.Equal(FakePackageSource.SimpleThemePath, target.ChromeThemePath);
+        Assert.Equal(FakePackageSource.SimpleThemePath, target.ToHostOptions(snapshotPath: null, handOffFile: null).ChromeThemePath);
+    }
+
+    [Theory]
+    [InlineData("Avalonia.Themes.Fluent")]
+    [InlineData("Avalonia.Themes.Simple")]
+    public void Resolve_AppWithATheme_GivesNoChromeTheme(string themePackage)
+    {
+        using TempDir dir = new();
+        _ = dir.Write("Repo.sln");
+        _ = dir.Write("src/Desktop/Desktop.csproj", "<Project />");
+        string axaml = dir.Write("src/Desktop/Views/Main.axaml");
+        string deps = $$"""{ "libraries": { "Avalonia/11.3.22": {}, "{{themePackage}}/11.3.22": {} } }""";
+        _ = AppFixture.WriteAppOutput(dir, "src/Desktop/bin/Debug/net9.0", "Desktop", "Desktop", deps);
+        FakePackageSource packages = new();
+
+        PreviewTarget target = new PreviewTargetResolver(packages).Resolve(axaml, outputDir: null);
+
+        Assert.Null(target.ChromeThemePath);
+        Assert.Equal(["Avalonia.Markup.Xaml.Loader/11.3.22"], packages.Requests);
     }
 
     [Fact]
@@ -36,7 +67,7 @@ public sealed class PreviewTargetResolverTests
         _ = dir.Write("src/Desktop/Desktop.csproj", "<Project />");
         _ = AppFixture.WriteAppOutput(dir, "src/Desktop/bin/Debug/net9.0", "Desktop", "Ui");
 
-        PreviewTarget target = new PreviewTargetResolver(new FakeLoaderSource()).Resolve(axaml, outputDir: null);
+        PreviewTarget target = new PreviewTargetResolver(new FakePackageSource()).Resolve(axaml, outputDir: null);
 
         string appProject = Path.Combine(dir.Path, "src", "Desktop");
         Assert.Equal(appProject, target.AppProjectDirectory);
@@ -55,7 +86,7 @@ public sealed class PreviewTargetResolverTests
         _ = dir.Write("src/Theme/Theme.csproj", "<Project />");
         _ = AppFixture.WriteAppOutput(dir, "src/Desktop/bin/Debug/net9.0", "Desktop", "Ui");
 
-        PreviewTarget target = new PreviewTargetResolver(new FakeLoaderSource()).Resolve(axaml, outputDir: null);
+        PreviewTarget target = new PreviewTargetResolver(new FakePackageSource()).Resolve(axaml, outputDir: null);
 
         string[] expected = [Path.Combine(dir.Path, "src", "Core"), Path.Combine(dir.Path, "src", "Theme")];
         Assert.Equal(expected, target.ReferencedProjectDirectories);
@@ -68,7 +99,7 @@ public sealed class PreviewTargetResolverTests
         using TempDir dir = new();
         string axaml = AppFixture.WriteProject(dir, "Desktop");
 
-        PreviewTarget target = new PreviewTargetResolver(new FakeLoaderSource()).Resolve(axaml, outputDir: null);
+        PreviewTarget target = new PreviewTargetResolver(new FakePackageSource()).Resolve(axaml, outputDir: null);
 
         Assert.Null(target.AppProjectDirectory);
     }
@@ -82,7 +113,7 @@ public sealed class PreviewTargetResolverTests
         string axaml = dir.Write("src/Ui/Views/Main.axaml");
         _ = AppFixture.WriteAppOutput(dir, "src/Desktop/bin/Debug/net9.0", "Desktop", "Ui");
 
-        PreviewTarget target = new PreviewTargetResolver(new FakeLoaderSource()).Resolve(axaml, outputDir: null);
+        PreviewTarget target = new PreviewTargetResolver(new FakePackageSource()).Resolve(axaml, outputDir: null);
 
         Assert.Null(target.AppProjectDirectory);
     }
@@ -99,7 +130,7 @@ public sealed class PreviewTargetResolverTests
         File.SetLastWriteTimeUtc(Path.Combine(given, "Ui.dll"), DateTime.UtcNow.AddHours(-1));
         File.SetLastWriteTimeUtc(Path.Combine(recent, "Ui.dll"), DateTime.UtcNow);
 
-        PreviewTarget target = new PreviewTargetResolver(new FakeLoaderSource()).Resolve(axaml, given);
+        PreviewTarget target = new PreviewTargetResolver(new FakePackageSource()).Resolve(axaml, given);
 
         Assert.Equal(given, target.Output.Directory);
     }
@@ -111,7 +142,7 @@ public sealed class PreviewTargetResolverTests
         string missing = Path.Combine(dir.Path, "Views", "Main.axaml");
 
         PreviewSetupException ex = Assert.Throws<PreviewSetupException>(
-            () => new PreviewTargetResolver(new FakeLoaderSource()).Resolve(missing, outputDir: null));
+            () => new PreviewTargetResolver(new FakePackageSource()).Resolve(missing, outputDir: null));
 
         Assert.Contains(missing, ex.Message, StringComparison.Ordinal);
     }
@@ -124,9 +155,9 @@ public sealed class PreviewTargetResolverTests
         _ = dir.Write("src/Ui/Ui.csproj", "<Project />");
         string axaml = dir.Write("src/Ui/Views/Main.axaml");
         _ = AppFixture.WriteAppOutput(dir, "src/Desktop/bin/Debug/net9.0", "Desktop", "Ui", deps: "{}");
-        FakeLoaderSource loaders = new();
+        FakePackageSource loaders = new();
 
         _ = Assert.Throws<PreviewSetupException>(() => new PreviewTargetResolver(loaders).Resolve(axaml, outputDir: null));
-        Assert.Empty(loaders.RequestedVersions);
+        Assert.Empty(loaders.Requests);
     }
 }

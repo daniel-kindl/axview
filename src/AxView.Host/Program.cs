@@ -25,6 +25,11 @@ internal static class Program
 
         // Register before any method that touches the loader is compiled.
         LoaderResolver.Register(options.LoaderPath);
+        if (options.ChromeThemePath is not null)
+        {
+            LoaderResolver.Register(options.ChromeThemePath);
+        }
+
         return Run(options);
     }
 

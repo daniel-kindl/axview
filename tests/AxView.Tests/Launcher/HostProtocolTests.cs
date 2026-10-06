@@ -17,7 +17,8 @@ public sealed class HostProtocolTests
         SettingsFile: "/tools/axview/settings.json",
         AppProjectDirectory: "/src/Desktop",
         ViewModelName: "Ui.ViewModels.MainViewModel",
-        ReferencedProjects: string.Join(Path.PathSeparator, "/src/Core", "/src/Common"));
+        ReferencedProjects: string.Join(Path.PathSeparator, "/src/Core", "/src/Common"),
+        ChromeThemePath: "/nuget/theme.dll");
 
     [Fact]
     public void Parse_ReadsTheArgumentsThatToArgumentsWrites()
@@ -40,6 +41,7 @@ public sealed class HostProtocolTests
             AppProjectDirectory = null,
             ViewModelName = null,
             ReferencedProjects = null,
+            ChromeThemePath = null,
         };
 
         HostOptions parsed = HostOptions.Parse(options.ToArguments());

@@ -44,6 +44,10 @@ _Avoid_: bin folder, build
 The Avalonia runtime XAML loader package that agrees with the Avalonia version of the target app.
 _Avoid_: loader assembly, compiler
 
+**Chrome theme**:
+The Fluent or Simple theme of the AxView controls around the preview. The launcher gets the Simple theme from NuGet when the target app ships neither.
+_Avoid_: host theme, AxView styles
+
 **Preview target**:
 All the facts that the launcher finds for one AXAML file before it starts a host.
 _Avoid_: target, config

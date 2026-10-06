@@ -29,6 +29,7 @@ namespace AxView.Protocol;
 /// If set, the folders of the projects that the view project and the app project reference. They are in one list, with
 /// <see cref="Path.PathSeparator"/> between them. A change of their C# files also starts a rebuild.
 /// </param>
+/// <param name="ChromeThemePath">If set, the Simple theme assembly for the chrome. The launcher sets it when the app ships no theme.</param>
 internal sealed record HostOptions(
     string AxamlPath,
     string ProjectDirectory,
@@ -42,7 +43,8 @@ internal sealed record HostOptions(
     string? AppProjectDirectory = null,
     string? SnapshotAllDirectory = null,
     string? ViewModelName = null,
-    string? ReferencedProjects = null)
+    string? ReferencedProjects = null,
+    string? ChromeThemePath = null)
 {
     private const string AxamlKey = "--axaml";
     private const string ProjectKey = "--project";
@@ -57,9 +59,10 @@ internal sealed record HostOptions(
     private const string SnapshotAllKey = "--snapshot-all";
     private const string ViewModelKey = "--view-model";
     private const string ReferencedProjectsKey = "--referenced-projects";
+    private const string ChromeThemeKey = "--chrome-theme";
 
     private static readonly string[] keys =
-        [AxamlKey, ProjectKey, AssemblyKey, AppAssemblyKey, LoaderKey, SnapshotKey, HandOffKey, SetupErrorKey, SettingsKey, AppProjectKey, SnapshotAllKey, ViewModelKey, ReferencedProjectsKey];
+        [AxamlKey, ProjectKey, AssemblyKey, AppAssemblyKey, LoaderKey, SnapshotKey, HandOffKey, SetupErrorKey, SettingsKey, AppProjectKey, SnapshotAllKey, ViewModelKey, ReferencedProjectsKey, ChromeThemeKey];
 
     /// <summary>Gets the host mode. A snapshot folder selects <see cref="HostMode.SnapshotAll"/>, a snapshot path <see cref="HostMode.Snapshot"/>.</summary>
     public HostMode Mode =>
@@ -128,7 +131,8 @@ internal sealed record HostOptions(
             values.GetValueOrDefault(AppProjectKey),
             values.GetValueOrDefault(SnapshotAllKey),
             values.GetValueOrDefault(ViewModelKey),
-            values.GetValueOrDefault(ReferencedProjectsKey));
+            values.GetValueOrDefault(ReferencedProjectsKey),
+            values.GetValueOrDefault(ChromeThemeKey));
     }
 
     /// <summary>Writes the options as the host command line.</summary>
@@ -150,6 +154,7 @@ internal sealed record HostOptions(
         AddOptional(args, SnapshotAllKey, SnapshotAllDirectory);
         AddOptional(args, ViewModelKey, ViewModelName);
         AddOptional(args, ReferencedProjectsKey, ReferencedProjects);
+        AddOptional(args, ChromeThemeKey, ChromeThemePath);
         return args;
     }
 

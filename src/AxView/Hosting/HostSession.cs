@@ -1,5 +1,5 @@
 using AxView.Building;
-using AxView.Loader;
+using AxView.Packages;
 using AxView.Protocol;
 using AxView.Resolution;
 
@@ -29,12 +29,12 @@ internal sealed class HostSession(
     TextWriter log,
     string settingsFile)
 {
-    /// <summary>Makes a session that runs the installed host and takes the XAML loader from NuGet.</summary>
+    /// <summary>Makes a session that runs the installed host and takes the XAML loader and the chrome theme from NuGet.</summary>
     /// <param name="settingsFile">The settings file that keeps the window, the theme, and the preview size of each preview host.</param>
     /// <param name="buildDisplay">Shows the progress of each build.</param>
     public static HostSession CreateDefault(string settingsFile, IBuildDisplay buildDisplay)
     {
-        PreviewTargetResolver resolver = new(new NuGetLoaderSource());
+        PreviewTargetResolver resolver = new(new NuGetPackageSource());
         return new HostSession(
             resolver, DotnetHostProcess.ForInstalledHost(), new DotnetOutputBuilder(), buildDisplay, Console.Error, settingsFile);
     }

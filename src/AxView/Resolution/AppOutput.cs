@@ -7,6 +7,7 @@ internal sealed record AppOutput(string Directory, string DepsFile, string Runti
 {
     private const string RuntimeConfigSuffix = ".runtimeconfig.json";
     private const string AvaloniaLibraryPrefix = "Avalonia/";
+    private static readonly string[] standardThemeLibraryPrefixes = ["Avalonia.Themes.Fluent/", "Avalonia.Themes.Simple/"];
 
     /// <summary>The app's assembly name. The runtimeconfig file name carries it.</summary>
     public string AppName => AppNameOf(RuntimeConfig);
@@ -24,20 +25,25 @@ internal sealed record AppOutput(string Directory, string DepsFile, string Runti
     /// <exception cref="PreviewSetupException">The deps file does not reference Avalonia.</exception>
     public string ReadAvaloniaVersion()
     {
+        string? library = ReadLibraryNames()
+            .FirstOrDefault(name => name.StartsWith(AvaloniaLibraryPrefix, StringComparison.OrdinalIgnoreCase));
+        return library?[AvaloniaLibraryPrefix.Length..]
+            ?? throw new PreviewSetupException($"'{DepsFile}' does not reference the Avalonia package.");
+    }
+
+    /// <summary>Tells if the deps file references the Fluent or the Simple theme package.</summary>
+    public bool ReferencesStandardTheme() =>
+        ReadLibraryNames().Any(name => standardThemeLibraryPrefixes.Any(
+            prefix => name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)));
+
+    // Each library of the deps file has a name of the form "<package>/<version>".
+    private List<string> ReadLibraryNames()
+    {
         using FileStream stream = File.OpenRead(DepsFile);
         using JsonDocument doc = JsonDocument.Parse(stream);
-        if (doc.RootElement.TryGetProperty("libraries", out JsonElement libraries))
-        {
-            foreach (JsonProperty library in libraries.EnumerateObject())
-            {
-                if (library.Name.StartsWith(AvaloniaLibraryPrefix, StringComparison.OrdinalIgnoreCase))
-                {
-                    return library.Name[AvaloniaLibraryPrefix.Length..];
-                }
-            }
-        }
-
-        throw new PreviewSetupException($"'{DepsFile}' does not reference the Avalonia package.");
+        return doc.RootElement.TryGetProperty("libraries", out JsonElement libraries)
+            ? [.. libraries.EnumerateObject().Select(library => library.Name)]
+            : [];
     }
 
     private static string AppNameOf(string runtimeConfig) => Path.GetFileName(runtimeConfig)[..^RuntimeConfigSuffix.Length];

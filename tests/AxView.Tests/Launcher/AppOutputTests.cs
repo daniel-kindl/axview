@@ -43,5 +43,17 @@ public sealed class AppOutputTests
         _ = Assert.Throws<PreviewSetupException>(() => Output(dir).ReadAvaloniaVersion());
     }
 
+    [Theory]
+    [InlineData("Avalonia.Themes.Fluent/11.3.22", true)]
+    [InlineData("Avalonia.Themes.Simple/11.3.22", true)]
+    [InlineData("Avalonia.Desktop/11.3.22", false)]
+    public void ReferencesStandardTheme_TellsIfTheDepsReferenceTheFluentOrTheSimpleTheme(string library, bool expected)
+    {
+        using TempDir dir = new();
+        _ = dir.Write("App.deps.json", $$"""{ "libraries": { "Avalonia/11.3.22": {}, "{{library}}": {} } }""");
+
+        Assert.Equal(expected, Output(dir).ReferencesStandardTheme());
+    }
+
     private static AppOutput Output(TempDir dir) => AppOutput.FromRuntimeConfig(Path.Combine(dir.Path, "App.runtimeconfig.json"));
 }

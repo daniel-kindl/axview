@@ -215,5 +215,5 @@ public sealed class HostSessionTests
         Session(hosts, builder, new FakeBuildDisplay());
 
     private static HostSession Session(FakeHostProcess hosts, FakeOutputBuilder builder, FakeBuildDisplay display) =>
-        new(new PreviewTargetResolver(new FakeLoaderSource()), hosts, builder, display, TextWriter.Null, SettingsFile);
+        new(new PreviewTargetResolver(new FakePackageSource()), hosts, builder, display, TextWriter.Null, SettingsFile);
 }
