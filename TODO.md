@@ -11,10 +11,10 @@ Do not change or use again a number.
 
 ## Next
 
-UI overhaul. Goal: a modern, consistent look. Each item must work on Fluent and Simple, Light and Dark, and Avalonia 11 and 12.
-
 ## Later
 
+- [ ] #77 **Missing project folder (S).** `PreviewWindowModel.RefreshCatalog` runs on each window activation.
+  It throws `DirectoryNotFoundException` when the project folder is gone. Find out if this stops the host. Show an error instead.
 - [ ] #59 **Avalonia 11 host tests (M).** The test project tests only the Avalonia 12 host build (ADR 0002).
   Find a way to run the host tests also on the Avalonia 11 build, for example a second test run in CI.
 
