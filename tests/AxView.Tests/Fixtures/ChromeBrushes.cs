@@ -41,7 +41,7 @@ internal static class ChromeBrushes
     {
         HashSet<Color> chromeColors = [.. keys.Select(key => ColorOf(key, variant))];
         List<IBrush?> brushes = [];
-        foreach (ILogical element in window.GetLogicalDescendants())
+        foreach (ILogical element in window.GetLogicalDescendants().Where(element => !IsInAppIcon(element)))
         {
             AddSet(brushes, element as Border, Border.BackgroundProperty);
             AddSet(brushes, element as Border, Border.BorderBrushProperty);
@@ -51,6 +51,10 @@ internal static class ChromeBrushes
         Assert.NotEmpty(brushes);
         Assert.All(brushes, brush => Assert.Contains(Assert.IsType<ISolidColorBrush>(brush, exactMatch: false).Color, chromeColors));
     }
+
+    // The app icon has fixed brand colors.
+    private static bool IsInAppIcon(ILogical element) =>
+        element.GetSelfAndLogicalAncestors().OfType<StyledElement>().Any(ancestor => ancestor.Classes.Contains(AppIcon.FaceClass));
 
     private static void AddSet(List<IBrush?> brushes, AvaloniaObject? element, AvaloniaProperty<IBrush?> property)
     {

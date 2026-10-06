@@ -85,6 +85,17 @@ public sealed class ChromeShotTests
 
     [AvaloniaTheory]
     [MemberData(nameof(Looks))]
+    public void PickerWindow_WithAnError(ChromeLook look)
+    {
+        using TempDir dir = new();
+        RecentFiles recent = new(Path.Combine(dir.Path, "settings.json"));
+        recent.Add(dir.Write("Desktop/Views/MainView.axaml"));
+
+        AssertSaved(() => CreatePickerWithError(recent), "picker-error", look);
+    }
+
+    [AvaloniaTheory]
+    [MemberData(nameof(Looks))]
     public void BuildWindow_WithABuildLine(ChromeLook look) =>
         AssertSaved(() => CreateBuildWindow("  Desktop -> /work/Desktop/bin/Debug/net8.0/Desktop.dll"), "build", look);
 
@@ -132,6 +143,13 @@ public sealed class ChromeShotTests
         AppStyles appStyles = new(TargetStyles.None, () => TargetStyles.None, projects.CreateRenderers(DesignServices.None));
 
         AssertSaved(() => new PreviewWindow(options, projects, [], DesignServices.None, appStyles), name, look);
+    }
+
+    private static PickerWindow CreatePickerWithError(RecentFiles recent)
+    {
+        PickerWindow window = new(recent);
+        window.ShowMessage("The preview stopped with exit code 3. See the console output.");
+        return window;
     }
 
     private static BuildWindow CreateBuildWindow(string buildLine)

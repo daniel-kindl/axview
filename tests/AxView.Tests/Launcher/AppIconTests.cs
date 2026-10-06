@@ -1,3 +1,4 @@
+using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 
 using AxView.Picker;
@@ -10,6 +11,16 @@ public sealed class AppIconTests
 {
     [AvaloniaFact]
     public void Get_GivesTheSameIconEachTime() => Assert.Same(AppIcon.Get(), AppIcon.Get());
+
+    [AvaloniaFact]
+    public void CreateFace_GivesTheIconAsAControlInTheSize()
+    {
+        Border face = Assert.IsType<Border>(AppIcon.CreateFace(48));
+
+        Assert.Equal(48, face.Width);
+        Assert.Equal(48, face.Height);
+        Assert.Equal("Ax", Assert.IsType<TextBlock>(face.Child).Text);
+    }
 
     [AvaloniaFact]
     public void PickerWindow_AndAboutDialog_HaveTheIcon()

@@ -30,6 +30,6 @@ public sealed class AboutDialogTests
 
         PickerWindow window = new(new RecentFiles(Path.Combine(dir.Path, "settings.json")));
 
-        Assert.Contains(window.GetLogicalDescendants().OfType<Button>(), b => Equals(b.Content, "About"));
+        Assert.Contains(window.GetLogicalDescendants().OfType<Button>(), b => Equals(ToolTip.GetTip(b), "About AxView"));
     }
 }

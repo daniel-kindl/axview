@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Templates;
 using Avalonia.Input;
 using Avalonia.Layout;
@@ -16,14 +17,20 @@ namespace AxView.Picker;
 /// <summary>Lets the user open an AXAML file or a recent one. Hides while the preview runs.</summary>
 internal sealed class PickerWindow : Window
 {
+    private const double HeaderIconSize = 48;
+
     private readonly RecentFiles recent;
     private readonly TextBlock recentHeader;
     private readonly ListBox recentList;
     private readonly TextBlock noRecentFiles;
     private readonly TextBlock message;
+    private readonly Border messageCard;
 
     /// <summary>The hint that the window shows in place of an empty recent file list.</summary>
     public const string NoRecentFilesText = "No recent files yet. Open an AXAML file to start.";
+
+    /// <summary>The line below the app name.</summary>
+    public const string SubtitleText = "Render any Avalonia AXAML file. It reloads when you save.";
 
     public PickerWindow(RecentFiles recent)
     {
@@ -35,16 +42,19 @@ internal sealed class PickerWindow : Window
         WindowStartupLocation = WindowStartupLocation.CenterScreen;
         Resources.MergedDictionaries.Add(ChromeStyle.CreateResources());
 
-        Button openButton = new() { Content = "Open AXAML file...", HorizontalAlignment = HorizontalAlignment.Left };
+        // The accent class gives the primary button of the Fluent theme.
+        Button openButton = new() { Content = "Open AXAML file...", HorizontalAlignment = HorizontalAlignment.Left, Classes = { "accent" } };
         openButton.Click += async (_, _) => await PickAsync();
 
-        Button aboutButton = new() { Content = "About", HorizontalAlignment = HorizontalAlignment.Left };
+        Button aboutButton = ChromeControls.CreateIconButton(ChromeIcon.About, "About AxView");
         aboutButton.Click += async (_, _) => await new AboutDialog(AboutInfo.Read(typeof(AboutInfo).Assembly)).ShowDialog(this);
 
         recentList = new ListBox
         {
             ItemTemplate = new FuncDataTemplate<string>((path, _) => new RecentFileItem(path ?? string.Empty)),
         };
+        // A long folder trims at the start. It does not scroll the list to the side.
+        ScrollViewer.SetHorizontalScrollBarVisibility(recentList, ScrollBarVisibility.Disabled);
         recentList.DoubleTapped += async (_, _) => await OpenSelectedAsync();
         recentList.KeyDown += async (_, e) =>
         {
@@ -54,19 +64,16 @@ internal sealed class PickerWindow : Window
             }
         };
 
-        noRecentFiles = new TextBlock { Text = NoRecentFilesText, Opacity = 0.7 };
+        noRecentFiles = new TextBlock { Text = NoRecentFilesText };
+        ChromeStyle.SetBrush(noRecentFiles, TextBlock.ForegroundProperty, ChromeStyle.MutedTextBrushKey);
         DockPanel.SetDock(noRecentFiles, Dock.Top);
 
-        message = new TextBlock { TextWrapping = TextWrapping.Wrap, IsVisible = false };
-        ChromeStyle.SetBrush(message, TextBlock.ForegroundProperty, ChromeStyle.ErrorBrushKey);
-
-        TextBlock title = new() { Text = "AxView", FontSize = ChromeStyle.FontSizeTitle, FontWeight = FontWeight.SemiBold };
-        TextBlock subtitle = new() { Text = "Render any Avalonia AXAML file. It reloads when you save.", Opacity = 0.7 };
+        message = new TextBlock { TextWrapping = TextWrapping.Wrap, VerticalAlignment = VerticalAlignment.Center };
+        messageCard = CreateMessageCard(message);
         recentHeader = new TextBlock { Text = "Recent (double-click to open)", FontWeight = FontWeight.SemiBold };
-        StackPanel buttons = new() { Orientation = Orientation.Horizontal, Spacing = ChromeStyle.SpacingMedium, Children = { openButton, aboutButton } };
 
         DockPanel layout = new() { Margin = new Thickness(ChromeStyle.SpacingExtraLarge) };
-        foreach (Control top in new Control[] { title, subtitle, buttons, message, recentHeader })
+        foreach (Control top in new Control[] { CreateHeader(aboutButton), openButton, messageCard, recentHeader })
         {
             top.Margin = new Thickness(0, 0, 0, ChromeStyle.SpacingLarge);
             DockPanel.SetDock(top, Dock.Top);
@@ -77,6 +84,47 @@ internal sealed class PickerWindow : Window
         layout.Children.Add(recentList);
         Content = layout;
         ShowRecentFiles();
+    }
+
+    private static DockPanel CreateHeader(Button aboutButton)
+    {
+        Control face = AppIcon.CreateFace(HeaderIconSize);
+        face.Margin = new Thickness(0, 0, ChromeStyle.SpacingLarge, 0);
+        TextBlock title = new() { Text = "AxView", FontSize = ChromeStyle.FontSizeTitle, FontWeight = FontWeight.SemiBold };
+        TextBlock subtitle = new() { Text = SubtitleText };
+        ChromeStyle.SetBrush(subtitle, TextBlock.ForegroundProperty, ChromeStyle.MutedTextBrushKey);
+        aboutButton.VerticalAlignment = VerticalAlignment.Top;
+        DockPanel.SetDock(aboutButton, Dock.Right);
+        DockPanel.SetDock(face, Dock.Left);
+        return new DockPanel
+        {
+            Children =
+            {
+                aboutButton,
+                face,
+                new StackPanel { VerticalAlignment = VerticalAlignment.Center, Children = { title, subtitle } },
+            },
+        };
+    }
+
+    private static Border CreateMessageCard(TextBlock message)
+    {
+        PathIcon icon = ChromeControls.CreateIcon(ChromeIcon.Error);
+        icon.Margin = new Thickness(0, 0, ChromeStyle.SpacingMedium, 0);
+        icon.VerticalAlignment = VerticalAlignment.Top;
+        ChromeStyle.SetBrush(icon, PathIcon.ForegroundProperty, ChromeStyle.ErrorBrushKey);
+        DockPanel.SetDock(icon, Dock.Left);
+        Border card = new()
+        {
+            IsVisible = false,
+            Padding = new Thickness(ChromeStyle.SpacingLarge),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(ChromeStyle.CornerRadius),
+            Child = new DockPanel { Children = { icon, message } },
+        };
+        ChromeStyle.SetBrush(card, Border.BackgroundProperty, ChromeStyle.CardBrushKey);
+        ChromeStyle.SetBrush(card, Border.BorderBrushProperty, ChromeStyle.ErrorBrushKey);
+        return card;
     }
 
     private async Task PickAsync()
@@ -104,7 +152,7 @@ internal sealed class PickerWindow : Window
 
     private async Task PreviewAsync(string path)
     {
-        message.IsVisible = false;
+        messageCard.IsVisible = false;
         Hide();
         try
         {
@@ -139,9 +187,11 @@ internal sealed class PickerWindow : Window
         noRecentFiles.IsVisible = !hasFiles;
     }
 
-    private void ShowMessage(string text)
+    /// <summary>Shows an error message, for example when the preview stops with an error.</summary>
+    /// <param name="text">The message.</param>
+    public void ShowMessage(string text)
     {
         message.Text = text;
-        message.IsVisible = true;
+        messageCard.IsVisible = true;
     }
 }
