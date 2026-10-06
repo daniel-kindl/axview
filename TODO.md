@@ -13,11 +13,6 @@ Do not change or use again a number.
 
 UI overhaul. Goal: a modern, consistent look. Each item must work on Fluent and Simple, Light and Dark, and Avalonia 11 and 12.
 
-- [ ] #73 **Sidebar (M).** Restyle the sidebar:
-  - a project header with the project path as a tooltip, and the Open button as an icon button,
-  - a filter box with a search icon,
-  - file rows with a file kind icon and a clear selected state,
-  - a button that collapses the sidebar. The settings file keeps the state.
 - [ ] #74 **Status bar (S).** Show segments with separators: the status text, the output folder, and the DataContext badge.
   Show the badge as a pill with the warning brush.
 - [ ] #75 **Picker window (M).** Restyle the start screen:
@@ -35,6 +30,7 @@ UI overhaul. Goal: a modern, consistent look. Each item must work on Fluent and 
 
 ## Done
 
+- [x] #73 Sidebar: a header with Open and collapse icon buttons, a search icon in the filter, `FileRow` with a kind icon and an accent selection bar. `IsSidebarCollapsed` in `settings.json`. `130a2ed`
 - [x] #72 Error panel: `ErrorPanel` is a card with the error brush border, a header, copy and collapse buttons, and a last good render note. `1dfdca3`
 - [x] #71 Preview stage: `PreviewStage` shows a size preset as a centered card with a shadow on the stage brush, and the size below it. Fit has no card and no backdrop. `0b2a2db`
 - [x] #70 Preview toolbar: theme, size, and DataContext groups with an icon or a label, and separators. About is an icon button at the right edge. `ChromeControls` gives the icon button and the separator. `45601b1`
