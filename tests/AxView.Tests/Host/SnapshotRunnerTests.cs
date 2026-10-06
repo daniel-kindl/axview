@@ -93,6 +93,66 @@ public sealed class SnapshotRunnerTests
     }
 
     [AvaloniaFact]
+    public async Task RunAsync_SnapshotWithAReport_WritesTheExitReasonAndTheLoadTimeAsync()
+    {
+        using TempDir dir = new();
+        string file = dir.Write("Views/Hello.axaml", $"""<TextBlock {AvaloniaXmlns} Text="Hello" />""");
+
+        JsonElement report = await SaveReportAsync(dir, file, ExitReason.Ok);
+
+        Assert.Equal(file, report.GetProperty("File").GetString());
+        Assert.Equal("Ok", report.GetProperty("ExitReason").GetString());
+        Assert.True(report.GetProperty("LoadMilliseconds").GetDouble() >= 0);
+        Assert.False(report.TryGetProperty("Error", out _));
+        Assert.Empty(report.GetProperty("Log").EnumerateArray());
+    }
+
+    [AvaloniaFact]
+    public async Task RunAsync_SnapshotOfABrokenFileWithAReport_WritesTheErrorAndItsLineAsync()
+    {
+        using TempDir dir = new();
+        string file = dir.Write(
+            "Views/Broken.axaml",
+            $"""
+            <TextBlock {AvaloniaXmlns}>
+              <Broken
+            """);
+
+        JsonElement report = await SaveReportAsync(dir, file, ExitReason.RenderFailed);
+
+        Assert.Equal("RenderFailed", report.GetProperty("ExitReason").GetString());
+        Assert.False(string.IsNullOrEmpty(report.GetProperty("Error").GetString()));
+        Assert.Equal(2, report.GetProperty("Line").GetInt32());
+        Assert.True(report.GetProperty("Column").GetInt32() > 0);
+    }
+
+    [AvaloniaFact]
+    public async Task RunAsync_SnapshotWithABindingError_WritesTheBindingErrorToTheReportAsync()
+    {
+        using TempDir dir = new();
+        string file = dir.Write("Views/Hello.axaml", $$"""<TextBlock {{AvaloniaXmlns}} Text="{Binding Missing}" />""");
+
+        JsonElement report = await SaveReportAsync(dir, file, ExitReason.Ok, typeof(FixtureViewModel).FullName);
+
+        JsonElement entry = Assert.Single(
+            report.GetProperty("Log").EnumerateArray(), item => item.GetProperty("Area").GetString() == "Binding");
+        Assert.Contains("Missing", entry.GetProperty("Message").GetString(), StringComparison.Ordinal);
+        Assert.Equal("TextBlock", entry.GetProperty("Source").GetString());
+    }
+
+    [AvaloniaFact]
+    public async Task RunAsync_SnapshotWithAnUnknownViewModelAndAReport_WritesBadArgumentsAsync()
+    {
+        using TempDir dir = new();
+        string file = dir.Write("Views/Hello.axaml", $"""<TextBlock {AvaloniaXmlns} Text="Hello" />""");
+
+        JsonElement report = await SaveReportAsync(dir, file, ExitReason.BadArguments, "Unknown.ViewModel");
+
+        Assert.Equal("BadArguments", report.GetProperty("ExitReason").GetString());
+        Assert.Contains("Unknown.ViewModel", report.GetProperty("Error").GetString(), StringComparison.Ordinal);
+    }
+
+    [AvaloniaFact]
     public async Task RunAsync_SnapshotOfABrokenFile_GivesRenderFailedAsync()
     {
         using TempDir dir = new();
@@ -202,6 +262,23 @@ public sealed class SnapshotRunnerTests
         string file = dir.Write("Views/Hello.axaml", $"""<TextBlock {AvaloniaXmlns} Text="Hello" />""");
 
         _ = await Assert.ThrowsAsync<ArgumentException>(() => Runner(dir).RunAsync(Options(dir, file)));
+    }
+
+    private static async Task<JsonElement> SaveReportAsync(TempDir dir, string file, ExitReason expected, string? viewModelName = null)
+    {
+        string reportPath = Path.Combine(dir.Path, "out", "report.json");
+        HostOptions options = Options(dir, file) with
+        {
+            SnapshotPath = Path.Combine(dir.Path, "shot.png"),
+            ViewModelName = viewModelName,
+            ReportPath = reportPath,
+        };
+
+        ExitReason reason = await Runner(dir).RunAsync(options);
+
+        Assert.Equal(expected, reason);
+        using JsonDocument document = JsonDocument.Parse(await File.ReadAllTextAsync(reportPath));
+        return document.RootElement.Clone();
     }
 
     private static SnapshotRunner Runner(TempDir dir) =>

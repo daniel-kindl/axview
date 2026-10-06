@@ -13,7 +13,7 @@ namespace AxView;
 internal static class Program
 {
     private const string Usage =
-        "usage: axview [<file.axaml> [--output <app-bin-dir>] [--snapshot <file.png> [--view-model <type>] [--tree <file.json>] | --snapshot-all <dir>]" +
+        "usage: axview [<file.axaml> [--output <app-bin-dir>] [--snapshot <file.png> [--view-model <type>] [--tree <file.json>] [--report <file.json>] | --snapshot-all <dir>]" +
         " [--size <Fit|Phone|Tablet|Desktop|WxH>] [--theme <Default|Light|Dark>]]";
 
     [STAThread]
@@ -27,6 +27,7 @@ internal static class Program
         string? sizeText = null;
         string? themeText = null;
         string? tree = null;
+        string? report = null;
         for (int i = 0; i < args.Length; i++)
         {
             switch (args[i])
@@ -52,6 +53,9 @@ internal static class Program
                 case "--tree" when i + 1 < args.Length:
                     tree = Path.GetFullPath(args[++i]);
                     break;
+                case "--report" when i + 1 < args.Length:
+                    report = Path.GetFullPath(args[++i]);
+                    break;
                 case "-h" or "--help":
                     Console.WriteLine(Usage);
                     return 0;
@@ -66,7 +70,7 @@ internal static class Program
         {
             PreviewSize? size = sizeText is null ? null : PreviewSize.Parse(sizeText);
             PreviewTheme? theme = themeText is null ? null : HostOptions.ParseTheme(themeText);
-            request = new SnapshotRequest(snapshot, snapshotAll, viewModel, size, theme, tree);
+            request = new SnapshotRequest(snapshot, snapshotAll, viewModel, size, theme, tree, report);
             HostOptions.ValidateMode(request);
         }
         catch (ArgumentException ex)

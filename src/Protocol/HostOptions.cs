@@ -33,6 +33,7 @@ namespace AxView.Protocol;
 /// <param name="Size">If set, the size of each snapshot. <see cref="PreviewSize.Parse"/> reads the value.</param>
 /// <param name="Theme">If set, the theme variant of each snapshot. <see cref="ParseTheme"/> reads the value.</param>
 /// <param name="TreePath">If set, the host saves the visual tree of the snapshot to this JSON file.</param>
+/// <param name="ReportPath">If set, the host saves the result, the load time, the error, and the log of the snapshot to this JSON file.</param>
 internal sealed record HostOptions(
     string AxamlPath,
     string ProjectDirectory,
@@ -50,7 +51,8 @@ internal sealed record HostOptions(
     string? ChromeThemePath = null,
     PreviewSize? Size = null,
     PreviewTheme? Theme = null,
-    string? TreePath = null)
+    string? TreePath = null,
+    string? ReportPath = null)
 {
     private const string AxamlKey = "--axaml";
     private const string ProjectKey = "--project";
@@ -69,11 +71,12 @@ internal sealed record HostOptions(
     private const string SizeKey = "--size";
     private const string ThemeKey = "--theme";
     private const string TreeKey = "--tree";
+    private const string ReportKey = "--report";
 
     private static readonly string[] keys =
     [
         AxamlKey, ProjectKey, AssemblyKey, AppAssemblyKey, LoaderKey, SnapshotKey, HandOffKey, SetupErrorKey, SettingsKey, AppProjectKey,
-        SnapshotAllKey, ViewModelKey, ReferencedProjectsKey, ChromeThemeKey, SizeKey, ThemeKey, TreeKey,
+        SnapshotAllKey, ViewModelKey, ReferencedProjectsKey, ChromeThemeKey, SizeKey, ThemeKey, TreeKey, ReportKey,
     ];
 
     /// <summary>Gets the host mode. A snapshot folder selects <see cref="HostMode.SnapshotAll"/>, a snapshot path <see cref="HostMode.Snapshot"/>.</summary>
@@ -87,7 +90,8 @@ internal sealed record HostOptions(
     /// <summary>Makes sure that the snapshot options select one host mode. The launcher and the host use the same check.</summary>
     /// <param name="request">The snapshot options of the command line.</param>
     /// <exception cref="ArgumentException">
-    /// The options select more than one mode, a ViewModel or a tree without a snapshot, or a size or theme without a snapshot mode.
+    /// The options select more than one mode, a ViewModel, a tree, or a report without a snapshot,
+    /// or a size or theme without a snapshot mode.
     /// </exception>
     public static void ValidateMode(SnapshotRequest request)
     {
@@ -104,6 +108,11 @@ internal sealed record HostOptions(
         if (request.TreePath is not null && request.Path is null)
         {
             throw new ArgumentException($"{TreeKey} needs {SnapshotKey}.");
+        }
+
+        if (request.ReportPath is not null && request.Path is null)
+        {
+            throw new ArgumentException($"{ReportKey} needs {SnapshotKey}.");
         }
 
         if (request.Size is not null && !request.IsSnapshot)
@@ -161,7 +170,8 @@ internal sealed record HostOptions(
         string? snapshotAllDirectory = values.GetValueOrDefault(SnapshotAllKey);
         string? viewModelName = values.GetValueOrDefault(ViewModelKey);
         string? treePath = values.GetValueOrDefault(TreeKey);
-        ValidateMode(new SnapshotRequest(snapshotPath, snapshotAllDirectory, viewModelName, size, theme, treePath));
+        string? reportPath = values.GetValueOrDefault(ReportKey);
+        ValidateMode(new SnapshotRequest(snapshotPath, snapshotAllDirectory, viewModelName, size, theme, treePath, reportPath));
         return new HostOptions(
             Required(AxamlKey),
             Required(ProjectKey),
@@ -179,7 +189,8 @@ internal sealed record HostOptions(
             values.GetValueOrDefault(ChromeThemeKey),
             size,
             theme,
-            treePath);
+            treePath,
+            reportPath);
     }
 
     /// <summary>Writes the options as the host command line.</summary>
@@ -205,6 +216,7 @@ internal sealed record HostOptions(
         AddOptional(args, SizeKey, Size?.ToArgument());
         AddOptional(args, ThemeKey, Theme?.ToString());
         AddOptional(args, TreeKey, TreePath);
+        AddOptional(args, ReportKey, ReportPath);
         return args;
     }
 

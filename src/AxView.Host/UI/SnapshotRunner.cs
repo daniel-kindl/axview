@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Globalization;
 using System.Text;
 
@@ -29,7 +30,7 @@ namespace AxView.Host.UI;
 /// A failed file does not stop the run.
 /// </para>
 /// <see cref="HostMode.Snapshot"/> also saves the visual tree of the view with <see cref="VisualTreeDump"/>, if the options have a tree path.
-/// A failed load gives no tree file.
+/// A failed load gives no tree file. If the options have a report path, it also saves a <see cref="SnapshotReport"/>.
 /// Each PNG has the size and the theme of the options, if they are set. The control gallery ignores the size.
 /// Each PNG waits for the settle time after the window shows. The errors go to the standard error stream.
 /// </remarks>
@@ -72,6 +73,7 @@ internal sealed class SnapshotRunner(ProjectSet projects, DesignServices service
 
     private async Task<ExitReason> SaveFileAsync(HostOptions options, string png)
     {
+        using LogCapture log = LogCapture.Start();
         string? viewModelName = options.ViewModelName;
         Type? viewModelType = null;
         if (viewModelName is not null)
@@ -79,20 +81,34 @@ internal sealed class SnapshotRunner(ProjectSet projects, DesignServices service
             viewModelType = ViewModelCatalog.Find(projects.ViewAssembly, services, viewModelName);
             if (viewModelType is null)
             {
-                await Console.Error.WriteLineAsync($"axview: error: No ViewModel '{viewModelName}' that the design services can create.");
+                string viewModelError = $"No ViewModel '{viewModelName}' that the design services can create.";
+                await Console.Error.WriteLineAsync($"axview: error: {viewModelError}");
+                SaveReport(options, SnapshotReport.Create(options.AxamlPath, ExitReason.BadArguments, TimeSpan.Zero, viewModelError, null, log.Entries));
                 return ExitReason.BadArguments;
             }
         }
 
+        Stopwatch loadWatch = Stopwatch.StartNew();
         SnapshotWindow window = new(renderer, options.AxamlPath, createTarget(), viewModelType);
+        TimeSpan loadTime = loadWatch.Elapsed;
         string? error = await SaveAsync(window, png, options, options.TreePath);
-        if (error is null)
+        ExitReason reason = error is null ? ExitReason.Ok : ExitReason.RenderFailed;
+        if (error is not null)
         {
-            return ExitReason.Ok;
+            await Console.Error.WriteLineAsync($"axview: error: {error}");
         }
 
-        await Console.Error.WriteLineAsync($"axview: error: {error}");
-        return ExitReason.RenderFailed;
+        XamlLocation? location = error is null ? null : window.ErrorLocation;
+        SaveReport(options, SnapshotReport.Create(options.AxamlPath, reason, loadTime, error, location, log.Entries));
+        return reason;
+    }
+
+    private static void SaveReport(HostOptions options, SnapshotReport report)
+    {
+        if (options.ReportPath is string reportPath)
+        {
+            report.Save(reportPath);
+        }
     }
 
     private async Task<ExitReason> SaveProjectAsync(HostOptions options, string outputDirectory)

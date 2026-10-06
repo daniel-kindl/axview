@@ -8,13 +8,15 @@ namespace AxView.Protocol;
 /// <param name="Size">If set, the size of each snapshot.</param>
 /// <param name="Theme">If set, the theme variant of each snapshot.</param>
 /// <param name="TreePath">If set, the host saves the visual tree of the snapshot to this JSON file.</param>
+/// <param name="ReportPath">If set, the host saves the result, the load time, the error, and the log of the snapshot to this JSON file.</param>
 internal sealed record SnapshotRequest(
     string? Path = null,
     string? AllDirectory = null,
     string? ViewModelName = null,
     PreviewSize? Size = null,
     PreviewTheme? Theme = null,
-    string? TreePath = null)
+    string? TreePath = null,
+    string? ReportPath = null)
 {
     /// <summary>No snapshot. The host shows the interactive preview window.</summary>
     public static SnapshotRequest None { get; } = new();

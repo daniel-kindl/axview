@@ -44,6 +44,9 @@ internal sealed class LivePreview : IDisposable
     /// <summary>Gets the message of the most recent error. Null after a good load.</summary>
     public string? Error { get; private set; }
 
+    /// <summary>Gets the place of <see cref="Error"/> in the AXAML file, or null when it is not known.</summary>
+    public XamlLocation? ErrorLocation { get; private set; }
+
     /// <summary>Loads the file and watches it. Stops the watch of the previous file.</summary>
     /// <param name="path">An AXAML file of the project.</param>
     /// <param name="viewModelType">The type of the root DataContext, or null to use the DataContext from the XAML.</param>
@@ -78,11 +81,13 @@ internal sealed class LivePreview : IDisposable
             View = rendered.Control;
             IsStylePreview = rendered.IsStylePreview;
             Error = null;
+            ErrorLocation = null;
         }
         catch (Exception ex)
         {
             // User XAML and its code can throw any exception. Keep the last good preview.
             Error = ExceptionText.Describe(ex);
+            ErrorLocation = XamlLocation.Find(ex);
         }
 
         Changed?.Invoke(this, EventArgs.Empty);
@@ -91,6 +96,7 @@ internal sealed class LivePreview : IDisposable
     private void OnUnhandledException(Exception ex)
     {
         Error = ExceptionText.Describe(ex);
+        ErrorLocation = XamlLocation.Find(ex);
         Changed?.Invoke(this, EventArgs.Empty);
     }
 }

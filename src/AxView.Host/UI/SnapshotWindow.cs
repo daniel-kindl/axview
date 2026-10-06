@@ -63,6 +63,9 @@ internal sealed class SnapshotWindow : Window
     /// <summary>Gets the error of the load or of a dispatcher job, or null.</summary>
     public string? Error => livePreview?.Error;
 
+    /// <summary>Gets the place of the load error in the AXAML file, or null when it is not known.</summary>
+    public XamlLocation? ErrorLocation => livePreview?.ErrorLocation;
+
     /// <summary>Gives the preview the variant of a theme.</summary>
     public void ShowTheme(PreviewTheme theme) => scope.ShowTheme(theme);
 

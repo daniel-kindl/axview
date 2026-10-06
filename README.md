@@ -32,7 +32,7 @@ To write the source and binary archives to `artifacts/`, run `./pack.ps1 all` (P
 ## Use
 
 ```text
-axview [<file.axaml> [--output <app-bin-dir>] [--snapshot <file.png> [--view-model <type>] [--tree <file.json>] | --snapshot-all <dir>]
+axview [<file.axaml> [--output <app-bin-dir>] [--snapshot <file.png> [--view-model <type>] [--tree <file.json>] [--report <file.json>] | --snapshot-all <dir>]
        [--size <Fit|Phone|Tablet|Desktop|WxH>] [--theme <Default|Light|Dark>]]
 ```
 
@@ -52,6 +52,7 @@ axview [<file.axaml> [--output <app-bin-dir>] [--snapshot <file.png> [--view-mod
 | `--snapshot <file.png>` | Write a PNG of the file, then exit. |
 | `--view-model <type>` | Set the DataContext of a `--snapshot` to a new instance of this ViewModel type (full name). |
 | `--tree <file.json>` | With `--snapshot`, also write the visual tree of the view to a JSON file. |
+| `--report <file.json>` | With `--snapshot`, also write the result, the load time, the error, and the binding errors to a JSON file. |
 | `--snapshot-all <dir>` | Write a PNG of each AXAML file of the project and `summary.txt` into the folder, then exit. |
 | `--size <size>` | Set the size of each snapshot: `Fit`, `Phone` (390×844), `Tablet` (820×1180), `Desktop` (1920×1080), or a width and height, for example `500x300`. `Fit` is 1280×800. |
 | `--theme <variant>` | Set the theme variant of each snapshot: `Default` (the variant of the app), `Light`, or `Dark`. |
@@ -118,6 +119,27 @@ The file is one line of JSON, with one object for each visual:
 - A value that is null is not in the file.
 
 A failed load writes no tree. Use `jq` to make the file easier to read.
+
+`--report` writes the result of the `--snapshot` run:
+
+```json
+{
+  "File": "/src/Ui/Views/Main.axaml",
+  "ExitReason": "RenderFailed",
+  "LoadMilliseconds": 85.2,
+  "Error": "XmlException: Unexpected end of file. Line 2, position 3.",
+  "Line": 2,
+  "Column": 3,
+  "Log": [
+    { "Level": "Warning", "Area": "Binding", "Source": "TextBlock#lblTitle", "Message": "An error occurred binding ..." }
+  ]
+}
+```
+
+- `ExitReason` is the name of the exit code. See the exit code table.
+- `Line` and `Column` are only in the file when the error gives them.
+- `Log` has each Avalonia log event of level Warning and higher, for example binding errors. They do not change the exit code.
+- The host also writes the report when the ViewModel is unknown.
 
 `--snapshot-all` also writes the control gallery to `axview-gallery.png`.
 The gallery has its full size. It ignores `--size`.

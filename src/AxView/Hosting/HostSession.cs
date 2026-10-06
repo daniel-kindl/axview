@@ -63,6 +63,7 @@ internal sealed class HostSession(
                     Size = snapshot.Size,
                     Theme = snapshot.Theme,
                     TreePath = snapshot.TreePath,
+                    ReportPath = snapshot.ReportPath,
                 };
 
                 // A snapshot must not depend on the last window of the user.
