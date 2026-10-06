@@ -14,7 +14,7 @@ public sealed class DotnetOutputBuilderTests
 
         IReadOnlyList<string> args = DotnetOutputBuilder.Arguments(project, output);
 
-        Assert.Equal(["build", project, "--nologo", "--verbosity", "quiet", "--configuration", "Release"], args);
+        Assert.Equal(["build", project, "--nologo", "--verbosity", "minimal", "--configuration", "Release"], args);
     }
 
     [Fact]
@@ -26,6 +26,6 @@ public sealed class DotnetOutputBuilderTests
 
         IReadOnlyList<string> args = DotnetOutputBuilder.Arguments(project, output);
 
-        Assert.Equal(["build", project, "--nologo", "--verbosity", "quiet"], args);
+        Assert.Equal(["build", project, "--nologo", "--verbosity", "minimal"], args);
     }
 }

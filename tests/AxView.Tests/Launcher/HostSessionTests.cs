@@ -143,6 +143,43 @@ public sealed class HostSessionTests
     }
 
     [Fact]
+    public async Task RunAsync_ShowsTheProgressOfTheBuildUntilTheBuildStopsAsync()
+    {
+        using TempDir dir = new();
+        _ = dir.Write("Repo.sln");
+        string view = AppFixture.WriteProject(dir, "Ui");
+        FakeHostProcess hosts = new();
+        hosts.Enqueue(ExitReason.Rebuild, nextFile: view);
+        hosts.Enqueue(ExitReason.Ok);
+        FakeOutputBuilder builder = new();
+        FakeBuildDisplay display = new();
+
+        _ = await Session(hosts, builder, display).RunAsync(view, outputDir: null, snapshotPath: null, _ => { });
+
+        FakeBuildProgress progress = Assert.Single(display.Shown);
+        Assert.Equal("Ui", progress.AppName);
+        Assert.Equal([FakeOutputBuilder.BuildLine], progress.Lines);
+        Assert.Equal(progress.Cancellation, Assert.Single(builder.Cancellations));
+        Assert.True(progress.IsDisposed);
+    }
+
+    [Fact]
+    public async Task RunAsync_ClosesTheBuildProgressWhenTheBuildFailsAsync()
+    {
+        using TempDir dir = new();
+        _ = dir.Write("Repo.sln");
+        string view = AppFixture.WriteProject(dir, "Ui");
+        FakeHostProcess hosts = new();
+        hosts.Enqueue(ExitReason.Rebuild, nextFile: view);
+        hosts.Enqueue(ExitReason.Ok);
+        FakeBuildDisplay display = new();
+
+        _ = await Session(hosts, new FakeOutputBuilder("error"), display).RunAsync(view, null, null, _ => { });
+
+        Assert.True(Assert.Single(display.Shown).IsDisposed);
+    }
+
+    [Fact]
     public async Task RunAsync_ShowsTheBuildErrorInTheNextHostWhenTheBuildFailsAsync()
     {
         using TempDir dir = new();
@@ -175,5 +212,8 @@ public sealed class HostSessionTests
     private static HostSession Session(FakeHostProcess hosts) => Session(hosts, new FakeOutputBuilder());
 
     private static HostSession Session(FakeHostProcess hosts, FakeOutputBuilder builder) =>
-        new(new PreviewTargetResolver(new FakeLoaderSource()), hosts, builder, TextWriter.Null, SettingsFile);
+        Session(hosts, builder, new FakeBuildDisplay());
+
+    private static HostSession Session(FakeHostProcess hosts, FakeOutputBuilder builder, FakeBuildDisplay display) =>
+        new(new PreviewTargetResolver(new FakeLoaderSource()), hosts, builder, display, TextWriter.Null, SettingsFile);
 }

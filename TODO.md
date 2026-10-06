@@ -14,15 +14,16 @@ Do not change or use again a number.
 
 ## Next
 
-- [ ] #48 **Signed binaries (S).** Add a `sign` action to `pack.ps1`. Sign `axview.exe` and the AxView DLLs with the SPS certificate.
-  Use the signtool settings of DAT3810 `make_new.cmd`. Read the paths from environment variables, not from the script.
+- [ ] #57 **Version test on a tag (S).** `Read_GivesTheVersionFromTheGitTags` fails when a `v1.0.0` tag is on HEAD.
+  MinVer then gives `1.0.0`, the same as the SDK default. Find a check that does not depend on the tag.
 
 ## Later
 
-- [ ] #39 **Build progress (M).** Show the build progress during a rebuild.
-  Option A: the launcher shows a "Building" window.
-  Option B: the host runs from a copy of the output. It stays open during the build and shows a build overlay.
 - [ ] #20 **Avalonia 12 (L).** Check the loader and host APIs. A second host build may be necessary.
+- [ ] #55 **.NET 10 (S).** Change the launcher and the tests to `net10.0`. Keep the host on `net8.0`, because it runs in the runtime of the target app.
+  Update the `net9.0` paths in `AGENTS.md`, `pack.ps1`, and the docs.
+- [ ] #56 **Launcher on Avalonia 12 (M).** Change the picker UI of the launcher to Avalonia 12. Do #20 first.
+  The tests compile the host code against Avalonia 11. Make sure that one test project can test both.
 
 
 ## Known issues

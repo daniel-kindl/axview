@@ -1,5 +1,7 @@
 using Avalonia;
+using Avalonia.Threading;
 
+using AxView.Building;
 using AxView.Hosting;
 using AxView.Picker;
 using AxView.Protocol;
@@ -65,14 +67,31 @@ internal static class Program
         try
         {
             RecentFiles recent = RecentFiles.ForCurrentUser();
-            HostSession session = HostSession.CreateDefault(recent.SettingsFile);
-            return session.RunAsync(axaml, outputDir, snapshot, recent.Add, snapshotAll, viewModel).GetAwaiter().GetResult();
+            if ((snapshot is not null) || (snapshotAll is not null))
+            {
+                HostSession snapshotSession = HostSession.CreateDefault(recent.SettingsFile, new QuietBuildDisplay());
+                return snapshotSession.RunAsync(axaml, outputDir, snapshot, recent.Add, snapshotAll, viewModel).GetAwaiter().GetResult();
+            }
+
+            HostSession session = HostSession.CreateDefault(recent.SettingsFile, new BuildWindowDisplay());
+            return RunWithBuildWindows(() => session.RunAsync(axaml, outputDir, snapshotPath: null, recent.Add));
         }
         catch (PreviewSetupException ex)
         {
             Console.Error.WriteLine($"axview: {ex.Message}");
             return (int)ExitReason.SetupFailed;
         }
+    }
+
+    // The build window needs the UI thread. The session runs on it, and the main loop stops when the session stops.
+    private static int RunWithBuildWindows(Func<Task<int>> run)
+    {
+        _ = BuildAvaloniaApp().SetupWithoutStarting();
+        using CancellationTokenSource stop = new();
+        Task<int> session = Dispatcher.UIThread.InvokeAsync(run);
+        _ = session.ContinueWith(_ => stop.Cancel(), TaskScheduler.Default);
+        Dispatcher.UIThread.MainLoop(stop.Token);
+        return session.GetAwaiter().GetResult();
     }
 
     private static AppBuilder BuildAvaloniaApp() =>

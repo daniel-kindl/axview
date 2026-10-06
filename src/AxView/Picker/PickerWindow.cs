@@ -6,6 +6,7 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
 
+using AxView.Building;
 using AxView.Hosting;
 using AxView.Protocol;
 using AxView.Resolution;
@@ -105,7 +106,7 @@ internal sealed class PickerWindow : Window
         Hide();
         try
         {
-            HostSession session = HostSession.CreateDefault(recent.SettingsFile);
+            HostSession session = HostSession.CreateDefault(recent.SettingsFile, new BuildWindowDisplay());
             int exitCode = await session.RunAsync(path, outputDir: null, snapshotPath: null, recent.Add);
             if (exitCode == 0)
             {

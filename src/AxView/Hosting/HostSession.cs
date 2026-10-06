@@ -12,28 +12,31 @@ namespace AxView.Hosting;
 /// </list>
 /// <remarks>
 /// If the launcher cannot prepare the file of the other project, the host starts again on the previous file.
-/// If the build fails, the host starts again on the old app output.
+/// If the build fails or the user cancels it, the host starts again on the old app output.
 /// The host then shows the setup error.
 /// </remarks>
 /// <param name="resolver">Finds the preview target of each file.</param>
 /// <param name="hostProcess">Runs each host.</param>
 /// <param name="outputBuilder">Builds the app before a host starts again on a changed project.</param>
+/// <param name="buildDisplay">Shows the progress of each build.</param>
 /// <param name="log">Receives a line for each host that the session starts.</param>
 /// <param name="settingsFile">The settings file that keeps the window, the theme, and the preview size of each preview host.</param>
 internal sealed class HostSession(
     PreviewTargetResolver resolver,
     IHostProcess hostProcess,
     IOutputBuilder outputBuilder,
+    IBuildDisplay buildDisplay,
     TextWriter log,
     string settingsFile)
 {
     /// <summary>Makes a session that runs the installed host and takes the XAML loader from NuGet.</summary>
     /// <param name="settingsFile">The settings file that keeps the window, the theme, and the preview size of each preview host.</param>
-    public static HostSession CreateDefault(string settingsFile)
+    /// <param name="buildDisplay">Shows the progress of each build.</param>
+    public static HostSession CreateDefault(string settingsFile, IBuildDisplay buildDisplay)
     {
         PreviewTargetResolver resolver = new(new NuGetLoaderSource());
         return new HostSession(
-            resolver, DotnetHostProcess.ForInstalledHost(), new DotnetOutputBuilder(), Console.Error, settingsFile);
+            resolver, DotnetHostProcess.ForInstalledHost(), new DotnetOutputBuilder(), buildDisplay, Console.Error, settingsFile);
     }
 
     /// <param name="axamlPath">The first file to show.</param>
@@ -80,7 +83,11 @@ internal sealed class HostSession(
                         // The file of the hand-off is in the same project. On a build error, the next host shows it.
                         target = target with { AxamlPath = handOff.NextFile };
                         await log.WriteLineAsync($"axview: build of the app in '{target.Output.Directory}'");
-                        await outputBuilder.BuildAsync(target.Output);
+                        using (IBuildProgress progress = buildDisplay.Show(target.Output.AppName))
+                        {
+                            await outputBuilder.BuildAsync(target.Output, progress, progress.Cancellation);
+                        }
+
                         target = Open(handOff.NextFile, outputDir, opened);
                     }
                     else

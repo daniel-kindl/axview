@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text;
 
 using AxView.Hosting;
 using AxView.Resolution;
@@ -17,7 +18,7 @@ internal sealed class DotnetOutputBuilder : IOutputBuilder
     /// <param name="output">The app output that the project builds.</param>
     public static IReadOnlyList<string> Arguments(string projectPath, AppOutput output)
     {
-        List<string> args = ["build", projectPath, "--nologo", "--verbosity", "quiet"];
+        List<string> args = ["build", projectPath, "--nologo", "--verbosity", "minimal"];
         string relative = Path.GetRelativePath(Path.GetDirectoryName(projectPath)!, output.Directory);
         string[] folders = relative.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
         if ((folders.Length >= 2) && folders[0].Equals(BinFolder, StringComparison.OrdinalIgnoreCase))
@@ -29,7 +30,7 @@ internal sealed class DotnetOutputBuilder : IOutputBuilder
     }
 
     /// <inheritdoc />
-    public async Task BuildAsync(AppOutput output)
+    public async Task BuildAsync(AppOutput output, IProgress<string> progress, CancellationToken cancellation)
     {
         string project = ProjectFinder.FindAppProject(output);
         ProcessStartInfo info = new(DotnetHost.Path())
@@ -43,17 +44,48 @@ internal sealed class DotnetOutputBuilder : IOutputBuilder
             info.ArgumentList.Add(argument);
         }
 
-        using Process build = Process.Start(info) ?? throw new PreviewSetupException("Cannot start dotnet build.");
+        using Process build = new() { StartInfo = info };
+        StringBuilder text = new();
+        build.OutputDataReceived += (_, e) => Receive(e.Data, text, progress);
+        build.ErrorDataReceived += (_, e) => Receive(e.Data, text, progress);
+        if (!build.Start())
+        {
+            throw new PreviewSetupException("Cannot start dotnet build.");
+        }
 
         // Read both streams together. A full pipe stops the build.
-        Task<string> standardOutput = build.StandardOutput.ReadToEndAsync();
-        Task<string> standardError = build.StandardError.ReadToEndAsync();
-        await build.WaitForExitAsync();
-        string text = await standardOutput + await standardError;
+        build.BeginOutputReadLine();
+        build.BeginErrorReadLine();
+        try
+        {
+            await build.WaitForExitAsync(cancellation);
+        }
+        catch (OperationCanceledException)
+        {
+            build.Kill(entireProcessTree: true);
+            throw new PreviewSetupException($"The build of '{project}' was canceled.");
+        }
+
         if (build.ExitCode != 0)
         {
-            throw new PreviewSetupException($"The build of '{project}' failed.{Environment.NewLine}{Errors(text)}");
+            throw new PreviewSetupException($"The build of '{project}' failed.{Environment.NewLine}{Errors(text.ToString())}");
         }
+    }
+
+    // The process calls this method on worker threads, one time for each line. The last call gives null.
+    private static void Receive(string? line, StringBuilder text, IProgress<string> progress)
+    {
+        if (string.IsNullOrWhiteSpace(line))
+        {
+            return;
+        }
+
+        lock (text)
+        {
+            _ = text.AppendLine(line);
+        }
+
+        progress.Report(line);
     }
 
     // MSBuild writes each error two times: during the build and in the summary.
