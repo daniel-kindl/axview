@@ -13,10 +13,6 @@ Do not change or use again a number.
 
 UI overhaul. Goal: a modern, consistent look. Each item must work on Fluent and Simple, Light and Dark, and Avalonia 11 and 12.
 
-- [ ] #68 **Chrome style module (M).** Add one style set in `src/Protocol` for the launcher and the host.
-  It gives a spacing scale, font sizes, a corner radius, and theme brushes for border, muted text, accent, warning, and error.
-  Replace each hard-coded brush: `Brushes.Gray`, `Brushes.IndianRed`, the orange badge, and the red error panel.
-  The chrome theme can be Fluent or Simple. Use only resource keys that both themes have, or define the brushes per variant.
 - [ ] #69 **Icons (S).** Add a small set of vector icons as path geometries in `src/Protocol`. Use no package.
   Icons: open, about, theme, size, copy, collapse, file kinds (view, styles, resources, gallery), warning, error.
 - [ ] #70 **Preview toolbar (M).** Put the controls in groups with a label or an icon: theme, size, DataContext.
@@ -50,6 +46,7 @@ UI overhaul. Goal: a modern, consistent look. Each item must work on Fluent and 
 
 ## Done
 
+- [x] #68 Chrome style module: `ChromeStyle` gives a spacing scale, font sizes, a corner radius, and theme brushes per variant. The picker and the preview window use it. `290aea1`
 - [x] #67 Chrome shots: `ChromeShotTests` write a PNG of each window in Fluent and Simple, Light and Dark. The headless tests draw with Skia. `b3c3ebb`
 - [x] #66 Include update in one call: no change. `AppStyles` must then track each view search with a weak reference. That adds more code than the one check that it removes from `ProjectPreview`.
 - [x] #65 Snapshot runner: `SnapshotRunner` runs `--snapshot` and `--snapshot-all` and gives the exit reason. The shutdown waits for the main loop. `9859a40`
