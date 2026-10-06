@@ -81,3 +81,4 @@ Each known issue is now an item: #30 to #39.
 - [x] #37 Own chrome theme: the launcher gets `Avalonia.Themes.Simple` from NuGet when the app ships no theme. `d200d03`
 - [x] #58 README: what AxView does, the build, the options, the snapshot modes, and `settings.json`. `cb9462b`
 - [x] #60 Control gallery: a file list entry shows the common controls in each state and each app style class. `--snapshot-all` writes `axview-gallery.png`. `800b60d`
+- [x] #62 Strict analyzers: all CA rules (`latest-all`) and all IDE rules are errors. `.editorconfig` tells the reason for each rule that is off. `66a48a7`
