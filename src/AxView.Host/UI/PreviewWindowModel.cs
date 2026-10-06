@@ -32,7 +32,6 @@ internal sealed class PreviewWindowModel : IDisposable
     private readonly ProjectPreview preview;
     private readonly Func<Settings, Settings> addWindowState;
     private readonly Action<int> shutdown;
-    private readonly string outputDirectory;
 
     // A filter change lists the entries again. The cache keeps the files from a read for each key press.
     private readonly Dictionary<string, FileKind> fileKinds = new(StringComparer.FromComparison(pathComparison));
@@ -60,7 +59,7 @@ internal sealed class PreviewWindowModel : IDisposable
         this.options = options;
         this.addWindowState = addWindowState;
         this.shutdown = shutdown;
-        outputDirectory = Path.GetDirectoryName(projects.ViewAssembly.Location) ?? string.Empty;
+        OutputDirectory = Path.GetDirectoryName(projects.ViewAssembly.Location) ?? string.Empty;
         Styles = appStyles.CreateCopy();
         Settings = options.SettingsFile is null ? Settings.Default : Settings.Load(options.SettingsFile);
         preview = new ProjectPreview(options, projects, services, appStyles, Settings.ViewModels);
@@ -110,7 +109,10 @@ internal sealed class PreviewWindowModel : IDisposable
     /// <summary>Gets a value that tells if the preview shows the last good render of the file, because the last load failed.</summary>
     public bool IsLastGoodRenderShown { get; private set; }
 
-    /// <summary>Gets the status line. It tells the time of the last load or error, the shown item, and the app output.</summary>
+    /// <summary>Gets the folder of the app output that the preview uses.</summary>
+    public string OutputDirectory { get; }
+
+    /// <summary>Gets the status line. It tells the time of the last load or error, and the shown item.</summary>
     public string Status { get; private set; } = string.Empty;
 
     /// <summary>Gets a value that tells if the shown file is a control without a DataContext.</summary>
@@ -263,7 +265,7 @@ internal sealed class PreviewWindowModel : IDisposable
         IsDataContextMissing = false;
         Error = Join(message, preview.StylesError);
         IsLastGoodRenderShown = false;
-        Status = Error is null ? $"{GalleryTitle}   Output: {outputDirectory}" : $"Error {DateTime.Now:HH:mm:ss}   {GalleryTitle}";
+        Status = Error is null ? GalleryTitle : $"Error {DateTime.Now:HH:mm:ss}   {GalleryTitle}";
     }
 
     private void ShowFile()
@@ -275,7 +277,7 @@ internal sealed class PreviewWindowModel : IDisposable
         IsLastGoodRenderShown = (Error is not null) && (preview.View is not null);
         if (Error is null)
         {
-            Status = $"Rendered {DateTime.Now:HH:mm:ss}   {preview.FilePath}   Output: {outputDirectory}";
+            Status = $"Rendered {DateTime.Now:HH:mm:ss}   {preview.FilePath}";
             Console.WriteLine($"axview: rendered {RelativePath(preview.FilePath)}");
             return;
         }

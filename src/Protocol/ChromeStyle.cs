@@ -48,6 +48,9 @@ internal static class ChromeStyle
     /// <summary>The corner radius of a badge, a card, or a panel.</summary>
     public const double CornerRadius = 4;
 
+    /// <summary>The corner radius of a pill, for example the DataContext badge. It is half the height of a badge.</summary>
+    public const double PillCornerRadius = 9;
+
     /// <summary>The resource key of the brush of a separator line or a border.</summary>
     public const string BorderBrushKey = "AxView.Chrome.BorderBrush";
 

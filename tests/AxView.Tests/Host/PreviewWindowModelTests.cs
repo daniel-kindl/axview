@@ -58,6 +58,20 @@ public sealed class PreviewWindowModelTests
     }
 
     [AvaloniaFact]
+    public void OutputDirectory_IsTheFolderOfTheViewAssembly_AndNotInTheStatus()
+    {
+        using TempDir view = new();
+        string file = view.Write("Views/Main.axaml", TextBlockXaml);
+        using PreviewWindowModel model = Create(Options(view, file));
+
+        string expected = Path.GetDirectoryName(typeof(PreviewWindowModelTests).Assembly.Location)!;
+
+        Assert.Equal(expected, model.OutputDirectory);
+        Assert.DoesNotContain(expected, model.Status, StringComparison.Ordinal);
+        Assert.StartsWith("Rendered", model.Status, StringComparison.Ordinal);
+    }
+
+    [AvaloniaFact]
     public void SetFilter_KeepsTheMatchingEntries_AndTheSelection()
     {
         using TempDir view = new();

@@ -161,6 +161,24 @@ public sealed class PreviewWindowTests
         Assert.False(IsShown(next.GetLogicalDescendants().OfType<TextBox>().Single()));
     }
 
+    [AvaloniaFact]
+    public void StatusBar_ShowsTheStatus_TheOutputFolder_AndTheBadge_WithSeparators()
+    {
+        using TempDir view = new();
+        PreviewWindow window = CreateWindow(view);
+
+        string outputDirectory = Path.GetDirectoryName(typeof(PreviewWindowTests).Assembly.Location)!;
+        TextBlock output = window.GetLogicalDescendants().OfType<TextBlock>().Single(text => text.Text == $"Output: {outputDirectory}");
+        Panel statusBar = Assert.IsType<Panel>(output.Parent, exactMatch: false);
+        Border badge = statusBar.Children.OfType<Border>().Single(border => border.Child is TextBlock { Text: "No DataContext" });
+        TextBlock status = statusBar.Children.OfType<TextBlock>().Single(text => text != output);
+
+        Assert.StartsWith("Rendered", status.Text, StringComparison.Ordinal);
+        Assert.Equal(outputDirectory, ToolTip.GetTip(output));
+        Assert.Equal(ChromeStyle.PillCornerRadius, badge.CornerRadius.TopLeft);
+        Assert.Equal(2, statusBar.Children.OfType<Border>().Count(border => border.Width == 1));
+    }
+
     private static PreviewWindow CreateWindow(TempDir view, string? settingsFile = null)
     {
         string file = view.Write("Views/Main.axaml", TextBlockXaml);

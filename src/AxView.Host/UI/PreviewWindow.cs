@@ -26,6 +26,7 @@ namespace AxView.Host.UI;
 internal sealed class PreviewWindow : Window
 {
     private const double SidebarWidth = 280;
+    private const double OutputMaximumWidth = 480;
 
     private readonly HostOptions options;
     private readonly PreviewWindowModel model;
@@ -35,6 +36,7 @@ internal sealed class PreviewWindow : Window
     private readonly ErrorPanel errorPanel = new();
     private readonly TextBlock status;
     private readonly Border noDataContextBadge;
+    private readonly Border noDataContextSeparator = ChromeControls.CreateSeparator();
     private readonly TextBox filter;
     private readonly ListBox fileList;
     private readonly ThemeSwitch themeSwitch;
@@ -85,9 +87,10 @@ internal sealed class PreviewWindow : Window
         noDataContextBadge = new Border
         {
             IsVisible = false,
-            Margin = new Thickness(ChromeStyle.SpacingMedium, ChromeStyle.SpacingExtraSmall),
-            Padding = new Thickness(6, 1),
-            CornerRadius = new CornerRadius(ChromeStyle.CornerRadius),
+            Margin = new Thickness(0, ChromeStyle.SpacingExtraSmall),
+            Padding = new Thickness(ChromeStyle.SpacingMedium, 1),
+            VerticalAlignment = VerticalAlignment.Center,
+            CornerRadius = new CornerRadius(ChromeStyle.PillCornerRadius),
             Child = noDataContextText,
         };
         ChromeStyle.SetBrush(noDataContextBadge, Border.BackgroundProperty, ChromeStyle.WarningBrushKey);
@@ -130,9 +133,30 @@ internal sealed class PreviewWindow : Window
         };
         sidebar = BuildSidebar();
         Control previewArea = BuildPreviewArea();
+        TextBlock output = new()
+        {
+            Text = $"Output: {model.OutputDirectory}",
+            MaxWidth = OutputMaximumWidth,
+            Margin = new Thickness(0, ChromeStyle.SpacingSmall),
+            FontSize = ChromeStyle.FontSizeNormal,
+            TextTrimming = TextTrimming.CharacterEllipsis,
+        };
+        ChromeStyle.SetBrush(output, TextBlock.ForegroundProperty, ChromeStyle.MutedTextBrushKey);
+        ToolTip.SetTip(output, model.OutputDirectory);
+        Border outputSeparator = ChromeControls.CreateSeparator();
+        foreach (Control segment in new Control[] { noDataContextSeparator, output, outputSeparator })
+        {
+            DockPanel.SetDock(segment, Dock.Right);
+        }
+
         Border statusBar = new()
         {
-            Child = new DockPanel { Children = { noDataContextBadge, status } },
+            // The first segment with a right dock is at the right edge.
+            Child = new DockPanel
+            {
+                Margin = new Thickness(0, 0, ChromeStyle.SpacingMedium, 0),
+                Children = { noDataContextBadge, noDataContextSeparator, output, outputSeparator, status },
+            },
             BorderThickness = new Thickness(0, 1, 0, 0),
         };
         ChromeStyle.SetBrush(statusBar, Border.BorderBrushProperty, ChromeStyle.BorderBrushKey);
@@ -336,6 +360,7 @@ internal sealed class PreviewWindow : Window
         fileList.SelectedItem = model.SelectedEntry;
         scope.Content = model.Content;
         noDataContextBadge.IsVisible = model.IsDataContextMissing;
+        noDataContextSeparator.IsVisible = model.IsDataContextMissing;
         errorPanel.Show(model.Error, model.IsLastGoodRenderShown);
         status.Text = model.Status;
         viewModelSwitch.IsEnabled = model.CanSelectViewModel;
