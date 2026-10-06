@@ -134,6 +134,7 @@ Each value is optional:
   "Theme": "Dark",
   "Size": { "Preset": "Custom", "Width": 500, "Height": 300 },
   "ViewModels": { "/src/Ui/Views/Main.axaml": "Ui.ViewModels.MainViewModel" },
+  "IsSidebarCollapsed": true,
   "RunAppStartup": true
 }
 ```
@@ -145,6 +146,7 @@ Each value is optional:
 | `Theme` | The theme variant: `Default`, `Light`, or `Dark`. |
 | `Size` | The preview size: `Fit`, `Phone`, `Tablet`, `Desktop`, or `Custom` with a width and a height. |
 | `ViewModels` | The ViewModel type that you selected for each file. |
+| `IsSidebarCollapsed` | `true` when you collapsed the sidebar of the preview window. |
 | `RunAppStartup` | `true` calls `OnFrameworkInitializationCompleted` of the app. Its `ApplicationLifetime` is null. The default is `false`. You set this value in the file. |
 
 AxView writes all values except `RunAppStartup`.
