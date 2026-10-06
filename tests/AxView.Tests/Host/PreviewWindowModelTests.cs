@@ -192,6 +192,22 @@ public sealed class PreviewWindowModelTests
     }
 
     [AvaloniaFact]
+    public void RefreshCatalog_WithoutTheProjectFolder_ShowsTheError_AndKeepsTheEntries()
+    {
+        using TempDir view = new();
+        string file = view.Write("Views/Main.axaml", TextBlockXaml);
+        using PreviewWindowModel model = Create(Options(view, file));
+        IReadOnlyList<FileListEntry> entries = model.Entries;
+        Directory.Delete(view.Path, recursive: true);
+
+        model.RefreshCatalog();
+
+        Assert.Contains("Cannot list the project files", model.Error, StringComparison.Ordinal);
+        Assert.StartsWith("Error", model.Status, StringComparison.Ordinal);
+        Assert.Equal(entries, model.Entries);
+    }
+
+    [AvaloniaFact]
     public void BrokenFile_KeepsTheLastGoodView_AndTellsIt()
     {
         using TempDir view = new();

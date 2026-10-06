@@ -134,9 +134,19 @@ internal sealed class PreviewWindowModel : IDisposable
     }
 
     /// <summary>Lists the files of the project again. The user can add files while the window is open.</summary>
+    /// <remarks>The user can also delete the project folder. Then the old entries stay, and the error shows.</remarks>
     public void RefreshCatalog()
     {
-        preview.RefreshCatalog();
+        try
+        {
+            preview.RefreshCatalog();
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            ShowItem($"Cannot list the project files: {ex.Message}");
+            return;
+        }
+
         fileKinds.Clear();
         UpdateEntries();
         Changed?.Invoke(this, EventArgs.Empty);

@@ -13,13 +13,12 @@ Do not change or use again a number.
 
 ## Later
 
-- [ ] #77 **Missing project folder (S).** `PreviewWindowModel.RefreshCatalog` runs on each window activation.
-  It throws `DirectoryNotFoundException` when the project folder is gone. Find out if this stops the host. Show an error instead.
 - [ ] #59 **Avalonia 11 host tests (M).** The test project tests only the Avalonia 12 host build (ADR 0002).
   Find a way to run the host tests also on the Avalonia 11 build, for example a second test run in CI.
 
 ## Done
 
+- [x] #77 Missing project folder: `PreviewWindowModel.RefreshCatalog` shows the error and keeps the old entries. Before, the dispatcher hook showed it as a file error. On Avalonia 11.0 the host stopped. `HASH`
 - [x] #76 Build window: the app icon, the app name, the time as `m:ss`, and the last line in monospace. It uses `ChromeStyle`. `3b684e9`
 - [x] #75 Picker window: a header with the app icon and an About icon button, an accent Open button, file icons in the recent rows, and an error card. `06b8254`
 - [x] #74 Status bar: the status, the output folder, and the DataContext pill as segments with separators. `f5e453d`
