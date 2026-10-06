@@ -24,4 +24,4 @@ The launcher ships two host builds from one set of sources:
 
 - The host sources must compile against both APIs. Use an API that both versions have.
 - `AxView.Host12` ignores the obsolete warning (CS0618), because some Avalonia 11.0 APIs are obsolete in Avalonia 12.
-- The test project tests one host build only. Today that is the Avalonia 11 build.
+- The test project tests one host build only. Today that is the Avalonia 12 build. Only the compiler checks the Avalonia 11 build.

@@ -324,7 +324,7 @@ public sealed class AppStylesTests
         PreviewRenderer renderer = Renderer(dir);
         string main = Path.Combine(dir.Path, "Styles", "Main.axaml");
         string texts = Path.Combine(dir.Path, "Styles", "Texts.axaml");
-        IStyle style = Assert.IsAssignableFrom<IStyle>(renderer.Load(main, File.ReadAllText(main)));
+        IStyle style = Assert.IsType<IStyle>(renderer.Load(main, File.ReadAllText(main)), exactMatch: false);
         ResourceDictionary textResources = Assert.IsType<ResourceDictionary>(renderer.Load(texts, textsBuild));
         return new TargetStyles([style], new ResourceDictionary { MergedDictionaries = { textResources } }, [], null);
     }

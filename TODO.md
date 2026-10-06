@@ -21,10 +21,8 @@ Do not change or use again a number.
 
 ## Later
 
-- [ ] #20 **Avalonia 12 (L).** Check the loader and host APIs. A second host build may be necessary.
-  DAT4000 now uses Avalonia 12.1.3. The host fails in `PreviewFrame`: `MissingMethodException` for `AvaloniaObject.set_Item(IndexerDescriptor, IBinding)`.
-- [ ] #56 **Launcher on Avalonia 12 (M).** Change the picker UI of the launcher to Avalonia 12. Do #20 first.
-  The tests compile the host code against Avalonia 11. Make sure that one test project can test both.
+- [ ] #59 **Avalonia 11 host tests (M).** The test project tests only the Avalonia 12 host build (ADR 0002).
+  Find a way to run the host tests also on the Avalonia 11 build, for example a second test run in CI.
 
 
 ## Known issues

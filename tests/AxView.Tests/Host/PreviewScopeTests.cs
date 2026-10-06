@@ -56,7 +56,7 @@ public sealed class PreviewScopeTests
             {
                 new Setter(TemplatedControl.BackgroundProperty, Brushes.Red),
                 new Setter(TextElement.FontSizeProperty, 21.0),
-                new Setter(Window.SystemDecorationsProperty, SystemDecorations.None),
+                new Setter(Window.WindowDecorationsProperty, WindowDecorations.None),
                 new Setter(TemplatedControl.TemplateProperty, new FuncControlTemplate<Window>((_, _) => new Panel())),
             },
         };
@@ -67,7 +67,7 @@ public sealed class PreviewScopeTests
 
         window.Show();
 
-        TemplatedControl frame = Assert.IsAssignableFrom<TemplatedControl>(scope.Child);
+        TemplatedControl frame = Assert.IsType<TemplatedControl>(scope.Child, exactMatch: false);
         Assert.Same(Brushes.Red, frame.Background);
         Assert.Equal(21.0, inside.FontSize);
         Assert.Same(inside, frame.GetVisualDescendants().OfType<TextBlock>().Single());
@@ -90,7 +90,7 @@ public sealed class PreviewScopeTests
 
         window.Show();
 
-        TemplatedControl frame = Assert.IsAssignableFrom<TemplatedControl>(scope.Child);
+        TemplatedControl frame = Assert.IsType<TemplatedControl>(scope.Child, exactMatch: false);
         Assert.Same(Brushes.Red, frame.Background);
         Assert.NotEqual("Target window", window.Title);
         window.Close();
@@ -109,7 +109,7 @@ public sealed class PreviewScopeTests
 
         window.Show();
 
-        TemplatedControl frame = Assert.IsAssignableFrom<TemplatedControl>(scope.Child);
+        TemplatedControl frame = Assert.IsType<TemplatedControl>(scope.Child, exactMatch: false);
         Assert.Null(frame.Background);
         window.Close();
     }

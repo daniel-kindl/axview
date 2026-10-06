@@ -17,7 +17,8 @@ public sealed class PickerWindowTests
         RecentFileItem item = new(path);
 
         string?[] texts = [.. item.Children.OfType<TextBlock>().Select(t => t.Text)];
-        Assert.Equal(["MainView", Path.GetDirectoryName(path)], texts);
+        string?[] expected = ["MainView", Path.GetDirectoryName(path)];
+        Assert.Equal(expected, texts);
         Assert.Equal(path, ToolTip.GetTip(item));
     }
 

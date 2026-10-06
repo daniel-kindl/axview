@@ -2,6 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
+    <!-- xunit v3 builds each test project as an executable. -->
+    <OutputType>Exe</OutputType>
 
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
@@ -9,16 +11,17 @@
 
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="6.0.0" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
-    <PackageReference Include="xunit" Version="2.5.3" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.5.3" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
+    <!-- Avalonia.Headless.XUnit 12 needs xunit v3 3.2. -->
+    <PackageReference Include="xunit.v3" Version="3.2.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5" />
   </ItemGroup>
 
   <!-- The host tests render real AXAML on the headless platform. Only the tests use these packages, never the host. -->
   <ItemGroup>
-    <PackageReference Include="Avalonia.Headless.XUnit" Version="11.3.22" />
-    <PackageReference Include="Avalonia.Markup.Xaml.Loader" Version="11.3.22" />
-    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.22" />
+    <PackageReference Include="Avalonia.Headless.XUnit" Version="12.1.3" />
+    <PackageReference Include="Avalonia.Markup.Xaml.Loader" Version="12.1.3" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.3" />
   </ItemGroup>
 
   <ItemGroup>
@@ -28,7 +31,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\AxView\AxView.csproj" />
     <!-- Both assemblies compile the host protocol. The alias prevents duplicate type names. -->
-    <ProjectReference Include="..\..\src\AxView.Host\AxView.Host.csproj" Aliases="host" />
+    <ProjectReference Include="..\..\src\AxView.Host12\AxView.Host12.csproj" Aliases="host" />
   </ItemGroup>
 
 </Project>

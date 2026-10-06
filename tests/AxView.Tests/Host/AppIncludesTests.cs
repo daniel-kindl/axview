@@ -196,7 +196,8 @@ public sealed class AppIncludesTests
         using TempDir libraryDir = new();
         string app = WriteApp(appDir, styles: $"""<StyleInclude Source="{LibraryUri}/Styles/Main.axaml" />""");
         string main = libraryDir.Write("Styles/Main.axaml", TagStyles("Before"));
-        Styles styles = [Assert.IsAssignableFrom<IStyle>(LibraryRenderer(libraryDir).Load(main, File.ReadAllText(main)))];
+        object loaded = LibraryRenderer(libraryDir).Load(main, File.ReadAllText(main));
+        Styles styles = [Assert.IsType<IStyle>(loaded, exactMatch: false)];
         AppIncludes includes = new(Renderer(appDir), app, styles, new ResourceDictionary(), [LibraryRenderer(libraryDir)]);
 
         File.WriteAllText(main, TagStyles("After"));
@@ -219,7 +220,8 @@ public sealed class AppIncludesTests
             </Styles>
             """);
         string inner = libraryDir.Write("Styles/Inner.axaml", TagStyles("Before"));
-        IStyle compiledInner = Assert.IsAssignableFrom<IStyle>(LibraryRenderer(libraryDir).Load(inner, File.ReadAllText(inner)));
+        object loadedInner = LibraryRenderer(libraryDir).Load(inner, File.ReadAllText(inner));
+        IStyle compiledInner = Assert.IsType<IStyle>(loadedInner, exactMatch: false);
         Styles styles = [new Styles { compiledInner }];
         AppIncludes includes = new(Renderer(appDir), app, styles, new ResourceDictionary(), [LibraryRenderer(libraryDir)]);
 
@@ -257,7 +259,7 @@ public sealed class AppIncludesTests
 
     // The compiled XAML of the target app gives the same objects as the runtime loader.
     private static IStyle LoadStyles(TempDir dir, string path) =>
-        Assert.IsAssignableFrom<IStyle>(Renderer(dir).Load(path, File.ReadAllText(path)));
+        Assert.IsType<IStyle>(Renderer(dir).Load(path, File.ReadAllText(path)), exactMatch: false);
 
     private static ResourceDictionary LoadResources(TempDir dir, string path) =>
         Assert.IsType<ResourceDictionary>(Renderer(dir).Load(path, File.ReadAllText(path)));

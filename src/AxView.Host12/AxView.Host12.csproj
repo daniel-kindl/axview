@@ -16,6 +16,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="AxView.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Compile Include="..\AxView.Host\**\*.cs" Exclude="..\AxView.Host\bin\**;..\AxView.Host\obj\**" Link="%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="..\Protocol\*.cs" Link="Protocol\%(Filename)%(Extension)" />
   </ItemGroup>

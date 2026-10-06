@@ -124,7 +124,7 @@ public sealed class PreviewRendererTests
         Control preview = Renderer(dir).Render(file).Control;
 
         Assert.IsNotType<FixtureNoDefaultConstructor>(preview);
-        Assert.Equal("From XAML", Assert.IsType<TextBlock>(Assert.IsAssignableFrom<UserControl>(preview).Content).Text);
+        Assert.Equal("From XAML", Assert.IsType<TextBlock>(Assert.IsType<UserControl>(preview, exactMatch: false).Content).Text);
     }
 
     [AvaloniaFact]

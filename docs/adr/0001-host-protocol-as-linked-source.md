@@ -9,7 +9,7 @@ Both projects compile these files as linked items. There is no shared assembly.
 
 The host runs with the deps file of the target app. A shared assembly is not in that file.
 The host must then load it with a resolve hook before it can read its own options.
-The launcher cannot reference `AxView.Host` either, because the host compiles against Avalonia 11.0 and the launcher uses 11.3.
+The launcher cannot reference `AxView.Host` either, because the host compiles against Avalonia 11.0 or 12.0 and the launcher uses 12.1.
 
 ## Consequences
 
