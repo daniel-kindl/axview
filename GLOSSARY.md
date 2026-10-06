@@ -94,6 +94,15 @@ _Avoid_: shutdown, quit
 The kind of work that one host does: an interactive preview, one snapshot, or a snapshot of each file of the project.
 _Avoid_: run mode, flags
 
+**Window model**:
+The headless state of the preview window: the file list, the shown item, the status, and the settings.
+The window only shows it.
+_Avoid_: presenter, view model, controller
+
+**Shown item**:
+The thing that the preview window shows: one file of the project, or the control gallery.
+_Avoid_: selection, current page
+
 **Project catalog**:
 The list of the AXAML files of one project that the host can show without a restart.
 _Avoid_: file list, index

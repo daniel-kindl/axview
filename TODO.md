@@ -8,6 +8,26 @@ Do not change or use again a number.
 
 ## Now
 
+Items #63 to #66 come from the architecture review of 2026-10-06.
+
+- [ ] #63 **Hand-off module (S).** `HandOff` carries the exit reason and the next file.
+  The host saves it and gets the exit code. The launcher takes it with the exit code.
+  `StopRequest` goes. `HostSession` does not decode the exit codes.
+- [ ] #64 **Window model (M).** A headless `PreviewWindowModel` owns the state of the preview window:
+  - the file list with the filter, the gallery entry, and the selection
+  - the shown item: a file or the control gallery
+  - the status: the error, the status line, the title, and the DataContext badge
+  - the settings file and the stop with a hand-off
+
+  `PreviewWindow` only binds its controls to the model. Tests for each rule run without a window.
+  `ProjectPreview` gives the include error of the last load in `Error`. Its deferred `Failed` event for this error goes.
+  While the gallery shows, an include change rebuilds the gallery, and the status names the gallery.
+- [ ] #65 **Snapshot runner (S).** One module runs `--snapshot` and `--snapshot-all`, and gives the exit reason.
+  It finds the ViewModel, waits for the settle time, and writes the PNG files.
+  `PreviewApp` only selects the mode. An unknown ViewModel gets a headless test.
+- [ ] #66 **Include update in one call (S).** `AppStyles.Update` also tells if an include of the shown view changed.
+  `ProjectPreview` makes one call and does not know the order of the checks.
+
 ## Next
 
 ## Later
