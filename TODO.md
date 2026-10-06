@@ -13,9 +13,6 @@ Do not change or use again a number.
 
 UI overhaul. Goal: a modern, consistent look. Each item must work on Fluent and Simple, Light and Dark, and Avalonia 11 and 12.
 
-- [ ] #76 **Build window (S).** Restyle the build window: the app icon, the app name, the time as `m:ss`, and the last line in monospace.
-  Use the style module from #68.
-
 ## Later
 
 - [ ] #59 **Avalonia 11 host tests (M).** The test project tests only the Avalonia 12 host build (ADR 0002).
@@ -23,6 +20,7 @@ UI overhaul. Goal: a modern, consistent look. Each item must work on Fluent and 
 
 ## Done
 
+- [x] #76 Build window: the app icon, the app name, the time as `m:ss`, and the last line in monospace. It uses `ChromeStyle`. `3b684e9`
 - [x] #75 Picker window: a header with the app icon and an About icon button, an accent Open button, file icons in the recent rows, and an error card. `06b8254`
 - [x] #74 Status bar: the status, the output folder, and the DataContext pill as segments with separators. `f5e453d`
 - [x] #73 Sidebar: a header with Open and collapse icon buttons, a search icon in the filter, `FileRow` with a kind icon and an accent selection bar. `IsSidebarCollapsed` in `settings.json`. `130a2ed`
