@@ -80,3 +80,4 @@ Each known issue is now an item: #30 to #39.
 - [x] #54 Pack only: `pack.ps1` publishes and writes the archives. It has no smoke check. `9e98ff6`
 - [x] #51 StaticResource from an include of a view: `ChangedIncludes` gives the changed include files to `LoadGroup`. Then the load uses them. `1c69607`
 - [x] #52 Includes in the children of a view: `ChangedIncludes` finds each include element of the file, also in child controls. `1c69607`
+- [x] #39 Build progress: the launcher shows a build window with the app name, the time, and the last build line. Cancel stops the build. `f98134b`
