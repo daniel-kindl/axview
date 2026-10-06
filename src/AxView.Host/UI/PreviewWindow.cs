@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
@@ -20,6 +22,7 @@ namespace AxView.Host.UI;
 /// The <see cref="ProjectPreview"/> owns the preview logic. The window keeps the layout, the settings file, and the shutdown.
 /// On a stop request of the preview, the window writes the hand-off file and stops the host.
 /// </remarks>
+[SuppressMessage("Design", "CA1001", Justification = "OnClosed disposes the preview. A window has no Dispose.")]
 internal sealed class PreviewWindow : Window
 {
     private const double SidebarWidth = 280;
@@ -192,11 +195,14 @@ internal sealed class PreviewWindow : Window
         return sidebar;
     }
 
+    // The gallery entry is the only empty item of the file list.
+    private static bool IsGalleryEntry(string item) => item.Length == GalleryEntry.Length;
+
     // The file name first, so a long folder path does not hide it.
     private static StackPanel FileItem(string? relative)
     {
         string path = relative ?? string.Empty;
-        if (path == GalleryEntry)
+        if (IsGalleryEntry(path))
         {
             return new StackPanel
             {
@@ -340,7 +346,7 @@ internal sealed class PreviewWindow : Window
             return;
         }
 
-        if (relative == GalleryEntry)
+        if (IsGalleryEntry(relative))
         {
             ShowGallery();
         }

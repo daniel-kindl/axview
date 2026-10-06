@@ -69,7 +69,8 @@ internal static class Program
             RecentFiles recent = RecentFiles.ForCurrentUser();
             if ((snapshot is not null) || (snapshotAll is not null))
             {
-                HostSession snapshotSession = HostSession.CreateDefault(recent.SettingsFile, new QuietBuildDisplay());
+                using QuietBuildDisplay quietDisplay = new();
+                HostSession snapshotSession = HostSession.CreateDefault(recent.SettingsFile, quietDisplay);
                 return snapshotSession.RunAsync(axaml, outputDir, snapshot, recent.Add, snapshotAll, viewModel).GetAwaiter().GetResult();
             }
 

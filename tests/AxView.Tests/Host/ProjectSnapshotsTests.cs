@@ -28,7 +28,7 @@ public sealed class ProjectSnapshotsTests
         Assert.Equal(ExitReason.Ok, reason);
         Assert.Equal(
             ["ok\tViews/Hello.axaml", "ok\tViews/Sub/World.axaml", "ok\t(control gallery)"],
-            File.ReadAllLines(Path.Combine(output, "summary.txt")));
+            await File.ReadAllLinesAsync(Path.Combine(output, "summary.txt")));
     }
 
     [AvaloniaFact]
@@ -42,7 +42,7 @@ public sealed class ProjectSnapshotsTests
         ExitReason reason = await Snapshots(dir, output).RunAsync();
 
         Assert.Equal(ExitReason.RenderFailed, reason);
-        string[] summary = File.ReadAllLines(Path.Combine(output, "summary.txt"));
+        string[] summary = await File.ReadAllLinesAsync(Path.Combine(output, "summary.txt"));
         Assert.StartsWith("FAIL\tViews/Broken.axaml\t", summary[0], StringComparison.Ordinal);
         Assert.Equal("ok\tViews/Hello.axaml", summary[1]);
     }
@@ -60,7 +60,7 @@ public sealed class ProjectSnapshotsTests
         ExitReason reason = await Snapshots(dir, output).RunAsync();
 
         Assert.Equal(ExitReason.RenderFailed, reason);
-        string[] summary = File.ReadAllLines(Path.Combine(output, "summary.txt"));
+        string[] summary = await File.ReadAllLinesAsync(Path.Combine(output, "summary.txt"));
         Assert.Contains("Layout failed.", summary[1], StringComparison.Ordinal);
         Assert.StartsWith("FAIL	Views/Throws.axaml	", summary[1], StringComparison.Ordinal);
         Assert.Equal("ok	Views/Hello.axaml", summary[0]);

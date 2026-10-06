@@ -1,5 +1,6 @@
 using Avalonia.Headless.XUnit;
 
+using AxView.Picker;
 using AxView.Protocol;
 using AxView.Tests.Fixtures;
 
@@ -15,7 +16,7 @@ public sealed class AppIconTests
     {
         using TempDir dir = new();
 
-        AxView.Picker.PickerWindow picker = new(new AxView.Picker.RecentFiles(Path.Combine(dir.Path, "settings.json")));
+        PickerWindow picker = new(new RecentFiles(Path.Combine(dir.Path, "settings.json")));
         AboutDialog about = new(new AboutInfo("1.0.0", new DateOnly(2026, 10, 2), "11.3.22"));
 
         Assert.Same(AppIcon.Get(), picker.Icon);

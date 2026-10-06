@@ -108,8 +108,8 @@ public sealed class ControlGalleryTests
 
         window.Show();
 
-        Assert.Contains(window.GetLogicalDescendants().OfType<TextBlock>(), t => t.Text?.Contains("Layout failed.") == true);
-        Assert.Single(window.GetLogicalDescendants().OfType<Button>());
+        Assert.Contains(window.GetLogicalDescendants().OfType<TextBlock>(), t => t.Text?.Contains("Layout failed.", StringComparison.Ordinal) == true);
+        _ = Assert.Single(window.GetLogicalDescendants().OfType<Button>());
         Assert.Empty(window.GetLogicalDescendants().OfType<FixtureThrowingControl>());
         window.Close();
     }

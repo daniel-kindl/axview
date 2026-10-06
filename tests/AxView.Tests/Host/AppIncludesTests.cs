@@ -132,7 +132,7 @@ public sealed class AppIncludesTests
         IncludeUpdate update = includes.Update();
 
         Assert.False(update.IsChanged);
-        Assert.Contains("Main.axaml", update.Error);
+        Assert.Contains("Main.axaml", update.Error, StringComparison.Ordinal);
         Assert.Equal("Before", TagOf(styles[0]));
     }
 

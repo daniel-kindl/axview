@@ -106,7 +106,10 @@ internal sealed class PreviewRenderer(Assembly localAssembly, string projectDire
         where TStyle : AvaloniaObject, IStyle
     {
         // Avalonia 12 also has an IStyle overload. The cast selects the overload that Avalonia 11 has too.
+        // On Avalonia 11 the cast is redundant.
+#pragma warning disable IDE0004
         Control preview = Design.GetPreviewWith((AvaloniaObject)style) ?? throw NoPreviewWith(style);
+#pragma warning restore IDE0004
         preview.Styles.Add(style);
         return preview;
     }

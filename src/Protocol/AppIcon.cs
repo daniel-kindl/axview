@@ -36,7 +36,8 @@ internal static class AppIcon
         face.Measure(new Size(Size, Size));
         face.Arrange(new Rect(0, 0, Size, Size));
 
-        RenderTargetBitmap bitmap = new(new PixelSize(Size, Size));
+        // The icon copies the pixels. Dispose the bitmap.
+        using RenderTargetBitmap bitmap = new(new PixelSize(Size, Size));
         bitmap.Render(face);
         return new WindowIcon(bitmap);
     }

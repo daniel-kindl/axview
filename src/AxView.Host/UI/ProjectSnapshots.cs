@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 
 using AxView.Host.Catalog;
@@ -56,8 +57,8 @@ internal sealed class ProjectSnapshots(
         isGood &= AddSummaryLine(summary, GalleryName, galleryError);
 
         string summaryText = summary.ToString();
-        File.WriteAllText(Path.Combine(outputDirectory, SummaryFileName), summaryText);
-        Console.Error.Write(summaryText);
+        await File.WriteAllTextAsync(Path.Combine(outputDirectory, SummaryFileName), summaryText);
+        await Console.Error.WriteAsync(summaryText);
         return isGood ? ExitReason.Ok : ExitReason.RenderFailed;
     }
 
@@ -66,11 +67,11 @@ internal sealed class ProjectSnapshots(
     {
         if (error is null)
         {
-            _ = summary.AppendLine($"ok\t{name}");
+            _ = summary.AppendLine(CultureInfo.InvariantCulture, $"ok\t{name}");
             return true;
         }
 
-        _ = summary.AppendLine($"FAIL\t{name}\t{error.ReplaceLineEndings(" ")}");
+        _ = summary.AppendLine(CultureInfo.InvariantCulture, $"FAIL\t{name}\t{error.ReplaceLineEndings(" ")}");
         return false;
     }
 

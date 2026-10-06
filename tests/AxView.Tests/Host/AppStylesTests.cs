@@ -89,8 +89,8 @@ public sealed class AppStylesTests
 
         Assert.False(update.IsChanged);
         string error = Assert.IsType<string>(update.Error);
-        Assert.Single(error.Split(Environment.NewLine));
-        Assert.Contains("Texts.axaml", error);
+        _ = Assert.Single(error.Split(Environment.NewLine));
+        Assert.Contains("Texts.axaml", error, StringComparison.Ordinal);
     }
 
     [AvaloniaFact]
@@ -222,11 +222,11 @@ public sealed class AppStylesTests
         AppStyles appStyles = CreateWithAppType(dir, appPath);
         TargetStyles copy = appStyles.CreateCopy();
 
-        File.WriteAllText(appPath, InlineApp("After").Replace("</Application>", "<Unknown /></Application>"));
+        File.WriteAllText(appPath, InlineApp("After").Replace("</Application>", "<Unknown /></Application>", StringComparison.Ordinal));
         IncludeUpdate update = appStyles.Update();
 
         Assert.False(update.IsChanged);
-        Assert.Contains("App.axaml", update.Error);
+        Assert.Contains("App.axaml", update.Error, StringComparison.Ordinal);
         Assert.Equal("Before", TagOf(copy.Styles[0]));
     }
 

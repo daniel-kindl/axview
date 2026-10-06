@@ -112,7 +112,7 @@ public sealed class ChangedIncludesTests
         IReadOnlyList<RuntimeXamlLoaderDocument> documents = includes.FindChanged(view, File.ReadAllText(view));
 
         Assert.Empty(documents);
-        Assert.Contains("Texts.axaml", includes.Error);
+        Assert.Contains("Texts.axaml", includes.Error, StringComparison.Ordinal);
     }
 
     [AvaloniaFact]
@@ -126,7 +126,7 @@ public sealed class ChangedIncludesTests
         IReadOnlyList<RuntimeXamlLoaderDocument> documents = includes.FindChanged(view, File.ReadAllText(view));
 
         Assert.Empty(documents);
-        Assert.Contains("Texts.axaml", includes.Error);
+        Assert.Contains("Texts.axaml", includes.Error, StringComparison.Ordinal);
     }
 
     [AvaloniaFact]

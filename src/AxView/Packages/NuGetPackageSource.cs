@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 
 using AxView.Hosting;
 using AxView.Resolution;
@@ -15,6 +16,7 @@ internal sealed class NuGetPackageSource : IPackageSource
     /// <param name="packagesRoot">The NuGet global packages folder.</param>
     /// <param name="packageId">The package. Its assembly has the same name.</param>
     /// <param name="version">The Avalonia version.</param>
+    [SuppressMessage("Globalization", "CA1308", Justification = "The NuGet cache uses lowercase folder names.")]
     public static string? FindInCache(string packagesRoot, string packageId, string version)
     {
         string lib = Path.Combine(packagesRoot, packageId.ToLowerInvariant(), version.ToLowerInvariant(), "lib");

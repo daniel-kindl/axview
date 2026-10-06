@@ -39,7 +39,7 @@ public sealed class SnapshotWindowTests
         window.Show();
 
         TextBlock text = Assert.IsType<TextBlock>(Assert.IsType<PreviewScope>(window.Content).Content);
-        Assert.IsType<FixtureViewModel>(text.DataContext);
+        _ = Assert.IsType<FixtureViewModel>(text.DataContext);
         window.Close();
     }
 

@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 
 using Avalonia;
 using Avalonia.Controls;
@@ -15,6 +16,10 @@ internal sealed class BuildWindow : Window, IBuildProgress
 {
     private static readonly TimeSpan timerInterval = TimeSpan.FromSeconds(1);
 
+    [SuppressMessage(
+        "Usage",
+        "CA2213",
+        Justification = "The build reads the token after Dispose. A source without a timer holds no resources.")]
     private readonly CancellationTokenSource cancellation = new();
     private readonly Stopwatch stopwatch = Stopwatch.StartNew();
     private readonly DispatcherTimer timer;

@@ -72,7 +72,7 @@ public sealed class ProjectPreviewTests
 
         Assert.False(isStopRequested);
         Assert.NotNull(error);
-        Assert.Contains("another project", error);
+        Assert.Contains("another project", error, StringComparison.Ordinal);
         Assert.Equal(Path.GetFullPath(file), preview.FilePath);
     }
 

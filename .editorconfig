@@ -17,6 +17,10 @@ indent_size = 2
 trim_trailing_whitespace = false
 
 [*.cs]
+# Strict mode: each analyzer finding is an error. No rule has the severity suggestion or silent.
+# Directory.Build.props turns on all CA rules (AnalysisLevel latest-all). This line turns on all IDE rules.
+dotnet_analyzer_diagnostic.category-Style.severity = warning
+
 # Formatting: about 130 characters per line. 4 spaces. One statement per line.
 max_line_length = 130
 dotnet_diagnostic.IDE0055.severity = warning
@@ -72,10 +76,10 @@ dotnet_style_prefer_simplified_boolean_expressions = true:warning
 dotnet_diagnostic.IDE0100.severity = warning
 
 # Use parentheses to show operator priority in logical expressions.
-dotnet_style_parentheses_in_arithmetic_binary_operators = always_for_clarity:suggestion
-dotnet_style_parentheses_in_relational_binary_operators = always_for_clarity:suggestion
+dotnet_style_parentheses_in_arithmetic_binary_operators = always_for_clarity:warning
+dotnet_style_parentheses_in_relational_binary_operators = always_for_clarity:warning
 dotnet_style_parentheses_in_other_binary_operators = always_for_clarity:warning
-dotnet_style_parentheses_in_other_operators = never_if_unnecessary:suggestion
+dotnet_style_parentheses_in_other_operators = never_if_unnecessary:warning
 
 # Make each member private by default. Make internal types sealed.
 dotnet_style_require_accessibility_modifiers = for_non_interface_members:warning
@@ -89,21 +93,38 @@ dotnet_diagnostic.IDE0060.severity = warning
 dotnet_diagnostic.IDE0005.severity = warning
 
 # Expression bodies only when short.
-csharp_style_expression_bodied_methods = when_on_single_line:suggestion
-csharp_style_expression_bodied_properties = when_on_single_line:suggestion
-csharp_style_expression_bodied_accessors = when_on_single_line:suggestion
-csharp_style_expression_bodied_constructors = false:suggestion
+csharp_style_expression_bodied_methods = when_on_single_line:warning
+csharp_style_expression_bodied_properties = when_on_single_line:warning
+csharp_style_expression_bodied_accessors = when_on_single_line:warning
+csharp_style_expression_bodied_constructors = false:warning
+csharp_style_expression_bodied_local_functions = true:warning
 
 # Null checks and modern operators
-dotnet_style_coalesce_expression = true:suggestion
-dotnet_style_null_propagation = true:suggestion
-csharp_style_throw_expression = true:suggestion
-csharp_style_conditional_delegate_call = true:suggestion
-csharp_style_inlined_variable_declaration = true:suggestion
-csharp_prefer_simple_using_statement = true:suggestion
+dotnet_style_coalesce_expression = true:warning
+dotnet_style_null_propagation = true:warning
+csharp_style_throw_expression = true:warning
+csharp_style_conditional_delegate_call = true:warning
+csharp_style_inlined_variable_declaration = true:warning
+csharp_prefer_simple_using_statement = true:warning
 
 # Add an XML documentation comment to each type, method, and property.
-dotnet_diagnostic.CS1591.severity = suggestion
+dotnet_diagnostic.CS1591.severity = warning
+
+# Rules that do not apply to AxView. Each line tells the reason.
+# CA1032: An exception has only the constructors that its callers use (YAGNI).
+dotnet_diagnostic.CA1032.severity = none
+# CA1303: AxView has no localization. The texts are in the code.
+dotnet_diagnostic.CA1303.severity = none
+# CA2007: AxView is a UI app. An await must continue on the UI thread.
+dotnet_diagnostic.CA2007.severity = none
+# IDE0010, IDE0072: A switch handles only the values that it needs. The default case handles the others.
+dotnet_diagnostic.IDE0010.severity = none
+dotnet_diagnostic.IDE0072.severity = none
+# IDE0002: Avalonia code reads a property through the control type, for example Button.BackgroundProperty.
+dotnet_diagnostic.IDE0002.severity = none
+# IDE0045, IDE0046: An if statement is easier to debug than a conditional expression.
+dotnet_diagnostic.IDE0045.severity = none
+dotnet_diagnostic.IDE0046.severity = none
 
 # Naming: PascalCase for types, methods, properties, events, and constants.
 # camelCase for locals, parameters, and private fields. No prefixes, except I for interfaces and T for type parameters.
@@ -172,3 +193,12 @@ dotnet_naming_rule.locals_and_parameters_are_camel_case.priority = 3
 # Test names describe behaviour in words, and tests need no XML documentation.
 dotnet_diagnostic.CS1591.severity = none
 dotnet_diagnostic.CA1707.severity = none
+# JSON002: Tests write JSON test data as plain strings. They need no JSON language marker.
+dotnet_diagnostic.JSON002.severity = none
+# xUnit needs public test classes. The XAML loader needs public fixture types.
+dotnet_diagnostic.CA1515.severity = none
+
+[src/AxView.Host/**.cs]
+# The host runs user XAML and user code. They can throw any exception.
+# A catch of Exception keeps the preview alive. Each catch has a comment that tells why.
+dotnet_diagnostic.CA1031.severity = none

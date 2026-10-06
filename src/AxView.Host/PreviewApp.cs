@@ -23,7 +23,6 @@ internal sealed class PreviewApp(HostOptions options, List<string> notes) : Appl
     // Give layout, bindings, and image loads time to settle before the snapshot.
     private static readonly TimeSpan snapshotDelay = TimeSpan.FromMilliseconds(500);
 
-    private ProjectSet? projects;
     private DesignServices services = DesignServices.None;
     private AppStyles? appStyles;
 
@@ -31,7 +30,7 @@ internal sealed class PreviewApp(HostOptions options, List<string> notes) : Appl
     // The target styles go only to the preview. The AxView chrome gets its own theme.
     public override void Initialize()
     {
-        projects = ProjectSet.Load(options);
+        Projects = ProjectSet.Load(options);
         services = LoadServices();
         appStyles = AppStyles.Import(Projects, services, notes, LoadSettings().RunAppStartup);
 
@@ -77,7 +76,11 @@ internal sealed class PreviewApp(HostOptions options, List<string> notes) : Appl
     }
 
     // Initialize loads the projects and the app styles. The framework calls it before each other member.
-    private ProjectSet Projects => projects ?? throw new InvalidOperationException("The app is not initialized.");
+    private ProjectSet Projects
+    {
+        get => field ?? throw new InvalidOperationException("The app is not initialized.");
+        set;
+    }
 
     private AppStyles ImportedAppStyles => appStyles ?? throw new InvalidOperationException("The app is not initialized.");
 
@@ -115,7 +118,7 @@ internal sealed class PreviewApp(HostOptions options, List<string> notes) : Appl
         catch (Exception ex)
         {
             // The run must not end silently. Without a shutdown, the host would wait forever.
-            Console.Error.WriteLine($"axview: error: {ex.Message}");
+            await Console.Error.WriteLineAsync($"axview: error: {ex.Message}");
             reason = ExitReason.RenderFailed;
         }
 

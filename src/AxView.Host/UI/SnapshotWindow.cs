@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media.Imaging;
@@ -9,6 +11,7 @@ using AxView.Protocol;
 namespace AxView.Host.UI;
 
 /// <summary>Shows only the preview of one file or one control, with no AxView chrome. A snapshot captures only the preview.</summary>
+[SuppressMessage("Design", "CA1001", Justification = "OnClosed disposes the preview. A window has no Dispose.")]
 internal sealed class SnapshotWindow : Window
 {
     private const double DefaultWidth = 1280;

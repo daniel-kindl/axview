@@ -118,7 +118,7 @@ internal sealed class AppIncludes
 
     private void WalkStyles(XElement? element, string file, Styles list)
     {
-        List<XElement> children = [.. element?.Elements().Where(e => !e.Name.LocalName.Contains('.')) ?? []];
+        List<XElement> children = [.. element?.Elements().Where(e => !e.Name.LocalName.Contains('.', StringComparison.Ordinal)) ?? []];
         if (children.Count != list.Count)
         {
             return;

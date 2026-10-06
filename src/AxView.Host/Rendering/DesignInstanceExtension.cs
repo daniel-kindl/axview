@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 using Avalonia.Markup.Xaml;
 
 namespace AxView.Host.Rendering;
@@ -8,6 +10,7 @@ namespace AxView.Host.Rendering;
 /// Example: <c>DataContext="{axview:DesignInstance {x:Type vm:MainViewModel}}"</c>.
 /// </remarks>
 /// <param name="type">A type with a parameterless constructor.</param>
+[SuppressMessage("Maintainability", "CA1515", Justification = "The XAML loader creates the type. It must be public.")]
 public sealed class DesignInstanceExtension(Type type) : MarkupExtension
 {
     private readonly Type type = type;

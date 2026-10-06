@@ -13,7 +13,7 @@ public sealed class BuildWindowTests
     [AvaloniaFact]
     public void BuildWindow_ShowsTheAppName()
     {
-        BuildWindow window = new("Desktop");
+        using BuildWindow window = new("Desktop");
 
         Assert.Contains(Texts(window), text => text.Contains("Desktop", StringComparison.Ordinal));
     }
@@ -21,7 +21,7 @@ public sealed class BuildWindowTests
     [AvaloniaFact]
     public void Report_ShowsTheLastLineOfTheBuild()
     {
-        BuildWindow window = new("Desktop");
+        using BuildWindow window = new("Desktop");
 
         window.Report("  Core -> Core.dll");
         window.Report("  Desktop -> Desktop.dll");
@@ -34,7 +34,7 @@ public sealed class BuildWindowTests
     [AvaloniaFact]
     public void CancelButton_CancelsTheBuild()
     {
-        BuildWindow window = new("Desktop");
+        using BuildWindow window = new("Desktop");
         Button cancel = window.GetLogicalDescendants().OfType<Button>().Single(b => Equals(b.Content, "Cancel"));
 
         cancel.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
@@ -45,7 +45,7 @@ public sealed class BuildWindowTests
     [AvaloniaFact]
     public void Close_ByTheUserCancelsTheBuild()
     {
-        BuildWindow window = new("Desktop");
+        using BuildWindow window = new("Desktop");
         window.Show();
 
         window.Close();
@@ -56,7 +56,7 @@ public sealed class BuildWindowTests
     [AvaloniaFact]
     public void Dispose_ClosesTheWindowAndDoesNotCancelTheBuild()
     {
-        BuildWindow window = new("Desktop");
+        using BuildWindow window = new("Desktop");
         window.Show();
 
         window.Dispose();
