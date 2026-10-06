@@ -81,3 +81,5 @@ Each known issue is now an item: #30 to #39.
 - [x] #52 Includes in the children of a view: `ChangedIncludes` finds each include element of the file, also in child controls. `1c69607`
 - [x] #39 Build progress: the launcher shows a build window with the app name, the time, and the last build line. Cancel stops the build. `f98134b`
 - [x] #55 .NET 10: the launcher and the tests target `net10.0`. The host stays on `net8.0`. `2471184`
+- [x] #20 Avalonia 12: `AxView.Host12` compiles the host sources against Avalonia 12. The launcher selects `host` or `host12` (ADR 0002). `ce322b7`
+- [x] #56 Launcher on Avalonia 12: the picker and the tests use Avalonia 12.1.3 and xunit v3. The tests test the Avalonia 12 host build. `264b173`
