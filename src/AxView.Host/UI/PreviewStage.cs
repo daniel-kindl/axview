@@ -4,7 +4,6 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Layout;
-using Avalonia.Media;
 
 using AxView.Protocol;
 
@@ -18,8 +17,6 @@ namespace AxView.Host.UI;
 /// </remarks>
 internal sealed class PreviewStage : Panel
 {
-    private static readonly BoxShadows cardShadow = new(new BoxShadow { OffsetY = 2, Blur = 12, Color = Color.FromArgb(0x40, 0, 0, 0) });
-
     private readonly Control preview;
     private readonly Border backdrop = new();
     private readonly Border card;
@@ -84,7 +81,7 @@ internal sealed class PreviewStage : Panel
         sizeLabel.IsVisible = !isFit;
         backdrop.IsVisible = !isFit;
         card.BorderThickness = isFit ? default : new Thickness(1);
-        card.BoxShadow = isFit ? default : cardShadow;
+        card.BoxShadow = isFit ? default : ChromeStyle.CardShadow;
         layout.Margin = isFit ? default : new Thickness(ChromeStyle.SpacingExtraLarge);
         layout.HorizontalAlignment = isFit ? HorizontalAlignment.Stretch : HorizontalAlignment.Center;
         layout.VerticalAlignment = isFit ? VerticalAlignment.Stretch : VerticalAlignment.Center;

@@ -20,6 +20,7 @@ internal static class ChromeBrushes
         ChromeStyle.WarningBrushKey,
         ChromeStyle.ErrorBrushKey,
         ChromeStyle.StageBrushKey,
+        ChromeStyle.CardBrushKey,
         ChromeStyle.StatusForegroundBrushKey,
     ];
 

@@ -170,6 +170,31 @@ public sealed class PreviewWindowModelTests
         Assert.Same(good, model.Content);
         Assert.NotNull(model.Error);
         Assert.Contains("Showing the last good render", model.Status, StringComparison.Ordinal);
+        Assert.True(model.IsLastGoodRenderShown);
+    }
+
+    [AvaloniaFact]
+    public void BrokenFile_WithNoGoodLoad_ShowsNoLastGoodRender()
+    {
+        using TempDir view = new();
+        string file = view.Write("Views/Main.axaml", "<TextBlock");
+
+        using PreviewWindowModel model = Create(Options(view, file));
+
+        Assert.NotNull(model.Error);
+        Assert.False(model.IsLastGoodRenderShown);
+    }
+
+    [AvaloniaFact]
+    public void GoodFile_ShowsNoLastGoodRender()
+    {
+        using TempDir view = new();
+        string file = view.Write("Views/Main.axaml", TextBlockXaml);
+
+        using PreviewWindowModel model = Create(Options(view, file));
+
+        Assert.Null(model.Error);
+        Assert.False(model.IsLastGoodRenderShown);
     }
 
     [AvaloniaFact]

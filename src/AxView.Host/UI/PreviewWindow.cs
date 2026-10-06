@@ -26,15 +26,12 @@ internal sealed class PreviewWindow : Window
 {
     private const double SidebarWidth = 280;
 
-    private static readonly FontFamily monospace = new("Cascadia Mono, Consolas, Menlo, DejaVu Sans Mono, monospace");
-
     private readonly HostOptions options;
     private readonly PreviewWindowModel model;
     private readonly ContentControl host = new();
     private readonly PreviewScope scope;
     private readonly PreviewStage stage;
-    private readonly Border errorPanel;
-    private readonly SelectableTextBlock errorText;
+    private readonly ErrorPanel errorPanel = new();
     private readonly TextBlock status;
     private readonly Border noDataContextBadge;
     private readonly TextBox filter;
@@ -89,23 +86,6 @@ internal sealed class PreviewWindow : Window
         ChromeStyle.SetBrush(noDataContextBadge, Border.BackgroundProperty, ChromeStyle.WarningBrushKey);
         ToolTip.SetTip(noDataContextBadge, "Select a ViewModel, set Design.DataContext, or make x:DataType creatable. See AxViewDesign.CreateServices.");
         DockPanel.SetDock(noDataContextBadge, Dock.Right);
-
-        errorText = new SelectableTextBlock
-        {
-            TextWrapping = TextWrapping.Wrap,
-            FontFamily = monospace,
-            FontSize = ChromeStyle.FontSizeNormal,
-        };
-        ChromeStyle.SetBrush(errorText, TextBlock.ForegroundProperty, ChromeStyle.StatusForegroundBrushKey);
-        errorPanel = new Border
-        {
-            IsVisible = false,
-            VerticalAlignment = VerticalAlignment.Bottom,
-            MaxHeight = 320,
-            Padding = new Thickness(ChromeStyle.SpacingLarge),
-            Child = new ScrollViewer { Content = errorText },
-        };
-        ChromeStyle.SetBrush(errorPanel, Border.BackgroundProperty, ChromeStyle.ErrorBrushKey);
 
         filter = new TextBox { Watermark = "Filter", Margin = new Thickness(8) };
         filter.PropertyChanged += (_, e) =>
@@ -313,8 +293,7 @@ internal sealed class PreviewWindow : Window
         fileList.SelectedItem = model.SelectedEntry;
         scope.Content = model.Content;
         noDataContextBadge.IsVisible = model.IsDataContextMissing;
-        errorText.Text = model.Error;
-        errorPanel.IsVisible = model.Error is not null;
+        errorPanel.Show(model.Error, model.IsLastGoodRenderShown);
         status.Text = model.Status;
         viewModelSwitch.IsEnabled = model.CanSelectViewModel;
         viewModelSwitch.SelectedTypeName = model.ViewModelName;

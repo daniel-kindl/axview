@@ -103,6 +103,9 @@ internal sealed class PreviewWindowModel : IDisposable
     /// <summary>Gets the errors and the message to show. Null when there is none.</summary>
     public string? Error { get; private set; }
 
+    /// <summary>Gets a value that tells if the preview shows the last good render of the file, because the last load failed.</summary>
+    public bool IsLastGoodRenderShown { get; private set; }
+
     /// <summary>Gets the status line. It tells the time of the last load or error, the shown item, and the app output.</summary>
     public string Status { get; private set; } = string.Empty;
 
@@ -254,6 +257,7 @@ internal sealed class PreviewWindowModel : IDisposable
         Content = ControlGallery.Create([Styles.Styles], Styles.Resources);
         IsDataContextMissing = false;
         Error = Join(message, preview.StylesError);
+        IsLastGoodRenderShown = false;
         Status = Error is null ? $"{GalleryTitle}   Output: {outputDirectory}" : $"Error {DateTime.Now:HH:mm:ss}   {GalleryTitle}";
     }
 
@@ -263,6 +267,7 @@ internal sealed class PreviewWindowModel : IDisposable
         Content = preview.View;
         IsDataContextMissing = preview.View is { DataContext: null } && !preview.IsStylePreview;
         Error = Join(message, preview.Error, preview.StylesError);
+        IsLastGoodRenderShown = (Error is not null) && (preview.View is not null);
         if (Error is null)
         {
             Status = $"Rendered {DateTime.Now:HH:mm:ss}   {preview.FilePath}   Output: {outputDirectory}";
@@ -270,9 +275,9 @@ internal sealed class PreviewWindowModel : IDisposable
             return;
         }
 
-        Status = preview.View is null
-            ? $"Error {DateTime.Now:HH:mm:ss}   {preview.FilePath}"
-            : $"Error {DateTime.Now:HH:mm:ss}. Showing the last good render.   {preview.FilePath}";
+        Status = IsLastGoodRenderShown
+            ? $"Error {DateTime.Now:HH:mm:ss}. Showing the last good render.   {preview.FilePath}"
+            : $"Error {DateTime.Now:HH:mm:ss}   {preview.FilePath}";
     }
 
     // The shutdown does not close the window. Thus save the settings first, so the next host opens at the same place.
