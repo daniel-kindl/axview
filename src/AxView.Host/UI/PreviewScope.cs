@@ -2,6 +2,7 @@ using Avalonia.Controls;
 using Avalonia.Styling;
 
 using AxView.Host.Startup;
+using AxView.Protocol;
 
 namespace AxView.Host.UI;
 
@@ -39,6 +40,15 @@ internal sealed class PreviewScope : ThemeVariantScope
         get => frame.Content;
         set => frame.Content = value;
     }
+
+    /// <summary>Requests the variant of a theme. <see cref="PreviewTheme.Default"/> requests the variant of the target app.</summary>
+    public void ShowTheme(PreviewTheme theme) =>
+        RequestedThemeVariant = theme switch
+        {
+            PreviewTheme.Light => ThemeVariant.Light,
+            PreviewTheme.Dark => ThemeVariant.Dark,
+            _ => AppThemeVariant,
+        };
 
     // A variant that the user selects stays. The scope follows the app only when it shows the app variant.
     private void ChangeAppThemeVariant(ThemeVariant variant)

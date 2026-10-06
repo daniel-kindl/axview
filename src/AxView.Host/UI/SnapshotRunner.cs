@@ -26,6 +26,7 @@ namespace AxView.Host.UI;
 /// </code>
 /// A failed file does not stop the run.
 /// </para>
+/// Each PNG has the size and the theme of the options, if they are set. The control gallery ignores the size.
 /// Each PNG waits for the settle time after the window shows. The errors go to the standard error stream.
 /// </remarks>
 /// <param name="projects">The projects of the preview.</param>
@@ -47,8 +48,8 @@ internal sealed class SnapshotRunner(ProjectSet projects, DesignServices service
     public Task<ExitReason> RunAsync(HostOptions options) =>
         options switch
         {
-            { SnapshotAllDirectory: string directory } => SaveProjectAsync(options.ProjectDirectory, directory),
-            { SnapshotPath: string png } => SaveFileAsync(options.AxamlPath, png, options.ViewModelName),
+            { SnapshotAllDirectory: string directory } => SaveProjectAsync(options, directory),
+            { SnapshotPath: string png } => SaveFileAsync(options, png),
             _ => throw new ArgumentException("The options select no snapshot mode.", nameof(options)),
         };
 
@@ -65,8 +66,9 @@ internal sealed class SnapshotRunner(ProjectSet projects, DesignServices service
         return false;
     }
 
-    private async Task<ExitReason> SaveFileAsync(string axamlPath, string png, string? viewModelName)
+    private async Task<ExitReason> SaveFileAsync(HostOptions options, string png)
     {
+        string? viewModelName = options.ViewModelName;
         Type? viewModelType = null;
         if (viewModelName is not null)
         {
@@ -78,7 +80,8 @@ internal sealed class SnapshotRunner(ProjectSet projects, DesignServices service
             }
         }
 
-        string? error = await SaveAsync(new SnapshotWindow(renderer, axamlPath, createTarget(), viewModelType), png);
+        SnapshotWindow window = new(renderer, options.AxamlPath, createTarget(), viewModelType);
+        string? error = await SaveAsync(window, png, options);
         if (error is null)
         {
             return ExitReason.Ok;
@@ -88,8 +91,9 @@ internal sealed class SnapshotRunner(ProjectSet projects, DesignServices service
         return ExitReason.RenderFailed;
     }
 
-    private async Task<ExitReason> SaveProjectAsync(string projectDirectory, string outputDirectory)
+    private async Task<ExitReason> SaveProjectAsync(HostOptions options, string outputDirectory)
     {
+        string projectDirectory = options.ProjectDirectory;
         _ = Directory.CreateDirectory(outputDirectory);
         StringBuilder summary = new();
         bool isGood = true;
@@ -97,13 +101,13 @@ internal sealed class SnapshotRunner(ProjectSet projects, DesignServices service
         {
             string relative = Path.GetRelativePath(projectDirectory, file).Replace(Path.DirectorySeparatorChar, '/');
             string png = Path.Combine(outputDirectory, Path.ChangeExtension(relative, ".png"));
-            string? error = await SaveAsync(new SnapshotWindow(renderer, file, createTarget()), png);
+            string? error = await SaveAsync(new SnapshotWindow(renderer, file, createTarget()), png, options);
             isGood &= AddSummaryLine(summary, relative, error);
         }
 
         TargetStyles galleryTarget = createTarget();
         SnapshotWindow galleryWindow = new(ControlGallery.Create(galleryTarget.Styles, galleryTarget.Resources), galleryTarget);
-        string? galleryError = await SaveAsync(galleryWindow, Path.Combine(outputDirectory, GalleryFileName));
+        string? galleryError = await SaveAsync(galleryWindow, Path.Combine(outputDirectory, GalleryFileName), options);
         isGood &= AddSummaryLine(summary, GalleryName, galleryError);
 
         string summaryText = summary.ToString();
@@ -113,8 +117,10 @@ internal sealed class SnapshotRunner(ProjectSet projects, DesignServices service
     }
 
     // Gives the error of the snapshot, or null for a good snapshot.
-    private async Task<string?> SaveAsync(SnapshotWindow window, string png)
+    private async Task<string?> SaveAsync(SnapshotWindow window, string png, HostOptions options)
     {
+        window.PreviewSize = options.Size ?? PreviewSize.Fit;
+        window.ShowTheme(options.Theme ?? PreviewTheme.Default);
         _ = Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(png))!);
         try
         {

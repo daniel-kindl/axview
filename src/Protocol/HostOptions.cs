@@ -30,6 +30,8 @@ namespace AxView.Protocol;
 /// <see cref="Path.PathSeparator"/> between them. A change of their C# files also starts a rebuild.
 /// </param>
 /// <param name="ChromeThemePath">If set, the Simple theme assembly for the chrome. The launcher sets it when the app ships no theme.</param>
+/// <param name="Size">If set, the size of each snapshot. <see cref="PreviewSize.Parse"/> reads the value.</param>
+/// <param name="Theme">If set, the theme variant of each snapshot. <see cref="ParseTheme"/> reads the value.</param>
 internal sealed record HostOptions(
     string AxamlPath,
     string ProjectDirectory,
@@ -44,7 +46,9 @@ internal sealed record HostOptions(
     string? SnapshotAllDirectory = null,
     string? ViewModelName = null,
     string? ReferencedProjects = null,
-    string? ChromeThemePath = null)
+    string? ChromeThemePath = null,
+    PreviewSize? Size = null,
+    PreviewTheme? Theme = null)
 {
     private const string AxamlKey = "--axaml";
     private const string ProjectKey = "--project";
@@ -60,9 +64,14 @@ internal sealed record HostOptions(
     private const string ViewModelKey = "--view-model";
     private const string ReferencedProjectsKey = "--referenced-projects";
     private const string ChromeThemeKey = "--chrome-theme";
+    private const string SizeKey = "--size";
+    private const string ThemeKey = "--theme";
 
     private static readonly string[] keys =
-        [AxamlKey, ProjectKey, AssemblyKey, AppAssemblyKey, LoaderKey, SnapshotKey, HandOffKey, SetupErrorKey, SettingsKey, AppProjectKey, SnapshotAllKey, ViewModelKey, ReferencedProjectsKey, ChromeThemeKey];
+    [
+        AxamlKey, ProjectKey, AssemblyKey, AppAssemblyKey, LoaderKey, SnapshotKey, HandOffKey, SetupErrorKey, SettingsKey, AppProjectKey,
+        SnapshotAllKey, ViewModelKey, ReferencedProjectsKey, ChromeThemeKey, SizeKey, ThemeKey,
+    ];
 
     /// <summary>Gets the host mode. A snapshot folder selects <see cref="HostMode.SnapshotAll"/>, a snapshot path <see cref="HostMode.Snapshot"/>.</summary>
     public HostMode Mode =>
@@ -76,8 +85,13 @@ internal sealed record HostOptions(
     /// <param name="snapshotPath">The value of <c>--snapshot</c>, or null.</param>
     /// <param name="snapshotAllDirectory">The value of <c>--snapshot-all</c>, or null.</param>
     /// <param name="viewModelName">The value of <c>--view-model</c>, or null.</param>
-    /// <exception cref="ArgumentException">The options select more than one mode, or a ViewModel without a snapshot.</exception>
-    public static void ValidateMode(string? snapshotPath, string? snapshotAllDirectory, string? viewModelName)
+    /// <param name="size">The value of <c>--size</c>, or null.</param>
+    /// <param name="theme">The value of <c>--theme</c>, or null.</param>
+    /// <exception cref="ArgumentException">
+    /// The options select more than one mode, a ViewModel without a snapshot, or a size or theme without a snapshot mode.
+    /// </exception>
+    public static void ValidateMode(
+        string? snapshotPath, string? snapshotAllDirectory, string? viewModelName, PreviewSize? size = null, PreviewTheme? theme = null)
     {
         if (snapshotPath is not null && snapshotAllDirectory is not null)
         {
@@ -88,6 +102,28 @@ internal sealed record HostOptions(
         {
             throw new ArgumentException($"{ViewModelKey} needs {SnapshotKey}.");
         }
+
+        bool isSnapshot = snapshotPath is not null || snapshotAllDirectory is not null;
+        if (size is not null && !isSnapshot)
+        {
+            throw new ArgumentException($"{SizeKey} needs {SnapshotKey} or {SnapshotAllKey}.");
+        }
+
+        if (theme is not null && !isSnapshot)
+        {
+            throw new ArgumentException($"{ThemeKey} needs {SnapshotKey} or {SnapshotAllKey}.");
+        }
+    }
+
+    /// <summary>Reads the name of a theme variant. The name can have any case.</summary>
+    /// <exception cref="ArgumentException">The text is not the name of a <see cref="PreviewTheme"/>.</exception>
+    public static PreviewTheme ParseTheme(string text)
+    {
+        // Enum.TryParse also accepts numbers. Thus compare with the names.
+        string name = Enum.GetNames<PreviewTheme>()
+            .FirstOrDefault(name => string.Equals(name, text, StringComparison.OrdinalIgnoreCase))
+            ?? throw new ArgumentException($"The theme '{text}' is not Default, Light, or Dark.");
+        return Enum.Parse<PreviewTheme>(name);
     }
 
     /// <summary>Reads the options from the host command line.</summary>
@@ -117,22 +153,29 @@ internal sealed record HostOptions(
         string Required(string key) =>
             values.TryGetValue(key, out string? value) ? value : throw new ArgumentException($"Missing {key}.", nameof(args));
 
-        ValidateMode(values.GetValueOrDefault(SnapshotKey), values.GetValueOrDefault(SnapshotAllKey), values.GetValueOrDefault(ViewModelKey));
+        PreviewSize? size = values.TryGetValue(SizeKey, out string? sizeText) ? PreviewSize.Parse(sizeText) : null;
+        PreviewTheme? theme = values.TryGetValue(ThemeKey, out string? themeText) ? ParseTheme(themeText) : null;
+        string? snapshotPath = values.GetValueOrDefault(SnapshotKey);
+        string? snapshotAllDirectory = values.GetValueOrDefault(SnapshotAllKey);
+        string? viewModelName = values.GetValueOrDefault(ViewModelKey);
+        ValidateMode(snapshotPath, snapshotAllDirectory, viewModelName, size, theme);
         return new HostOptions(
             Required(AxamlKey),
             Required(ProjectKey),
             Required(AssemblyKey),
             values.GetValueOrDefault(AppAssemblyKey),
             Required(LoaderKey),
-            values.GetValueOrDefault(SnapshotKey),
+            snapshotPath,
             values.GetValueOrDefault(HandOffKey),
             values.GetValueOrDefault(SetupErrorKey),
             values.GetValueOrDefault(SettingsKey),
             values.GetValueOrDefault(AppProjectKey),
-            values.GetValueOrDefault(SnapshotAllKey),
-            values.GetValueOrDefault(ViewModelKey),
+            snapshotAllDirectory,
+            viewModelName,
             values.GetValueOrDefault(ReferencedProjectsKey),
-            values.GetValueOrDefault(ChromeThemeKey));
+            values.GetValueOrDefault(ChromeThemeKey),
+            size,
+            theme);
     }
 
     /// <summary>Writes the options as the host command line.</summary>
@@ -155,6 +198,8 @@ internal sealed record HostOptions(
         AddOptional(args, ViewModelKey, ViewModelName);
         AddOptional(args, ReferencedProjectsKey, ReferencedProjects);
         AddOptional(args, ChromeThemeKey, ChromeThemePath);
+        AddOptional(args, SizeKey, Size?.ToArgument());
+        AddOptional(args, ThemeKey, Theme?.ToString());
         return args;
     }
 

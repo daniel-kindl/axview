@@ -1,5 +1,4 @@
 using Avalonia.Controls;
-using Avalonia.Styling;
 
 using AxView.Protocol;
 
@@ -22,19 +21,5 @@ internal sealed class ThemeSwitch : ComboBox
     // A subclass has no control theme of its own. Use the ComboBox theme.
     protected override Type StyleKeyOverride => typeof(ComboBox);
 
-    private void Apply()
-    {
-        if (SelectedItem is PreviewTheme.Light)
-        {
-            target.RequestedThemeVariant = ThemeVariant.Light;
-        }
-        else if (SelectedItem is PreviewTheme.Dark)
-        {
-            target.RequestedThemeVariant = ThemeVariant.Dark;
-        }
-        else
-        {
-            target.RequestedThemeVariant = target.AppThemeVariant;
-        }
-    }
+    private void Apply() => target.ShowTheme(SelectedItem is PreviewTheme theme ? theme : PreviewTheme.Default);
 }

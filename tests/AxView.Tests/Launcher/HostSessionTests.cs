@@ -60,6 +60,23 @@ public sealed class HostSessionTests
     }
 
     [Fact]
+    public async Task RunAsync_GivesTheRenderFlagsToTheHostAsync()
+    {
+        using TempDir dir = new();
+        _ = dir.Write("Repo.sln");
+        string view = AppFixture.WriteProject(dir, "Ui");
+        FakeHostProcess hosts = new();
+        hosts.Enqueue(ExitReason.Ok);
+        PreviewSize size = new(PreviewSizePreset.Custom, 500, 300);
+
+        _ = await Session(hosts).RunAsync(view, null, "shot.png", _ => { }, size: size, theme: PreviewTheme.Dark);
+
+        HostOptions options = Assert.Single(hosts.Runs);
+        Assert.Equal(size, options.Size);
+        Assert.Equal(PreviewTheme.Dark, options.Theme);
+    }
+
+    [Fact]
     public async Task RunAsync_StartsANewHostForTheFileOfTheHandOffAsync()
     {
         using TempDir dir = new();

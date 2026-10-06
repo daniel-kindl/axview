@@ -32,7 +32,8 @@ To write the source and binary archives to `artifacts/`, run `./pack.ps1 all` (P
 ## Use
 
 ```text
-axview [<file.axaml> [--output <app-bin-dir>] [--snapshot <file.png> [--view-model <type>] | --snapshot-all <dir>]]
+axview [<file.axaml> [--output <app-bin-dir>] [--snapshot <file.png> [--view-model <type>] | --snapshot-all <dir>]
+       [--size <Fit|Phone|Tablet|Desktop|WxH>] [--theme <Default|Light|Dark>]]
 ```
 
 | Command | Result |
@@ -41,6 +42,7 @@ axview [<file.axaml> [--output <app-bin-dir>] [--snapshot <file.png> [--view-mod
 | `axview Views/MainView.axaml` | Opens the preview window for the file. |
 | `axview Views/MainView.axaml --snapshot main.png` | Writes one PNG and exits. |
 | `axview Views/MainView.axaml --snapshot-all shots` | Writes one PNG for each AXAML file of the project and exits. |
+| `axview Views/MainView.axaml --snapshot main.png --size Phone --theme Dark` | Writes one PNG at the phone size in the dark variant. |
 
 ### Options
 
@@ -50,9 +52,13 @@ axview [<file.axaml> [--output <app-bin-dir>] [--snapshot <file.png> [--view-mod
 | `--snapshot <file.png>` | Write a PNG of the file, then exit. |
 | `--view-model <type>` | Set the DataContext of a `--snapshot` to a new instance of this ViewModel type (full name). |
 | `--snapshot-all <dir>` | Write a PNG of each AXAML file of the project and `summary.txt` into the folder, then exit. |
+| `--size <size>` | Set the size of each snapshot: `Fit`, `Phone` (390×844), `Tablet` (820×1180), `Desktop` (1920×1080), or a width and height, for example `500x300`. `Fit` is 1280×800. |
+| `--theme <variant>` | Set the theme variant of each snapshot: `Default` (the variant of the app), `Light`, or `Dark`. |
 | `-h`, `--help` | Show the usage. |
 
 Use `--snapshot` or `--snapshot-all`, not both.
+`--size` and `--theme` need `--snapshot` or `--snapshot-all`. The names can have any case.
+A snapshot does not use the size and the theme of `settings.json`.
 
 ### Preview window
 
@@ -97,6 +103,7 @@ FAIL    Views/Broken.axaml    The error text, on one line
 A failed file does not stop the run.
 
 `--snapshot-all` also writes the control gallery to `axview-gallery.png`.
+The gallery has its full size. It ignores `--size`.
 The last line of `summary.txt` is for the gallery: `ok      (control gallery)`.
 
 ### Control gallery

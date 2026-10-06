@@ -6,6 +6,7 @@ using Avalonia.Media.Imaging;
 
 using AxView.Host.Rendering;
 using AxView.Host.Startup;
+using AxView.Protocol;
 
 namespace AxView.Host.UI;
 
@@ -52,8 +53,15 @@ internal sealed class SnapshotWindow : Window
         Content = scope;
     }
 
+    /// <summary>Gets or sets the size of the snapshot. <see cref="PreviewSize.Fit"/> gives the default window size.</summary>
+    /// <remarks>A control that has the full size ignores this value.</remarks>
+    public PreviewSize PreviewSize { get; set; } = PreviewSize.Fit;
+
     /// <summary>Gets the error of the load or of a dispatcher job, or null.</summary>
     public string? Error => livePreview?.Error;
+
+    /// <summary>Gives the preview the variant of a theme.</summary>
+    public void ShowTheme(PreviewTheme theme) => scope.ShowTheme(theme);
 
     /// <summary>Writes a PNG of the window. <see cref="Error"/> tells if the PNG shows the last good preview.</summary>
     /// <param name="pngPath">The path of the PNG.</param>
@@ -67,6 +75,14 @@ internal sealed class SnapshotWindow : Window
             // The next layout pass gives the preview the window size again.
             scope.Measure(Size.Infinity);
             clientSize = new Size(Math.Max(clientSize.Width, scope.DesiredSize.Width), scope.DesiredSize.Height);
+            scope.Arrange(new Rect(clientSize));
+            captured = scope;
+        }
+        else if (PreviewSize.Preset != PreviewSizePreset.Fit)
+        {
+            // The operating system limits a window to the screen size. Thus lay out the preview at the size, not the window.
+            clientSize = new Size(PreviewSize.Width, PreviewSize.Height);
+            scope.Measure(clientSize);
             scope.Arrange(new Rect(clientSize));
             captured = scope;
         }

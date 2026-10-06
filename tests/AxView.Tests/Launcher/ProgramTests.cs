@@ -19,4 +19,24 @@ public sealed class ProgramTests
 
         Assert.Equal((int)ExitReason.BadArguments, exitCode);
     }
+
+    [Theory]
+    [InlineData("--size", "Phone")]
+    [InlineData("--theme", "Dark")]
+    public void Main_RejectsARenderFlagWithoutASnapshot(string key, string value)
+    {
+        int exitCode = Program.Main(["Main.axaml", key, value]);
+
+        Assert.Equal((int)ExitReason.BadArguments, exitCode);
+    }
+
+    [Theory]
+    [InlineData("--size", "Huge")]
+    [InlineData("--theme", "Blue")]
+    public void Main_RejectsARenderFlagWithABadValue(string key, string value)
+    {
+        int exitCode = Program.Main(["Main.axaml", "--snapshot", "shot.png", key, value]);
+
+        Assert.Equal((int)ExitReason.BadArguments, exitCode);
+    }
 }

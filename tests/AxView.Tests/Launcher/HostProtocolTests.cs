@@ -18,7 +18,9 @@ public sealed class HostProtocolTests
         AppProjectDirectory: "/src/Desktop",
         ViewModelName: "Ui.ViewModels.MainViewModel",
         ReferencedProjects: string.Join(Path.PathSeparator, "/src/Core", "/src/Common"),
-        ChromeThemePath: "/nuget/theme.dll");
+        ChromeThemePath: "/nuget/theme.dll",
+        Size: new PreviewSize(PreviewSizePreset.Custom, 500, 300),
+        Theme: PreviewTheme.Dark);
 
     [Fact]
     public void Parse_ReadsTheArgumentsThatToArgumentsWrites()
@@ -42,6 +44,8 @@ public sealed class HostProtocolTests
             ViewModelName = null,
             ReferencedProjects = null,
             ChromeThemePath = null,
+            Size = null,
+            Theme = null,
         };
 
         HostOptions parsed = HostOptions.Parse(options.ToArguments());
@@ -98,6 +102,57 @@ public sealed class HostProtocolTests
     }
 
     [Fact]
+    public void Parse_ReadsTheRenderFlagsWithASnapshotFolder()
+    {
+        HostOptions options = full with { SnapshotPath = null, ViewModelName = null, SnapshotAllDirectory = "/out/shots" };
+
+        HostOptions parsed = HostOptions.Parse(options.ToArguments());
+
+        Assert.Equal(options, parsed);
+    }
+
+    [Theory]
+    [InlineData("--size", "Phone")]
+    [InlineData("--theme", "Dark")]
+    public void ValidateMode_RejectsARenderFlagWithoutASnapshot(string key, string value)
+    {
+        HostOptions preview = full with { SnapshotPath = null, ViewModelName = null, Size = null, Theme = null };
+        string[] args = [.. preview.ToArguments(), key, value];
+
+        ArgumentException ex = Assert.Throws<ArgumentException>(() => HostOptions.Parse(args));
+
+        Assert.Contains(key, ex.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Parse_RejectsASizeThatIsNotASize()
+    {
+        string[] args = [.. (full with { Size = null }).ToArguments(), "--size", "Huge"];
+
+        ArgumentException ex = Assert.Throws<ArgumentException>(() => HostOptions.Parse(args));
+
+        Assert.Contains("'Huge'", ex.Message, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("Default", (int)PreviewTheme.Default)]
+    [InlineData("light", (int)PreviewTheme.Light)]
+    [InlineData("DARK", (int)PreviewTheme.Dark)]
+    public void ParseTheme_ReadsTheNameInAnyCase(string text, int theme) =>
+        Assert.Equal((PreviewTheme)theme, HostOptions.ParseTheme(text));
+
+    [Theory]
+    [InlineData("Blue")]
+    [InlineData("1")]
+    [InlineData("")]
+    public void ParseTheme_RejectsAnUnknownName(string text)
+    {
+        ArgumentException ex = Assert.Throws<ArgumentException>(() => HostOptions.ParseTheme(text));
+
+        Assert.Contains($"'{text}'", ex.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void ReferencedProjectDirectories_SplitsTheOption()
     {
         Assert.Equal(["/src/Core", "/src/Common"], full.ReferencedProjectDirectories);
@@ -107,11 +162,11 @@ public sealed class HostProtocolTests
     [Fact]
     public void Parse_RejectsAnUnknownKey()
     {
-        string[] args = [.. full.ToArguments(), "--theme", "Dark"];
+        string[] args = [.. full.ToArguments(), "--color", "Red"];
 
         ArgumentException ex = Assert.Throws<ArgumentException>(() => HostOptions.Parse(args));
 
-        Assert.Contains("--theme", ex.Message, StringComparison.Ordinal);
+        Assert.Contains("--color", ex.Message, StringComparison.Ordinal);
     }
 
     [Fact]

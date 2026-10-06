@@ -10,16 +10,6 @@ namespace AxView.Host.UI;
 /// <remarks>A typed width or height selects Custom.</remarks>
 internal sealed class PreviewSizeSwitch : StackPanel
 {
-    private const double MinimumSide = 1;
-    private const double MaximumSide = 10000;
-
-    private static readonly Dictionary<PreviewSizePreset, Size> presetSizes = new()
-    {
-        [PreviewSizePreset.Phone] = new Size(390, 844),
-        [PreviewSizePreset.Tablet] = new Size(820, 1180),
-        [PreviewSizePreset.Desktop] = new Size(1920, 1080),
-    };
-
     private readonly PreviewStage target;
     private readonly ComboBox presets;
     private readonly NumericUpDown widthBox;
@@ -73,8 +63,8 @@ internal sealed class PreviewSizeSwitch : StackPanel
         {
             Width = 64,
             ShowButtonSpinner = false,
-            Minimum = (decimal)MinimumSide,
-            Maximum = (decimal)MaximumSide,
+            Minimum = (decimal)PreviewSize.MinimumSide,
+            Maximum = (decimal)PreviewSize.MaximumSide,
             Increment = 10,
             FormatString = "0",
         };
@@ -86,9 +76,10 @@ internal sealed class PreviewSizeSwitch : StackPanel
     private void OnPresetSelected()
     {
         PreviewSizePreset preset = Size.Preset;
-        if (presetSizes.TryGetValue(preset, out Size size))
+        if (preset is not (PreviewSizePreset.Fit or PreviewSizePreset.Custom))
         {
-            SetBoxes(size);
+            PreviewSize size = PreviewSize.FromPreset(preset);
+            SetBoxes(new Size(size.Width, size.Height));
         }
 
         // Fit has no width and height to show.
@@ -119,8 +110,8 @@ internal sealed class PreviewSizeSwitch : StackPanel
     private void SetBoxes(Size size)
     {
         isSyncing = true;
-        widthBox.Value = (decimal)Math.Clamp(size.Width, MinimumSide, MaximumSide);
-        heightBox.Value = (decimal)Math.Clamp(size.Height, MinimumSide, MaximumSide);
+        widthBox.Value = (decimal)Math.Clamp(size.Width, PreviewSize.MinimumSide, PreviewSize.MaximumSide);
+        heightBox.Value = (decimal)Math.Clamp(size.Height, PreviewSize.MinimumSide, PreviewSize.MaximumSide);
         isSyncing = false;
     }
 

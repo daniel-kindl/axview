@@ -13,7 +13,8 @@ namespace AxView;
 internal static class Program
 {
     private const string Usage =
-        "usage: axview [<file.axaml> [--output <app-bin-dir>] [--snapshot <file.png> [--view-model <type>] | --snapshot-all <dir>]]";
+        "usage: axview [<file.axaml> [--output <app-bin-dir>] [--snapshot <file.png> [--view-model <type>] | --snapshot-all <dir>]" +
+        " [--size <Fit|Phone|Tablet|Desktop|WxH>] [--theme <Default|Light|Dark>]]";
 
     [STAThread]
     public static int Main(string[] args)
@@ -23,6 +24,8 @@ internal static class Program
         string? snapshot = null;
         string? snapshotAll = null;
         string? viewModel = null;
+        string? sizeText = null;
+        string? themeText = null;
         for (int i = 0; i < args.Length; i++)
         {
             switch (args[i])
@@ -39,6 +42,12 @@ internal static class Program
                 case "--view-model" when i + 1 < args.Length:
                     viewModel = args[++i];
                     break;
+                case "--size" when i + 1 < args.Length:
+                    sizeText = args[++i];
+                    break;
+                case "--theme" when i + 1 < args.Length:
+                    themeText = args[++i];
+                    break;
                 case "-h" or "--help":
                     Console.WriteLine(Usage);
                     return 0;
@@ -48,9 +57,13 @@ internal static class Program
             }
         }
 
+        PreviewSize? size;
+        PreviewTheme? theme;
         try
         {
-            HostOptions.ValidateMode(snapshot, snapshotAll, viewModel);
+            size = sizeText is null ? null : PreviewSize.Parse(sizeText);
+            theme = themeText is null ? null : HostOptions.ParseTheme(themeText);
+            HostOptions.ValidateMode(snapshot, snapshotAll, viewModel, size, theme);
         }
         catch (ArgumentException ex)
         {
@@ -71,7 +84,8 @@ internal static class Program
             {
                 using QuietBuildDisplay quietDisplay = new();
                 HostSession snapshotSession = HostSession.CreateDefault(recent.SettingsFile, quietDisplay);
-                return snapshotSession.RunAsync(axaml, outputDir, snapshot, recent.Add, snapshotAll, viewModel).GetAwaiter().GetResult();
+                Task<int> run = snapshotSession.RunAsync(axaml, outputDir, snapshot, recent.Add, snapshotAll, viewModel, size, theme);
+                return run.GetAwaiter().GetResult();
             }
 
             HostSession session = HostSession.CreateDefault(recent.SettingsFile, new BuildWindowDisplay());

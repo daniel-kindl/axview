@@ -1,6 +1,8 @@
 extern alias host;
 
+using Avalonia;
 using Avalonia.Headless.XUnit;
+using Avalonia.Media.Imaging;
 
 using AxView.Tests.Fixtures;
 
@@ -26,6 +28,36 @@ public sealed class SnapshotRunnerTests
 
         Assert.Equal(ExitReason.Ok, reason);
         Assert.True(File.Exists(png));
+    }
+
+    [AvaloniaFact]
+    public async Task RunAsync_SnapshotWithASize_WritesAPngOfThatSizeAsync()
+    {
+        using TempDir dir = new();
+        string file = dir.Write("Views/Hello.axaml", $"""<TextBlock {AvaloniaXmlns} Text="Hello" />""");
+        string png = Path.Combine(dir.Path, "hello.png");
+        HostOptions options =
+            Options(dir, file) with { SnapshotPath = png, Size = PreviewSize.Parse("500x300"), Theme = PreviewTheme.Dark };
+
+        ExitReason reason = await Runner(dir).RunAsync(options);
+
+        Assert.Equal(ExitReason.Ok, reason);
+        using Bitmap bitmap = new(png);
+        Assert.Equal(new PixelSize(500, 300), bitmap.PixelSize);
+    }
+
+    [AvaloniaFact]
+    public async Task RunAsync_SnapshotAllWithASize_WritesPngsOfThatSizeAsync()
+    {
+        using TempDir dir = new();
+        string file = dir.Write("Views/Hello.axaml", $"""<TextBlock {AvaloniaXmlns} Text="Hello" />""");
+        string output = Path.Combine(dir.Path, "out");
+        HostOptions options = Options(dir, file) with { SnapshotAllDirectory = output, Size = PreviewSize.Parse("500x300") };
+
+        _ = await Runner(dir).RunAsync(options);
+
+        using Bitmap bitmap = new(Path.Combine(output, "Views", "Hello.png"));
+        Assert.Equal(new PixelSize(500, 300), bitmap.PixelSize);
     }
 
     [AvaloniaFact]
