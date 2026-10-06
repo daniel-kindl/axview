@@ -53,6 +53,7 @@ internal sealed class PreviewWindow : Window
         Icon = AppIcon.Get();
         Width = 1280;
         Height = 800;
+        Resources.MergedDictionaries.Add(ChromeStyle.CreateResources());
         Settings settings = model.Settings;
         if (settings.Window is not null)
         {
@@ -66,36 +67,43 @@ internal sealed class PreviewWindow : Window
         viewModelSwitch = new ViewModelSwitch(model.ViewModelTypes);
         viewModelSwitch.SelectionChanged += (_, _) => model.SelectViewModel(viewModelSwitch.SelectedType);
 
-        status = new TextBlock { Margin = new Thickness(8, 4), FontSize = 12, TextTrimming = TextTrimming.CharacterEllipsis };
+        status = new TextBlock
+        {
+            Margin = new Thickness(ChromeStyle.SpacingMedium, ChromeStyle.SpacingSmall),
+            FontSize = ChromeStyle.FontSizeNormal,
+            TextTrimming = TextTrimming.CharacterEllipsis,
+        };
         ToolTip.SetTip(status, string.Join(Environment.NewLine, notes));
+        TextBlock noDataContextText = new() { Text = "No DataContext", FontSize = ChromeStyle.FontSizeSmall };
+        ChromeStyle.SetBrush(noDataContextText, TextBlock.ForegroundProperty, ChromeStyle.StatusForegroundBrushKey);
         noDataContextBadge = new Border
         {
             IsVisible = false,
-            Margin = new Thickness(8, 2),
+            Margin = new Thickness(ChromeStyle.SpacingMedium, ChromeStyle.SpacingExtraSmall),
             Padding = new Thickness(6, 1),
-            CornerRadius = new CornerRadius(3),
-            Background = new SolidColorBrush(Color.FromRgb(0xB0, 0x6A, 0x00)),
-            Child = new TextBlock { Text = "No DataContext", FontSize = 11, Foreground = Brushes.White },
+            CornerRadius = new CornerRadius(ChromeStyle.CornerRadius),
+            Child = noDataContextText,
         };
+        ChromeStyle.SetBrush(noDataContextBadge, Border.BackgroundProperty, ChromeStyle.WarningBrushKey);
         ToolTip.SetTip(noDataContextBadge, "Select a ViewModel, set Design.DataContext, or make x:DataType creatable. See AxViewDesign.CreateServices.");
         DockPanel.SetDock(noDataContextBadge, Dock.Right);
 
         errorText = new SelectableTextBlock
         {
             TextWrapping = TextWrapping.Wrap,
-            Foreground = Brushes.White,
             FontFamily = monospace,
-            FontSize = 12,
+            FontSize = ChromeStyle.FontSizeNormal,
         };
+        ChromeStyle.SetBrush(errorText, TextBlock.ForegroundProperty, ChromeStyle.StatusForegroundBrushKey);
         errorPanel = new Border
         {
             IsVisible = false,
             VerticalAlignment = VerticalAlignment.Bottom,
             MaxHeight = 320,
-            Padding = new Thickness(12),
-            Background = new SolidColorBrush(Color.FromArgb(0xE6, 0x8B, 0x1A, 0x1A)),
+            Padding = new Thickness(ChromeStyle.SpacingLarge),
             Child = new ScrollViewer { Content = errorText },
         };
+        ChromeStyle.SetBrush(errorPanel, Border.BackgroundProperty, ChromeStyle.ErrorBrushKey);
 
         filter = new TextBox { Watermark = "Filter", Margin = new Thickness(8) };
         filter.PropertyChanged += (_, e) =>
@@ -124,8 +132,8 @@ internal sealed class PreviewWindow : Window
         {
             Child = new DockPanel { Children = { noDataContextBadge, status } },
             BorderThickness = new Thickness(0, 1, 0, 0),
-            BorderBrush = Brushes.Gray,
         };
+        ChromeStyle.SetBrush(statusBar, Border.BorderBrushProperty, ChromeStyle.BorderBrushKey);
         DockPanel.SetDock(statusBar, Dock.Bottom);
 
         Grid body = new() { ColumnDefinitions = new ColumnDefinitions($"{SidebarWidth},Auto,*") };
@@ -246,8 +254,8 @@ internal sealed class PreviewWindow : Window
                 },
             },
             BorderThickness = new Thickness(0, 0, 0, 1),
-            BorderBrush = Brushes.Gray,
         };
+        ChromeStyle.SetBrush(toolbar, Border.BorderBrushProperty, ChromeStyle.BorderBrushKey);
         DockPanel.SetDock(toolbar, Dock.Top);
         return new DockPanel { Children = { toolbar, preview } };
     }

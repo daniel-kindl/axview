@@ -1,6 +1,7 @@
 extern alias host;
 
 using Avalonia.Headless.XUnit;
+using Avalonia.Styling;
 using Avalonia.Threading;
 
 using AxView.Tests.Fixtures;
@@ -35,5 +36,19 @@ public sealed class PreviewWindowTests
 
         Assert.Equal($"AxView - {Path.Combine("Views", "Main.axaml")}", window.Title);
         Assert.True(File.Exists(options.SettingsFile));
+    }
+
+    [AvaloniaFact]
+    public void PreviewWindow_TakesEachBrushFromTheChromeStyle()
+    {
+        using TempDir view = new();
+        string file = view.Write("Views/Main.axaml", TextBlockXaml);
+        HostOptions options = new(file, view.Path, "AxView.Tests", null, "Loader.dll", null, null);
+        ProjectSet projects = ProjectSet.Load(options);
+        AppStyles appStyles = new(TargetStyles.None, () => TargetStyles.None, projects.CreateRenderers(DesignServices.None));
+
+        PreviewWindow window = new(options, projects, [], DesignServices.None, appStyles) { RequestedThemeVariant = ThemeVariant.Dark };
+
+        ChromeBrushes.AssertFromChromeStyle(window, ThemeVariant.Dark);
     }
 }

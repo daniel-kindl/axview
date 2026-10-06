@@ -33,6 +33,7 @@ internal sealed class PickerWindow : Window
         Width = 640;
         Height = 460;
         WindowStartupLocation = WindowStartupLocation.CenterScreen;
+        Resources.MergedDictionaries.Add(ChromeStyle.CreateResources());
 
         Button openButton = new() { Content = "Open AXAML file...", HorizontalAlignment = HorizontalAlignment.Left };
         openButton.Click += async (_, _) => await PickAsync();
@@ -56,17 +57,18 @@ internal sealed class PickerWindow : Window
         noRecentFiles = new TextBlock { Text = NoRecentFilesText, Opacity = 0.7 };
         DockPanel.SetDock(noRecentFiles, Dock.Top);
 
-        message = new TextBlock { TextWrapping = TextWrapping.Wrap, Foreground = Brushes.IndianRed, IsVisible = false };
+        message = new TextBlock { TextWrapping = TextWrapping.Wrap, IsVisible = false };
+        ChromeStyle.SetBrush(message, TextBlock.ForegroundProperty, ChromeStyle.ErrorBrushKey);
 
-        TextBlock title = new() { Text = "AxView", FontSize = 28, FontWeight = FontWeight.SemiBold };
+        TextBlock title = new() { Text = "AxView", FontSize = ChromeStyle.FontSizeTitle, FontWeight = FontWeight.SemiBold };
         TextBlock subtitle = new() { Text = "Render any Avalonia AXAML file. It reloads when you save.", Opacity = 0.7 };
         recentHeader = new TextBlock { Text = "Recent (double-click to open)", FontWeight = FontWeight.SemiBold };
-        StackPanel buttons = new() { Orientation = Orientation.Horizontal, Spacing = 8, Children = { openButton, aboutButton } };
+        StackPanel buttons = new() { Orientation = Orientation.Horizontal, Spacing = ChromeStyle.SpacingMedium, Children = { openButton, aboutButton } };
 
-        DockPanel layout = new() { Margin = new Thickness(24) };
+        DockPanel layout = new() { Margin = new Thickness(ChromeStyle.SpacingExtraLarge) };
         foreach (Control top in new Control[] { title, subtitle, buttons, message, recentHeader })
         {
-            top.Margin = new Thickness(0, 0, 0, 12);
+            top.Margin = new Thickness(0, 0, 0, ChromeStyle.SpacingLarge);
             DockPanel.SetDock(top, Dock.Top);
             layout.Children.Add(top);
         }
