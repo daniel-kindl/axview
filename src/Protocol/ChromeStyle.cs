@@ -63,6 +63,9 @@ internal static class ChromeStyle
     /// <summary>The resource key of the brush of an error, as text or as a fill.</summary>
     public const string ErrorBrushKey = "AxView.Chrome.ErrorBrush";
 
+    /// <summary>The resource key of the neutral brush of the backdrop around the preview.</summary>
+    public const string StageBrushKey = "AxView.Chrome.StageBrush";
+
     /// <summary>The resource key of the brush of text on a warning or an error fill.</summary>
     public const string StatusForegroundBrushKey = "AxView.Chrome.StatusForegroundBrush";
 
@@ -74,9 +77,9 @@ internal static class ChromeStyle
             ThemeDictionaries =
             {
                 [ThemeVariant.Light] = CreateBrushes(
-                    border: "#D6D6D6", mutedText: "#616161", accent: "#7B3F85", warning: "#9D5D00", error: "#C42B1C"),
+                    border: "#D6D6D6", mutedText: "#616161", accent: "#7B3F85", warning: "#9D5D00", error: "#C42B1C", stage: "#E8E8E8"),
                 [ThemeVariant.Dark] = CreateBrushes(
-                    border: "#404040", mutedText: "#A6A6A6", accent: "#C792D0", warning: "#C77700", error: "#E0493E"),
+                    border: "#404040", mutedText: "#A6A6A6", accent: "#C792D0", warning: "#C77700", error: "#E0493E", stage: "#141414"),
             },
         };
 
@@ -87,7 +90,8 @@ internal static class ChromeStyle
     public static void SetBrush(StyledElement element, AvaloniaProperty property, string key) =>
         _ = element.Bind(property, element.GetResourceObservable(key));
 
-    private static ResourceDictionary CreateBrushes(string border, string mutedText, string accent, string warning, string error) =>
+    private static ResourceDictionary CreateBrushes(
+        string border, string mutedText, string accent, string warning, string error, string stage) =>
         new()
         {
             [BorderBrushKey] = CreateBrush(border),
@@ -95,6 +99,7 @@ internal static class ChromeStyle
             [AccentBrushKey] = CreateBrush(accent),
             [WarningBrushKey] = CreateBrush(warning),
             [ErrorBrushKey] = CreateBrush(error),
+            [StageBrushKey] = CreateBrush(stage),
             [StatusForegroundBrushKey] = new SolidColorBrush(Colors.White),
         };
 

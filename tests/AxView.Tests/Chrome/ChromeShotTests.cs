@@ -49,6 +49,11 @@ public sealed class ChromeShotTests
 
     [AvaloniaTheory]
     [MemberData(nameof(Looks))]
+    public void PreviewWindow_WithASizePreset(ChromeLook look) =>
+        SavePreview("preview-size", ViewXaml, look, """{ "Size": { "Preset": "Custom", "Width": 480, "Height": 360 } }""");
+
+    [AvaloniaTheory]
+    [MemberData(nameof(Looks))]
     public void PreviewWindow_WithAnError(ChromeLook look) => SavePreview("preview-error", BrokenXaml, look);
 
     [AvaloniaTheory]
@@ -106,7 +111,7 @@ public sealed class ChromeShotTests
     private static PathIcon CreateIcon(ChromeIcon icon, double size) =>
         new() { Width = size, Height = size, Data = ChromeIcons.CreateGeometry(icon) };
 
-    private static void SavePreview(string name, string xaml, ChromeLook look)
+    private static void SavePreview(string name, string xaml, ChromeLook look, string? settingsJson = null)
     {
         using TempDir view = new();
         string file = view.Write("Desktop/Views/MainView.axaml", xaml);
@@ -114,7 +119,10 @@ public sealed class ChromeShotTests
         _ = view.Write("Desktop/Styles/Buttons.axaml", """<Styles xmlns="https://github.com/avaloniaui" />""");
 
         // The sidebar shows the name of the project folder.
-        HostOptions options = new(file, Path.Combine(view.Path, "Desktop"), "AxView.Tests", null, "Loader.dll", null, null);
+        HostOptions options = new(file, Path.Combine(view.Path, "Desktop"), "AxView.Tests", null, "Loader.dll", null, null)
+        {
+            SettingsFile = settingsJson is null ? null : view.Write("settings.json", settingsJson),
+        };
         ProjectSet projects = ProjectSet.Load(options);
         AppStyles appStyles = new(TargetStyles.None, () => TargetStyles.None, projects.CreateRenderers(DesignServices.None));
 

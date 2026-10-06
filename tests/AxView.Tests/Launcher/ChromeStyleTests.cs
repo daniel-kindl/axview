@@ -17,6 +17,7 @@ public sealed class ChromeStyleTests
         ChromeStyle.AccentBrushKey,
         ChromeStyle.WarningBrushKey,
         ChromeStyle.ErrorBrushKey,
+        ChromeStyle.StageBrushKey,
     ];
 
     [AvaloniaTheory]

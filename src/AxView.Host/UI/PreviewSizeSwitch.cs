@@ -7,10 +7,7 @@ using AxView.Protocol;
 namespace AxView.Host.UI;
 
 /// <summary>Lets the user select the size of the preview: a preset, or a custom width and height.</summary>
-/// <remarks>
-/// Fit clears the size of the target, so the target fills the free space.
-/// A typed width or height selects Custom.
-/// </remarks>
+/// <remarks>A typed width or height selects Custom.</remarks>
 internal sealed class PreviewSizeSwitch : StackPanel
 {
     private const double MinimumSide = 1;
@@ -23,13 +20,13 @@ internal sealed class PreviewSizeSwitch : StackPanel
         [PreviewSizePreset.Desktop] = new Size(1920, 1080),
     };
 
-    private readonly Layoutable target;
+    private readonly PreviewStage target;
     private readonly ComboBox presets;
     private readonly NumericUpDown widthBox;
     private readonly NumericUpDown heightBox;
     private bool isSyncing;
 
-    public PreviewSizeSwitch(Layoutable target)
+    public PreviewSizeSwitch(PreviewStage target)
     {
         this.target = target;
         Orientation = Orientation.Horizontal;
@@ -127,17 +124,5 @@ internal sealed class PreviewSizeSwitch : StackPanel
         isSyncing = false;
     }
 
-    private void Apply()
-    {
-        PreviewSize size = Size;
-        if (size.Preset == PreviewSizePreset.Fit)
-        {
-            target.ClearValue(WidthProperty);
-            target.ClearValue(HeightProperty);
-            return;
-        }
-
-        target.Width = size.Width;
-        target.Height = size.Height;
-    }
+    private void Apply() => target.Size = Size;
 }

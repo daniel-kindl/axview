@@ -32,6 +32,7 @@ internal sealed class PreviewWindow : Window
     private readonly PreviewWindowModel model;
     private readonly ContentControl host = new();
     private readonly PreviewScope scope;
+    private readonly PreviewStage stage;
     private readonly Border errorPanel;
     private readonly SelectableTextBlock errorText;
     private readonly TextBlock status;
@@ -49,6 +50,7 @@ internal sealed class PreviewWindow : Window
         model = new PreviewWindowModel(options, projects, services, appStyles, AddWindowState, Shutdown);
         scope = new PreviewScope(model.Styles);
         host.Content = scope;
+        stage = new PreviewStage(host);
 
         Icon = AppIcon.Get();
         Width = 1280;
@@ -63,7 +65,7 @@ internal sealed class PreviewWindow : Window
         // Without a settings file, the window has no placement to keep.
         placementTracker = options.SettingsFile is null ? null : new WindowPlacementTracker(this);
         themeSwitch = new ThemeSwitch(scope) { SelectedItem = settings.Theme };
-        sizeSwitch = new PreviewSizeSwitch(host) { Size = settings.Size };
+        sizeSwitch = new PreviewSizeSwitch(stage) { Size = settings.Size };
         viewModelSwitch = new ViewModelSwitch(model.ViewModelTypes);
         viewModelSwitch.SelectionChanged += (_, _) => model.SelectViewModel(viewModelSwitch.SelectedType);
 
@@ -127,7 +129,7 @@ internal sealed class PreviewWindow : Window
         openButton.Click += async (_, _) => await OpenAsync();
 
         Control sidebar = BuildSidebar(openButton);
-        Control stage = BuildStage();
+        Control previewArea = BuildPreviewArea();
         Border statusBar = new()
         {
             Child = new DockPanel { Children = { noDataContextBadge, status } },
@@ -141,8 +143,8 @@ internal sealed class PreviewWindow : Window
         GridSplitter splitter = new() { Width = 4, ResizeDirection = GridResizeDirection.Columns };
         Grid.SetColumn(splitter, 1);
         body.Children.Add(splitter);
-        Grid.SetColumn(stage, 2);
-        body.Children.Add(stage);
+        Grid.SetColumn(previewArea, 2);
+        body.Children.Add(previewArea);
 
         Content = new DockPanel { Children = { statusBar, body } };
 
@@ -230,14 +232,10 @@ internal sealed class PreviewWindow : Window
         return sidebar;
     }
 
-    private DockPanel BuildStage()
+    private DockPanel BuildPreviewArea()
     {
         Grid preview = new();
-        preview.Children.Add(new ScrollViewer
-        {
-            HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
-            Content = host,
-        });
+        preview.Children.Add(stage);
         preview.Children.Add(errorPanel);
 
         Button aboutButton = ChromeControls.CreateIconButton(ChromeIcon.About, "About AxView");

@@ -14,7 +14,7 @@ public sealed class PreviewSizeSwitchTests
     [AvaloniaFact]
     public void New_SelectsFit()
     {
-        PreviewSizeSwitch sizeSwitch = new(new ContentControl());
+        PreviewSizeSwitch sizeSwitch = new(new PreviewStage(new ContentControl()));
 
         Assert.Equal(PreviewSize.Fit, sizeSwitch.Size);
     }
@@ -24,7 +24,7 @@ public sealed class PreviewSizeSwitchTests
     {
         ContentControl target = new();
 
-        _ = new PreviewSizeSwitch(target) { Size = new PreviewSize(PreviewSizePreset.Phone, 0, 0) };
+        _ = new PreviewSizeSwitch(new PreviewStage(target)) { Size = new PreviewSize(PreviewSizePreset.Phone, 0, 0) };
 
         Assert.Equal(390, target.Width);
         Assert.Equal(844, target.Height);
@@ -35,7 +35,7 @@ public sealed class PreviewSizeSwitchTests
     {
         ContentControl target = new();
 
-        _ = new PreviewSizeSwitch(target) { Size = new PreviewSize(PreviewSizePreset.Custom, 500, 300) };
+        _ = new PreviewSizeSwitch(new PreviewStage(target)) { Size = new PreviewSize(PreviewSizePreset.Custom, 500, 300) };
 
         Assert.Equal(500, target.Width);
         Assert.Equal(300, target.Height);
@@ -45,7 +45,7 @@ public sealed class PreviewSizeSwitchTests
     public void SetSize_Fit_ClearsTheSizeSoTheTargetFillsTheSpace()
     {
         ContentControl target = new();
-        PreviewSizeSwitch sizeSwitch = new(target) { Size = new PreviewSize(PreviewSizePreset.Tablet, 0, 0) };
+        PreviewSizeSwitch sizeSwitch = new(new PreviewStage(target)) { Size = new PreviewSize(PreviewSizePreset.Tablet, 0, 0) };
 
         sizeSwitch.Size = PreviewSize.Fit;
 
@@ -56,7 +56,7 @@ public sealed class PreviewSizeSwitchTests
     [AvaloniaFact]
     public void Size_GivesThePresetDimensions()
     {
-        PreviewSizeSwitch sizeSwitch = new(new ContentControl()) { Size = new PreviewSize(PreviewSizePreset.Desktop, 0, 0) };
+        PreviewSizeSwitch sizeSwitch = new(new PreviewStage(new ContentControl())) { Size = new PreviewSize(PreviewSizePreset.Desktop, 0, 0) };
 
         Assert.Equal(new PreviewSize(PreviewSizePreset.Desktop, 1920, 1080), sizeSwitch.Size);
     }
@@ -65,7 +65,7 @@ public sealed class PreviewSizeSwitchTests
     public void TypeWidth_OnAPreset_SelectsCustomAndKeepsTheHeight()
     {
         ContentControl target = new();
-        PreviewSizeSwitch sizeSwitch = new(target) { Size = new PreviewSize(PreviewSizePreset.Phone, 0, 0) };
+        PreviewSizeSwitch sizeSwitch = new(new PreviewStage(target)) { Size = new PreviewSize(PreviewSizePreset.Phone, 0, 0) };
 
         sizeSwitch.Children.OfType<NumericUpDown>().First().Value = 500;
 
@@ -77,7 +77,7 @@ public sealed class PreviewSizeSwitchTests
     [AvaloniaFact]
     public void SetSize_Fit_HidesTheWidthAndHeight()
     {
-        PreviewSizeSwitch sizeSwitch = new(new ContentControl()) { Size = new PreviewSize(PreviewSizePreset.Phone, 0, 0) };
+        PreviewSizeSwitch sizeSwitch = new(new PreviewStage(new ContentControl())) { Size = new PreviewSize(PreviewSizePreset.Phone, 0, 0) };
 
         sizeSwitch.Size = PreviewSize.Fit;
 
