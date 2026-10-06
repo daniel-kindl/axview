@@ -1,7 +1,9 @@
 extern alias host;
 
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
+using Avalonia.Layout;
 using Avalonia.Media.Imaging;
 
 using AxView.Building;
@@ -75,6 +77,34 @@ public sealed class ChromeShotTests
     [MemberData(nameof(Looks))]
     public void BuildWindow_WithABuildLine(ChromeLook look) =>
         AssertSaved(() => CreateBuildWindow("  Desktop -> /work/Desktop/bin/Debug/net8.0/Desktop.dll"), "build", look);
+
+    [AvaloniaTheory]
+    [MemberData(nameof(Looks))]
+    public void Icons_InEachSize(ChromeLook look) => AssertSaved(CreateIconWindow, "icons", look);
+
+    private static Window CreateIconWindow()
+    {
+        StackPanel rows = new() { Margin = new Thickness(ChromeStyle.SpacingLarge), Spacing = ChromeStyle.SpacingMedium };
+        foreach (ChromeIcon icon in Enum.GetValues<ChromeIcon>())
+        {
+            rows.Children.Add(new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Spacing = ChromeStyle.SpacingLarge,
+                Children =
+                {
+                    CreateIcon(icon, ChromeIcons.Size),
+                    CreateIcon(icon, ChromeIcons.Size * 2),
+                    new TextBlock { Text = icon.ToString(), VerticalAlignment = VerticalAlignment.Center },
+                },
+            });
+        }
+
+        return new Window { Width = 200, SizeToContent = SizeToContent.Height, Content = rows };
+    }
+
+    private static PathIcon CreateIcon(ChromeIcon icon, double size) =>
+        new() { Width = size, Height = size, Data = ChromeIcons.CreateGeometry(icon) };
 
     private static void SavePreview(string name, string xaml, ChromeLook look)
     {
