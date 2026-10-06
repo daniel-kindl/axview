@@ -12,6 +12,9 @@ Do not change or use again a number.
 
 ## Later
 
+- [ ] #61 **Gallery: keyed control themes (S).** The gallery shows only style classes.
+  Add a row for each `ControlTheme` with a key in the app resources, for example `Theme="{StaticResource PillButton}"`.
+
 - [ ] #59 **Avalonia 11 host tests (M).** The test project tests only the Avalonia 12 host build (ADR 0002).
   Find a way to run the host tests also on the Avalonia 11 build, for example a second test run in CI.
 
@@ -77,3 +80,4 @@ Each known issue is now an item: #30 to #39.
 - [x] #57 Version test on a tag: the test project writes the MinVer version. The test compares the launcher version with it. `ec8bd65`
 - [x] #37 Own chrome theme: the launcher gets `Avalonia.Themes.Simple` from NuGet when the app ships no theme. `d200d03`
 - [x] #58 README: what AxView does, the build, the options, the snapshot modes, and `settings.json`. `cb9462b`
+- [x] #60 Control gallery: a file list entry shows the common controls in each state and each app style class. `--snapshot-all` writes `axview-gallery.png`. `800b60d`
