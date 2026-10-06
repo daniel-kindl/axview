@@ -23,11 +23,14 @@ public sealed class AboutInfoTests
     [Fact]
     public void Read_GivesTheVersionFromTheGitTags()
     {
-        // The SDK gives 1.0.0 when nothing sets the version. MinVer gives 0.0.0-alpha.0.<height> without a tag.
+        // The test project writes the version that MinVer calculates. A tag on HEAD does not change the result.
+        string expected = typeof(AboutInfoTests).Assembly.GetCustomAttributes<AssemblyMetadataAttribute>()
+            .Single(attribute => attribute.Key == "MinVerVersion").Value!;
+
         AboutInfo info = AboutInfo.Read(typeof(AboutInfo).Assembly);
 
-        Assert.NotEqual("1.0.0", info.Version);
-        Assert.Matches(@"^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$", info.Version);
+        Assert.NotEmpty(expected);
+        Assert.Equal(expected, info.Version);
     }
 
     [Fact]

@@ -28,6 +28,17 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
+  <!-- AboutInfoTests compares the launcher version with the MinVer version. The source archive has no MinVer version. -->
+  <Target Name="AddMinVerVersionMetadata" DependsOnTargets="MinVer" BeforeTargets="GetAssemblyAttributes">
+    <PropertyGroup>
+      <ExpectedMinVerVersion>$(MinVerVersion)</ExpectedMinVerVersion>
+      <ExpectedMinVerVersion Condition="'$(MinVerSkip)' == 'true'">$(Version)</ExpectedMinVerVersion>
+    </PropertyGroup>
+    <ItemGroup>
+      <AssemblyMetadata Include="MinVerVersion" Value="$(ExpectedMinVerVersion)" />
+    </ItemGroup>
+  </Target>
+
   <ItemGroup>
     <ProjectReference Include="..\..\src\AxView\AxView.csproj" />
     <!-- Both assemblies compile the host protocol. The alias prevents duplicate type names. -->
