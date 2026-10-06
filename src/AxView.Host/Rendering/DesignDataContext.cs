@@ -75,11 +75,34 @@ internal static partial class DesignDataContext
     /// <remarks>The constructors of the design types are user code. They can throw any exception.</remarks>
     public static void Apply(Control root, string xaml, Func<string, string, Type?> findType, DesignServices services)
     {
-        // Also applies Design.Width, Design.Height, and Design.DesignStyle.
-        Design.ApplyDesignModeProperties(root, root);
+        ApplyDesignModeProperties(root);
         XElement element = XDocument.Parse(xaml).Root!;
         root.DataContext ??= services.CreateOrNull(FindDesignType(element, findType))
             ?? services.CreateOrNull(FindDataType(element, xaml, findType));
+    }
+
+    // Does what Design.ApplyDesignModeProperties does. Avalonia 12 removes that method from its public API.
+    private static void ApplyDesignModeProperties(Control root)
+    {
+        if (root.IsSet(Design.WidthProperty))
+        {
+            root.Width = Design.GetWidth(root);
+        }
+
+        if (root.IsSet(Design.HeightProperty))
+        {
+            root.Height = Design.GetHeight(root);
+        }
+
+        if (root.IsSet(Design.DataContextProperty))
+        {
+            root.DataContext = Design.GetDataContext(root);
+        }
+
+        if (root.IsSet(Design.DesignStyleProperty))
+        {
+            root.Styles.Add(Design.GetDesignStyle(root));
+        }
     }
 
     private static bool IsCreatable(Type type) => type.GetConstructor(Type.EmptyTypes) is not null;

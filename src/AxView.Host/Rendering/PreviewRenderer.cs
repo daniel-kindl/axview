@@ -105,7 +105,8 @@ internal sealed class PreviewRenderer(Assembly localAssembly, string projectDire
     private static Control WithStyle<TStyle>(TStyle style)
         where TStyle : AvaloniaObject, IStyle
     {
-        Control preview = Design.GetPreviewWith(style) ?? throw NoPreviewWith(style);
+        // Avalonia 12 also has an IStyle overload. The cast selects the overload that Avalonia 11 has too.
+        Control preview = Design.GetPreviewWith((AvaloniaObject)style) ?? throw NoPreviewWith(style);
         preview.Styles.Add(style);
         return preview;
     }

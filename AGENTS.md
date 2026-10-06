@@ -13,6 +13,7 @@ AxView renders one Avalonia AXAML file of any project, and reloads it when the f
 - `src/AxView.Host`: the host. The launcher starts it with `dotnet exec` and the target app's deps and runtimeconfig.
   The host then runs on the target's Avalonia version.
   Its window lists the project's AXAML files. It switches between them in the same process.
+- `src/AxView.Host12`: the host build for Avalonia 12. It compiles the sources of `AxView.Host` against Avalonia 12.0.
 - `tests/AxView.Tests`: tests for the launcher.
 
 ## Work list

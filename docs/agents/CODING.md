@@ -133,7 +133,9 @@ Order members in this sequence:
 ## Host
 
 - The host runs inside the target app's runtime. Do not add package references with runtime assets to `AxView.Host`.
-- `AxView.Host` compiles against the Avalonia 11.0 API. Bind a newer API by reflection, and keep a fallback.
+- `AxView.Host` compiles against the Avalonia 11.0 API. `AxView.Host12` compiles the same sources against the Avalonia 12.0 API.
+- Write host code that compiles against both APIs. Do not use `#if`. ADR 0002 gives the reason.
+- Bind an API that only a newer Avalonia version has by reflection, and keep a fallback.
 - Do not run the target app's startup code. Import only what `Application.Initialize` loads.
 
 ## Portability

@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The host for apps on Avalonia 12 and later. Avalonia 12 breaks the binary API of Avalonia 11.
+    This project compiles the sources of AxView.Host against the Avalonia 12.0 API.
+    The launcher selects the host build from the Avalonia version of the app.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <UseAppHost>false</UseAppHost>
+    <AssemblyName>AxView.Host</AssemblyName>
+    <RootNamespace>AxView.Host</RootNamespace>
+    <!-- The sources use the Avalonia 11.0 API. Avalonia 12 marks some of it obsolete, for example TextBox.Watermark. -->
+    <NoWarn>$(NoWarn);CS0618</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\AxView.Host\**\*.cs" Exclude="..\AxView.Host\bin\**;..\AxView.Host\obj\**" Link="%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\Protocol\*.cs" Link="Protocol\%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="12.0.0" ExcludeAssets="runtime" />
+    <PackageReference Include="Avalonia.Desktop" Version="12.0.0" ExcludeAssets="runtime" />
+    <PackageReference Include="Avalonia.Markup.Xaml.Loader" Version="12.0.0" ExcludeAssets="runtime" />
+  </ItemGroup>
+
+</Project>

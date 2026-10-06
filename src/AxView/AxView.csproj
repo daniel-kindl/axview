@@ -24,21 +24,28 @@
     <PackageReference Include="Avalonia.Fonts.Inter" Version="11.3.22" />
   </ItemGroup>
 
-  <!-- The host runs inside the target app's runtime. Build it, but do not reference it. -->
+  <!--
+    The host runs inside the target app's runtime. Build it, but do not reference it.
+    Each host build goes to its HostFolder next to the launcher. DotnetHostProcess selects the folder.
+  -->
   <ItemGroup>
-    <ProjectReference Include="..\AxView.Host\AxView.Host.csproj" ReferenceOutputAssembly="false" />
+    <HostProject Include="..\AxView.Host\AxView.Host.csproj" HostFolder="host" />
+    <HostProject Include="..\AxView.Host12\AxView.Host12.csproj" HostFolder="host12" />
+    <ProjectReference Include="@(HostProject)" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
   <Target Name="CopyHost" AfterTargets="Build">
-    <MSBuild Projects="..\AxView.Host\AxView.Host.csproj" Targets="GetTargetPath" Properties="Configuration=$(Configuration)">
+    <MSBuild Projects="@(HostProject)" Targets="GetTargetPath" Properties="Configuration=$(Configuration)">
       <Output TaskParameter="TargetOutputs" ItemName="HostAssembly" />
     </MSBuild>
-    <Copy SourceFiles="@(HostAssembly);@(HostAssembly->'%(RootDir)%(Directory)%(Filename).pdb')" DestinationFolder="$(OutDir)host" SkipUnchangedFiles="true" />
+    <ItemGroup>
+      <HostFile Include="@(HostAssembly);@(HostAssembly->'%(RootDir)%(Directory)%(Filename).pdb')" />
+    </ItemGroup>
+    <Copy SourceFiles="@(HostFile)" DestinationFiles="@(HostFile->'$(OutDir)%(HostFolder)\%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
   </Target>
 
-  <!-- The launcher looks for the host in the host folder next to it. -->
   <Target Name="PublishHost" AfterTargets="Publish" DependsOnTargets="CopyHost">
-    <Copy SourceFiles="@(HostAssembly);@(HostAssembly->'%(RootDir)%(Directory)%(Filename).pdb')" DestinationFolder="$(PublishDir)host" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(HostFile)" DestinationFiles="@(HostFile->'$(PublishDir)%(HostFolder)\%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
   </Target>
 
 </Project>

@@ -6,6 +6,24 @@ namespace AxView.Tests.Launcher;
 
 public sealed class DotnetHostProcessTests
 {
+    [Theory]
+    [InlineData("11.0.0", "host")]
+    [InlineData("11.3.22", "host")]
+    [InlineData("12.0.0-rc1", "host12")]
+    [InlineData("12.1.3", "host12")]
+    public void HostPath_SelectsTheHostBuildOfTheAvaloniaMajorVersion(string avaloniaVersion, string folder)
+    {
+        string toolDirectory = Path.Combine(Path.GetTempPath(), "tool");
+
+        string hostPath = DotnetHostProcess.HostPath(toolDirectory, avaloniaVersion);
+
+        Assert.Equal(Path.Combine(toolDirectory, folder, "AxView.Host.dll"), hostPath);
+    }
+
+    [Fact]
+    public void HostPath_RejectsAVersionWithoutAMajorNumber() =>
+        Assert.Throws<PreviewSetupException>(() => DotnetHostProcess.HostPath("/tool", "next"));
+
     [Fact]
     public void Arguments_RunTheHostInsideTheTargetRuntime()
     {

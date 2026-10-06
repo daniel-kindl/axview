@@ -11,6 +11,7 @@ _Avoid_: CLI, client
 
 **Host**:
 The process that shows the preview. It runs inside the runtime of the target app.
+The launcher ships one host build for each Avalonia major version: `host` for Avalonia 11, `host12` for Avalonia 12.
 _Avoid_: previewer, server, child
 
 **Session**:

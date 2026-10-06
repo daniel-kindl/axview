@@ -145,6 +145,38 @@ public sealed class PreviewRendererTests
     }
 
     [AvaloniaFact]
+    public void Render_AppliesTheDesignSize()
+    {
+        using TempDir dir = new();
+        string file = dir.Write("Views/Sized.axaml", $"""
+            <UserControl {AvaloniaXmlns} Design.Width="300" Design.Height="200" />
+            """);
+
+        Control preview = Renderer(dir).Render(file).Control;
+
+        Assert.Equal((300, 200), (preview.Width, preview.Height));
+    }
+
+    [AvaloniaFact]
+    public void Render_AddsTheDesignStyle()
+    {
+        using TempDir dir = new();
+        string file = dir.Write("Views/Styled.axaml", $"""
+            <UserControl {AvaloniaXmlns}>
+              <Design.DesignStyle>
+                <Style Selector="UserControl">
+                  <Setter Property="Tag" Value="Designed" />
+                </Style>
+              </Design.DesignStyle>
+            </UserControl>
+            """);
+
+        Control preview = Renderer(dir).Render(file).Control;
+
+        _ = Assert.Single(preview.Styles);
+    }
+
+    [AvaloniaFact]
     public void Render_SelectedViewModel_ReplacesTheDesignDataContext()
     {
         using TempDir dir = new();

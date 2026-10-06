@@ -73,7 +73,7 @@ function New-BinaryArchive {
         Remove-Item $publish -Recurse -Force
     }
 
-    # The launcher project copies the host into the host folder of the output.
+    # The launcher project copies each host build into its host folder of the output.
     Invoke-Native dotnet @('publish', (Join-Path $PSScriptRoot 'src' 'AxView'), '-c', 'Release', '-o', $publish)
 
     # AboutInfo shows the informational version without the source revision.
