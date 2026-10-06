@@ -16,7 +16,7 @@ namespace AxView.Host.Rendering;
 /// <item><description>The rebuild watch of the C# files.</description></item>
 /// </list>
 /// Only the launcher can build the app or open another project. Thus a rebuild or a project switch gives a
-/// <see cref="StopRequested"/> event. The owner saves the hand-off and stops the host.
+/// <see cref="StopRequested"/> event after the preview saved the hand-off. The owner stops the host.
 /// Without a hand-off file in the options, there is no rebuild watch, and a file of another project gives an error.
 /// </remarks>
 internal sealed class ProjectPreview : IDisposable
@@ -30,9 +30,6 @@ internal sealed class ProjectPreview : IDisposable
     private readonly Dictionary<string, string> viewModels;
     private readonly List<FileChangeWatcher> watchers = [];
     private readonly ChangedIncludes viewIncludes;
-
-    // The include error of the last load. The window clears its error after a load, so report it after the change.
-    private string? viewIncludeError;
 
     /// <summary>Starts the watches of the code files and of the include files. Call <see cref="Show"/> to show a file.</summary>
     /// <param name="options">The options of the host.</param>
@@ -51,15 +48,14 @@ internal sealed class ProjectPreview : IDisposable
         ViewModelTypes = ViewModelCatalog.List(projects.ViewAssembly, services);
         viewIncludes = appStyles.CreateViewIncludes();
         livePreview = new LivePreview(projects.CreateViewRenderer(services), viewIncludes);
-        livePreview.Rendered += (_, _) => viewIncludeError = viewIncludes.Error;
-        livePreview.Changed += (_, _) => OnChanged();
+        livePreview.Changed += (_, _) => Changed?.Invoke(this, EventArgs.Empty);
 
-        if (options.HandOffFile is not null)
+        if (options.HandOffFile is string handOffFile)
         {
             // A library view also needs a rebuild when the code of the app or of a referenced project changes.
             foreach (string directory in projects.CodeDirectories)
             {
-                watchers.Add(FileChangeWatcher.ForCodeFiles(directory, () => RequestStop(ExitReason.Rebuild, FilePath)));
+                watchers.Add(FileChangeWatcher.ForCodeFiles(directory, () => Stop(handOffFile, ExitReason.Rebuild, FilePath)));
             }
         }
 
@@ -70,13 +66,17 @@ internal sealed class ProjectPreview : IDisposable
         }
     }
 
-    /// <summary>Occurs after a load of the shown file or a dispatcher error. See <see cref="LivePreview.Changed"/>.</summary>
+    /// <summary>
+    /// Occurs after a load of the shown file, a dispatcher error, or a change of <see cref="StylesError"/>.
+    /// See <see cref="LivePreview.Changed"/>.
+    /// </summary>
     public event EventHandler? Changed;
 
-    /// <summary>Occurs on an error that is not an error of the shown file. For example, a broken include.</summary>
+    /// <summary>Occurs when the user opens a file that the host cannot show.</summary>
     public event EventHandler<string>? Failed;
 
-    /// <summary>Occurs when the launcher must build the app or open another project.</summary>
+    /// <summary>Occurs when the launcher must build the app or open another project. The hand-off file is saved.</summary>
+    /// <remarks>The owner must stop the host with the exit reason of the hand-off.</remarks>
     public event EventHandler<HandOff>? StopRequested;
 
     /// <summary>Gets the full path of the shown file. Empty before the first <see cref="Show"/>.</summary>
@@ -88,8 +88,15 @@ internal sealed class ProjectPreview : IDisposable
     /// <summary>Gets a value that tells if <see cref="View"/> is the preview of a style or resource root.</summary>
     public bool IsStylePreview => livePreview.IsStylePreview;
 
-    /// <summary>Gets the message of the most recent error of the shown file. Null after a good load.</summary>
-    public string? Error => livePreview.Error;
+    /// <summary>Gets the errors of the most recent load of the shown file and of its include files. Null after a good load.</summary>
+    public string? Error =>
+        livePreview.Error is null || viewIncludes.Error is null
+            ? livePreview.Error ?? viewIncludes.Error
+            : string.Join(Environment.NewLine, livePreview.Error, viewIncludes.Error);
+
+    /// <summary>Gets the errors of the app file and of its include files after the last change. Null when all load.</summary>
+    /// <remarks>An app file or an include file that does not load keeps the old styles. The error stays until a fix loads.</remarks>
+    public string? StylesError { get; private set; }
 
     /// <summary>Gets the AXAML files of the project, with full paths. Empty before the first <see cref="RefreshCatalog"/>.</summary>
     public IReadOnlyList<string> Catalog { get; private set; } = [];
@@ -127,13 +134,13 @@ internal sealed class ProjectPreview : IDisposable
         }
 
         // A file of another project needs that project's app runtime. Only the launcher can start it.
-        if (options.HandOffFile is null)
+        if (options.HandOffFile is not string handOffFile)
         {
             Failed?.Invoke(this, $"'{path}' belongs to another project. Start axview with that file.");
             return;
         }
 
-        RequestStop(ExitReason.SwitchProject, fullPath);
+        Stop(handOffFile, ExitReason.SwitchProject, fullPath);
     }
 
     /// <summary>Selects the ViewModel of the shown file and loads the file again.</summary>
@@ -163,33 +170,27 @@ internal sealed class ProjectPreview : IDisposable
         livePreview.Dispose();
     }
 
-    private void OnChanged()
-    {
-        Changed?.Invoke(this, EventArgs.Empty);
-        string? error = viewIncludeError;
-        viewIncludeError = null;
-        if (error is not null)
-        {
-            Failed?.Invoke(this, error);
-        }
-    }
-
     // A StaticResource does not follow a change of the resources. Thus render the preview again.
     // The render loads the changed includes of the shown file, and reports their errors.
     private void UpdateIncludes()
     {
         IncludeUpdate appUpdate = appStyles.Update();
+        bool isErrorChanged = appUpdate.Error != StylesError;
+        StylesError = appUpdate.Error;
         if (appUpdate.IsChanged || viewIncludes.IsOutdated())
         {
             livePreview.Reload();
         }
-
-        if (appUpdate.Error is not null)
+        else if (isErrorChanged)
         {
-            Failed?.Invoke(this, appUpdate.Error);
+            Changed?.Invoke(this, EventArgs.Empty);
         }
     }
 
-    private void RequestStop(ExitReason reason, string nextFile) =>
-        StopRequested?.Invoke(this, new HandOff(reason, Path.GetFullPath(nextFile)));
+    private void Stop(string handOffFile, ExitReason reason, string nextFile)
+    {
+        HandOff handOff = new(reason, Path.GetFullPath(nextFile));
+        _ = handOff.Save(handOffFile);
+        StopRequested?.Invoke(this, handOff);
+    }
 }

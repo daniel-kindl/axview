@@ -36,7 +36,7 @@ public sealed class ProjectPreviewTests
     }
 
     [AvaloniaFact]
-    public void Open_FileOfAnotherProject_RequestsASwitchToThatFile()
+    public void Open_FileOfAnotherProject_SavesAHandOffToThatFile()
     {
         using TempDir view = new();
         using TempDir other = new();
@@ -52,6 +52,7 @@ public sealed class ProjectPreviewTests
         Assert.NotNull(request);
         Assert.Equal(ExitReason.SwitchProject, request.Reason);
         Assert.Equal(Path.GetFullPath(otherFile), request.NextFile);
+        Assert.Equal(request, HandOff.Take(Path.Combine(view.Path, "hand-off.json"), (int)request.Reason));
     }
 
     [AvaloniaFact]
@@ -123,6 +124,51 @@ public sealed class ProjectPreviewTests
 
         Assert.True(WaitForChange(preview));
         Assert.Equal("Second", Assert.IsType<TextBlock>(Assert.IsType<Border>(Assert.IsType<Decorator>(preview.View).Child).Child).Text);
+    }
+
+    [AvaloniaFact]
+    public void IncludeChange_ToABrokenFile_GivesTheIncludeErrorInError()
+    {
+        using TempDir view = new();
+        string file = view.Write("Views/Main.axaml", """
+            <TextBlock xmlns="https://github.com/avaloniaui">
+              <TextBlock.Resources>
+                <ResourceDictionary>
+                  <ResourceDictionary.MergedDictionaries>
+                    <ResourceInclude Source="/Styles/Texts.axaml" />
+                  </ResourceDictionary.MergedDictionaries>
+                </ResourceDictionary>
+              </TextBlock.Resources>
+            </TextBlock>
+            """);
+        string texts = view.Write("Styles/Texts.axaml", TextResources("Before"));
+        using ProjectPreview preview = Create(Options(view, file));
+        File.WriteAllText(texts, TextResources("First"));
+        preview.Show(file);
+
+        File.WriteAllText(texts, "<ResourceDictionary");
+
+        Assert.True(WaitForChange(preview));
+        Assert.Contains($"{Path.Combine("Styles", "Texts.axaml")}: ", preview.Error, StringComparison.Ordinal);
+    }
+
+    [AvaloniaFact]
+    public void AppFileChange_ToABrokenFile_GivesTheErrorInStylesError()
+    {
+        using TempDir view = new();
+        string file = view.Write("Views/Main.axaml", TextBlockXaml);
+        string app = view.Write("App.axaml", """<Application xmlns="https://github.com/avaloniaui" />""");
+        ProjectSet projects = ProjectSet.Load(Options(view, file));
+        AppStyles appStyles = new(TargetStyles.None, () => TargetStyles.None, projects.CreateRenderers(DesignServices.None));
+        _ = appStyles.CreateCopy();
+        using ProjectPreview preview = new(Options(view, file), projects, DesignServices.None, appStyles, new Dictionary<string, string>());
+        preview.Show(file);
+
+        File.WriteAllText(app, "<Application");
+
+        Assert.True(WaitForChange(preview));
+        Assert.Contains("App.axaml", preview.StylesError, StringComparison.Ordinal);
+        Assert.Null(preview.Error);
     }
 
     private static string TextResources(string text) => $"""

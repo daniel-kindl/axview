@@ -19,25 +19,17 @@ namespace AxView.Host.UI;
 /// Keeps the last good render when a load fails.
 /// </summary>
 /// <remarks>
-/// The <see cref="ProjectPreview"/> owns the preview logic. The window keeps the layout, the settings file, and the shutdown.
-/// On a stop request of the preview, the window writes the hand-off file and stops the host.
+/// The <see cref="PreviewWindowModel"/> owns the state. The window keeps the layout, and shows the model after each change.
 /// </remarks>
-[SuppressMessage("Design", "CA1001", Justification = "OnClosed disposes the preview. A window has no Dispose.")]
+[SuppressMessage("Design", "CA1001", Justification = "OnClosed disposes the model. A window has no Dispose.")]
 internal sealed class PreviewWindow : Window
 {
     private const double SidebarWidth = 280;
 
-    // The file list shows the gallery as the first entry. No relative path of a project file is empty.
-    private const string GalleryEntry = "";
-    private const string GalleryTitle = "Control gallery";
-
     private static readonly FontFamily monospace = new("Cascadia Mono, Consolas, Menlo, DejaVu Sans Mono, monospace");
-    private static readonly StringComparison pathComparison =
-        OperatingSystem.IsLinux() ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
 
     private readonly HostOptions options;
-    private readonly ProjectSet projects;
-    private readonly ProjectPreview preview;
+    private readonly PreviewWindowModel model;
     private readonly ContentControl host = new();
     private readonly PreviewScope scope;
     private readonly Border errorPanel;
@@ -50,20 +42,18 @@ internal sealed class PreviewWindow : Window
     private readonly PreviewSizeSwitch sizeSwitch;
     private readonly ViewModelSwitch viewModelSwitch;
     private readonly WindowPlacementTracker? placementTracker;
-    private bool isSyncingSelection;
-    private bool isGalleryShown;
 
     public PreviewWindow(HostOptions options, ProjectSet projects, IReadOnlyList<string> notes, DesignServices services, AppStyles appStyles)
     {
         this.options = options;
-        this.projects = projects;
-        scope = new PreviewScope(appStyles.CreateCopy());
+        model = new PreviewWindowModel(options, projects, services, appStyles, AddWindowState, Shutdown);
+        scope = new PreviewScope(model.Styles);
         host.Content = scope;
 
         Icon = AppIcon.Get();
         Width = 1280;
         Height = 800;
-        Settings settings = options.SettingsFile is null ? Settings.Default : Settings.Load(options.SettingsFile);
+        Settings settings = model.Settings;
         if (settings.Window is not null)
         {
             WindowPlacementTracker.Apply(this, settings.Window);
@@ -73,12 +63,8 @@ internal sealed class PreviewWindow : Window
         placementTracker = options.SettingsFile is null ? null : new WindowPlacementTracker(this);
         themeSwitch = new ThemeSwitch(scope) { SelectedItem = settings.Theme };
         sizeSwitch = new PreviewSizeSwitch(host) { Size = settings.Size };
-        preview = new ProjectPreview(options, projects, services, appStyles, settings.ViewModels);
-        preview.Changed += (_, _) => ShowPreview();
-        preview.Failed += (_, message) => ShowError(message);
-        preview.StopRequested += (_, handOff) => StopWithHandOff(handOff);
-        viewModelSwitch = new ViewModelSwitch(preview.ViewModelTypes);
-        viewModelSwitch.SelectionChanged += (_, _) => OnViewModelSelected();
+        viewModelSwitch = new ViewModelSwitch(model.ViewModelTypes);
+        viewModelSwitch.SelectionChanged += (_, _) => model.SelectViewModel(viewModelSwitch.SelectedType);
 
         status = new TextBlock { Margin = new Thickness(8, 4), FontSize = 12, TextTrimming = TextTrimming.CharacterEllipsis };
         ToolTip.SetTip(status, string.Join(Environment.NewLine, notes));
@@ -116,12 +102,18 @@ internal sealed class PreviewWindow : Window
         {
             if (e.Property == TextBox.TextProperty)
             {
-                ShowCatalog();
+                model.SetFilter(filter.Text ?? string.Empty);
             }
         };
 
-        fileList = new ListBox { ItemTemplate = new FuncDataTemplate<string>((relative, _) => FileItem(relative)) };
-        fileList.SelectionChanged += (_, _) => OnFileSelected();
+        fileList = new ListBox { ItemTemplate = new FuncDataTemplate<FileListEntry>((entry, _) => FileItem(entry)) };
+        fileList.SelectionChanged += (_, _) =>
+        {
+            if (fileList.SelectedItem is FileListEntry entry)
+            {
+                model.Select(entry);
+            }
+        };
 
         Button openButton = new() { Content = "Open...", Margin = new Thickness(8), HorizontalAlignment = HorizontalAlignment.Stretch };
         openButton.Click += async (_, _) => await OpenAsync();
@@ -147,14 +139,9 @@ internal sealed class PreviewWindow : Window
         Content = new DockPanel { Children = { statusBar, body } };
 
         // The user can add files while the window is open.
-        Activated += (_, _) => RefreshCatalog();
-
-        Show(options.AxamlPath);
-        RefreshCatalog();
-        if (options.SetupError is not null)
-        {
-            ShowError(options.SetupError);
-        }
+        Activated += (_, _) => model.RefreshCatalog();
+        model.Changed += (_, _) => ShowModel();
+        ShowModel();
     }
 
     // Save before the window closes. A closed window has no position.
@@ -163,14 +150,41 @@ internal sealed class PreviewWindow : Window
         base.OnClosing(e);
         if (!e.Cancel)
         {
-            SaveSettings();
+            model.SaveSettings();
         }
     }
 
     protected override void OnClosed(EventArgs e)
     {
-        preview.Dispose();
+        model.Dispose();
         base.OnClosed(e);
+    }
+
+    private static void Shutdown(int exitCode)
+    {
+        if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+        {
+            desktop.Shutdown(exitCode);
+        }
+    }
+
+    // The title first, so a long folder path does not hide the file name.
+    private static StackPanel FileItem(FileListEntry? entry)
+    {
+        StackPanel item = new() { Spacing = 1 };
+        if (entry is null)
+        {
+            return item;
+        }
+
+        item.Children.Add(new TextBlock { Text = entry.Title, TextTrimming = TextTrimming.CharacterEllipsis });
+        item.Children.Add(new TextBlock { Text = entry.Detail, FontSize = 11, Opacity = 0.6, TextTrimming = TextTrimming.CharacterEllipsis });
+        if (entry.RelativePath is not null)
+        {
+            ToolTip.SetTip(item, entry.RelativePath);
+        }
+
+        return item;
     }
 
     private DockPanel BuildSidebar(Button openButton)
@@ -193,40 +207,6 @@ internal sealed class PreviewWindow : Window
         sidebar.Children.Add(openButton);
         sidebar.Children.Add(fileList);
         return sidebar;
-    }
-
-    // The gallery entry is the only empty item of the file list.
-    private static bool IsGalleryEntry(string item) => item.Length == GalleryEntry.Length;
-
-    // The file name first, so a long folder path does not hide it.
-    private static StackPanel FileItem(string? relative)
-    {
-        string path = relative ?? string.Empty;
-        if (IsGalleryEntry(path))
-        {
-            return new StackPanel
-            {
-                Spacing = 1,
-                Children =
-                {
-                    new TextBlock { Text = GalleryTitle },
-                    new TextBlock { Text = "The controls in each state, with the app styles", FontSize = 11, Opacity = 0.6 },
-                },
-            };
-        }
-
-        string folder = Path.GetDirectoryName(path)?.Replace(Path.DirectorySeparatorChar, '/') ?? string.Empty;
-        StackPanel item = new() { Spacing = 1 };
-        item.Children.Add(new TextBlock { Text = Path.GetFileNameWithoutExtension(path), TextTrimming = TextTrimming.CharacterEllipsis });
-        item.Children.Add(new TextBlock
-        {
-            Text = folder.Length == 0 ? "/" : folder,
-            FontSize = 11,
-            Opacity = 0.6,
-            TextTrimming = TextTrimming.CharacterEllipsis,
-        });
-        ToolTip.SetTip(item, path);
-        return item;
     }
 
     private DockPanel BuildStage()
@@ -272,89 +252,16 @@ internal sealed class PreviewWindow : Window
         return new DockPanel { Children = { toolbar, preview } };
     }
 
-    private void SaveSettings()
-    {
-        if (placementTracker is not null)
-        {
-            UpdateSettings(settings => settings with
+    // The model saves the settings. The window gives its placement, its theme, and its preview size.
+    private Settings AddWindowState(Settings settings) =>
+        placementTracker is null
+            ? settings
+            : settings with
             {
                 Window = placementTracker.GetPlacement(),
                 Theme = themeSwitch.SelectedItem is PreviewTheme theme ? theme : PreviewTheme.Default,
                 Size = sizeSwitch.Size,
-            });
-        }
-    }
-
-    // The settings file must not stop the host. A failed write only loses the changed values.
-    private void UpdateSettings(Func<Settings, Settings> change)
-    {
-        if (options.SettingsFile is null)
-        {
-            return;
-        }
-
-        try
-        {
-            change(Settings.Load(options.SettingsFile)).Save(options.SettingsFile);
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            Console.Error.WriteLine($"axview: cannot save the settings: {ex.Message}");
-        }
-    }
-
-    // Save the choice now. A hand-off stops the host without a close of the window.
-    private void OnViewModelSelected()
-    {
-        if (isSyncingSelection)
-        {
-            return;
-        }
-
-        preview.SelectViewModel(viewModelSwitch.SelectedType);
-        UpdateSettings(settings => settings with { ViewModels = new Dictionary<string, string>(preview.ViewModels) });
-    }
-
-    private void RefreshCatalog()
-    {
-        preview.RefreshCatalog();
-        ShowCatalog();
-    }
-
-    private void ShowCatalog()
-    {
-        string text = filter.Text ?? string.Empty;
-        List<string> items = [.. preview.Catalog
-            .Select(RelativePath)
-            .Where(p => p.Contains(text, StringComparison.OrdinalIgnoreCase))];
-        if (GalleryTitle.Contains(text, StringComparison.OrdinalIgnoreCase))
-        {
-            items.Insert(0, GalleryEntry);
-        }
-
-        isSyncingSelection = true;
-        fileList.ItemsSource = items;
-        string shown = isGalleryShown ? GalleryEntry : RelativePath(preview.FilePath);
-        fileList.SelectedItem = items.FirstOrDefault(p => string.Equals(p, shown, pathComparison));
-        isSyncingSelection = false;
-    }
-
-    private void OnFileSelected()
-    {
-        if (isSyncingSelection || fileList.SelectedItem is not string relative)
-        {
-            return;
-        }
-
-        if (IsGalleryEntry(relative))
-        {
-            ShowGallery();
-        }
-        else
-        {
-            Show(Path.Combine(options.ProjectDirectory, relative));
-        }
-    }
+            };
 
     private async Task OpenAsync()
     {
@@ -369,96 +276,26 @@ internal sealed class PreviewWindow : Window
         string? path = picked.Count == 1 ? picked[0].TryGetLocalPath() : null;
         if (path is not null)
         {
-            isGalleryShown = false;
-            preview.Open(path);
-            ShowShownFile();
+            model.Open(path);
         }
     }
 
-    // The shutdown does not close the window. Thus save the settings first, so the next host opens at the same place.
-    // The preview gives a stop request only when the options have a hand-off file.
-    private void StopWithHandOff(HandOff handOff)
+    // A change of a selection calls the model again. The model ignores the selection of the shown item.
+    private void ShowModel()
     {
-        SaveSettings();
-        int exitCode = handOff.Save(options.HandOffFile!);
-        if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+        Title = model.Title;
+        if (!ReferenceEquals(fileList.ItemsSource, model.Entries))
         {
-            desktop.Shutdown(exitCode);
-        }
-    }
-
-    private void Show(string path)
-    {
-        isGalleryShown = false;
-        preview.Show(path);
-        ShowShownFile();
-    }
-
-    private void ShowGallery()
-    {
-        isGalleryShown = true;
-        Title = $"AxView - {GalleryTitle}";
-        viewModelSwitch.IsEnabled = false;
-        noDataContextBadge.IsVisible = false;
-        HideError();
-        CreateGallery();
-        status.Text = $"{GalleryTitle}   Output: {OutputDirectory()}";
-        ShowCatalog();
-    }
-
-    // Show the title, the ViewModel, and the list selection of the shown file.
-    private void ShowShownFile()
-    {
-        Title = $"AxView - {RelativePath(preview.FilePath)}";
-        viewModelSwitch.IsEnabled = true;
-        isSyncingSelection = true;
-        viewModelSwitch.SelectedTypeName = preview.ViewModelName;
-        isSyncingSelection = false;
-        ShowCatalog();
-    }
-
-    // The scope has the app styles and resources. An include reload can add or remove a style class or a keyed theme.
-    private void CreateGallery() => scope.Content = ControlGallery.Create(scope.Styles, scope.Resources);
-
-    // The preview of the file stays live behind the gallery. It shows again when the user selects a file.
-    // The preview changes also after an include reload. Then the gallery gets the changed style classes.
-    private void ShowPreview()
-    {
-        if (isGalleryShown)
-        {
-            CreateGallery();
-            return;
+            fileList.ItemsSource = model.Entries;
         }
 
-        scope.Content = preview.View;
-        noDataContextBadge.IsVisible = preview.View is { DataContext: null } && !preview.IsStylePreview;
-        if (preview.Error is not null)
-        {
-            ShowError(preview.Error);
-            return;
-        }
-
-        HideError();
-        status.Text = $"Rendered {DateTime.Now:HH:mm:ss}   {preview.FilePath}   Output: {OutputDirectory()}";
-        Console.WriteLine($"axview: rendered {RelativePath(preview.FilePath)}");
+        fileList.SelectedItem = model.SelectedEntry;
+        scope.Content = model.Content;
+        noDataContextBadge.IsVisible = model.IsDataContextMissing;
+        errorText.Text = model.Error;
+        errorPanel.IsVisible = model.Error is not null;
+        status.Text = model.Status;
+        viewModelSwitch.IsEnabled = model.CanSelectViewModel;
+        viewModelSwitch.SelectedTypeName = model.ViewModelName;
     }
-
-    private void ShowError(string message)
-    {
-        errorText.Text = message;
-        errorPanel.IsVisible = true;
-        Console.Error.WriteLine($"axview: error: {errorText.Text}");
-        status.Text = preview.View is null
-            ? $"Error {DateTime.Now:HH:mm:ss}   {preview.FilePath}"
-            : $"Error {DateTime.Now:HH:mm:ss}. Showing the last good render.   {preview.FilePath}";
-    }
-
-    // The app output folder shows which build the preview uses, for example Debug or Release.
-    private string OutputDirectory() =>
-        Path.GetDirectoryName(projects.ViewAssembly.Location) ?? string.Empty;
-
-    private void HideError() => errorPanel.IsVisible = false;
-
-    private string RelativePath(string path) =>
-        Path.GetRelativePath(options.ProjectDirectory, path);
 }
