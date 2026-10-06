@@ -9,7 +9,47 @@ Do not change or use again a number.
 
 ## Now
 
+- [ ] #67 **Chrome snapshots (S).** An agent cannot see the chrome. `--snapshot` captures only the preview.
+  Add a headless test helper that writes a PNG of each window:
+  - the preview window, with a view, with an error, and with no DataContext,
+  - the picker, with recent files and with none,
+  - the build window.
+
+  Write the PNGs to a folder that git ignores. Use them to check #68 to #76.
+
 ## Next
+
+UI overhaul. Goal: a modern, consistent look. Each item must work on Fluent and Simple, Light and Dark, and Avalonia 11 and 12.
+
+- [ ] #68 **Chrome style module (M).** Add one style set in `src/Protocol` for the launcher and the host.
+  It gives a spacing scale, font sizes, a corner radius, and theme brushes for border, muted text, accent, warning, and error.
+  Replace each hard-coded brush: `Brushes.Gray`, `Brushes.IndianRed`, the orange badge, and the red error panel.
+  The chrome theme can be Fluent or Simple. Use only resource keys that both themes have, or define the brushes per variant.
+- [ ] #69 **Icons (S).** Add a small set of vector icons as path geometries in `src/Protocol`. Use no package.
+  Icons: open, about, theme, size, copy, collapse, file kinds (view, styles, resources, gallery), warning, error.
+- [ ] #70 **Preview toolbar (M).** Put the controls in groups with a label or an icon: theme, size, DataContext.
+  Use separators between the groups. Give each icon button a tooltip.
+  Move About to the right edge as an icon button.
+- [ ] #71 **Preview stage (M).** Show a neutral backdrop around the preview.
+  For a size preset, show the preview as a card with a border and a shadow, centered, and the size below it.
+  Fit fills the stage with no card.
+- [ ] #72 **Error panel (M).** Show the error as a theme card at the bottom of the stage, not a red overlay.
+  The card has a header, a "Last good render" note, a copy button, and a collapse button.
+  Keep the monospace text selectable.
+- [ ] #73 **Sidebar (M).** Restyle the sidebar:
+  - a project header with the project path as a tooltip, and the Open button as an icon button,
+  - a filter box with a search icon,
+  - file rows with a file kind icon and a clear selected state,
+  - a button that collapses the sidebar. The settings file keeps the state.
+- [ ] #74 **Status bar (S).** Show segments with separators: the status text, the output folder, and the DataContext badge.
+  Show the badge as a pill with the warning brush.
+- [ ] #75 **Picker window (M).** Restyle the start screen:
+  - a header with the app icon, the name, and the subtitle,
+  - a primary Open button and an About icon button,
+  - recent rows with a file icon, the file name, and the folder,
+  - the error message as a card with the error brush, not red text.
+- [ ] #76 **Build window (S).** Restyle the build window: the app icon, the app name, the time as `m:ss`, and the last line in monospace.
+  Use the style module from #68.
 
 ## Later
 
