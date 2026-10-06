@@ -10,15 +10,6 @@ Do not change or use again a number.
 
 Items #63 to #66 come from the architecture review of 2026-10-06.
 
-- [ ] #64 **Window model (M).** A headless `PreviewWindowModel` owns the state of the preview window:
-  - the file list with the filter, the gallery entry, and the selection
-  - the shown item: a file or the control gallery
-  - the status: the error, the status line, the title, and the DataContext badge
-  - the settings file and the stop with a hand-off
-
-  `PreviewWindow` only binds its controls to the model. Tests for each rule run without a window.
-  `ProjectPreview` gives the include error of the last load in `Error`. Its deferred `Failed` event for this error goes.
-  While the gallery shows, an include change rebuilds the gallery, and the status names the gallery.
 - [ ] #65 **Snapshot runner (S).** One module runs `--snapshot` and `--snapshot-all`, and gives the exit reason.
   It finds the ViewModel, waits for the settle time, and writes the PNG files.
   `PreviewApp` only selects the mode. An unknown ViewModel gets a headless test.
@@ -98,3 +89,4 @@ Each known issue is now an item: #30 to #39.
 - [x] #62 Strict analyzers: all CA rules (`latest-all`) and all IDE rules are errors. `.editorconfig` tells the reason for each rule that is off. `66a48a7`
 - [x] #61 Gallery: each keyed `ControlTheme` of the app resources and app styles gets a row. Avalonia themes are ignored. `7ede774`
 - [x] #63 Hand-off module: `HandOff` carries the exit reason. `Save` gives the exit code. `Take` reads and deletes the file in the launcher. `563f027`
+- [x] #64 Window model: `PreviewWindowModel` owns the file list, the shown item, the status, and the settings. `ProjectPreview` gives `Error` and `StylesError`, and saves the hand-off. `9069225`
