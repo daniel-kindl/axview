@@ -53,5 +53,5 @@ A task is done only when all of these conditions are true:
 ## Verify
 
 - Run `dotnet build` and `dotnet test`.
-- For a host change, render a real view: `dotnet src/AxView/bin/Debug/net9.0/axview.dll <file.axaml> --snapshot <file.png>`.
+- For a host change, render a real view: `dotnet src/AxView/bin/Debug/net10.0/axview.dll <file.axaml> --snapshot <file.png>`.
 - Look at the PNG. A non-zero exit code means the render failed.
