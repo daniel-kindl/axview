@@ -23,6 +23,7 @@ public sealed class ProgramTests
     [Theory]
     [InlineData("--size", "Phone")]
     [InlineData("--theme", "Dark")]
+    [InlineData("--tree", "tree.json")]
     public void Main_RejectsARenderFlagWithoutASnapshot(string key, string value)
     {
         int exitCode = Program.Main(["Main.axaml", key, value]);

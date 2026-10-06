@@ -1,5 +1,7 @@
 extern alias host;
 
+using System.Text.Json;
+
 using Avalonia;
 using Avalonia.Headless.XUnit;
 using Avalonia.Media.Imaging;
@@ -58,6 +60,36 @@ public sealed class SnapshotRunnerTests
 
         using Bitmap bitmap = new(Path.Combine(output, "Views", "Hello.png"));
         Assert.Equal(new PixelSize(500, 300), bitmap.PixelSize);
+    }
+
+    [AvaloniaFact]
+    public async Task RunAsync_SnapshotWithATree_WritesTheTreeOfTheViewAsync()
+    {
+        using TempDir dir = new();
+        string file = dir.Write("Views/Hello.axaml", $"""<TextBlock {AvaloniaXmlns} Text="Hello" />""");
+        string tree = Path.Combine(dir.Path, "out", "tree.json");
+        HostOptions options = Options(dir, file) with { SnapshotPath = Path.Combine(dir.Path, "hello.png"), TreePath = tree };
+
+        ExitReason reason = await Runner(dir).RunAsync(options);
+
+        Assert.Equal(ExitReason.Ok, reason);
+        using JsonDocument document = JsonDocument.Parse(await File.ReadAllTextAsync(tree));
+        Assert.Equal("TextBlock", document.RootElement.GetProperty("Type").GetString());
+        Assert.Equal("Hello", document.RootElement.GetProperty("Text").GetString());
+    }
+
+    [AvaloniaFact]
+    public async Task RunAsync_SnapshotOfABrokenFileWithATree_WritesNoTreeAsync()
+    {
+        using TempDir dir = new();
+        string file = dir.Write("Views/Broken.axaml", "<TextBlock");
+        string tree = Path.Combine(dir.Path, "tree.json");
+        HostOptions options = Options(dir, file) with { SnapshotPath = Path.Combine(dir.Path, "broken.png"), TreePath = tree };
+
+        ExitReason reason = await Runner(dir).RunAsync(options);
+
+        Assert.Equal(ExitReason.RenderFailed, reason);
+        Assert.False(File.Exists(tree));
     }
 
     [AvaloniaFact]

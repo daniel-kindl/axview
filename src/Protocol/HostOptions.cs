@@ -32,6 +32,7 @@ namespace AxView.Protocol;
 /// <param name="ChromeThemePath">If set, the Simple theme assembly for the chrome. The launcher sets it when the app ships no theme.</param>
 /// <param name="Size">If set, the size of each snapshot. <see cref="PreviewSize.Parse"/> reads the value.</param>
 /// <param name="Theme">If set, the theme variant of each snapshot. <see cref="ParseTheme"/> reads the value.</param>
+/// <param name="TreePath">If set, the host saves the visual tree of the snapshot to this JSON file.</param>
 internal sealed record HostOptions(
     string AxamlPath,
     string ProjectDirectory,
@@ -48,7 +49,8 @@ internal sealed record HostOptions(
     string? ReferencedProjects = null,
     string? ChromeThemePath = null,
     PreviewSize? Size = null,
-    PreviewTheme? Theme = null)
+    PreviewTheme? Theme = null,
+    string? TreePath = null)
 {
     private const string AxamlKey = "--axaml";
     private const string ProjectKey = "--project";
@@ -66,11 +68,12 @@ internal sealed record HostOptions(
     private const string ChromeThemeKey = "--chrome-theme";
     private const string SizeKey = "--size";
     private const string ThemeKey = "--theme";
+    private const string TreeKey = "--tree";
 
     private static readonly string[] keys =
     [
         AxamlKey, ProjectKey, AssemblyKey, AppAssemblyKey, LoaderKey, SnapshotKey, HandOffKey, SetupErrorKey, SettingsKey, AppProjectKey,
-        SnapshotAllKey, ViewModelKey, ReferencedProjectsKey, ChromeThemeKey, SizeKey, ThemeKey,
+        SnapshotAllKey, ViewModelKey, ReferencedProjectsKey, ChromeThemeKey, SizeKey, ThemeKey, TreeKey,
     ];
 
     /// <summary>Gets the host mode. A snapshot folder selects <see cref="HostMode.SnapshotAll"/>, a snapshot path <see cref="HostMode.Snapshot"/>.</summary>
@@ -82,34 +85,33 @@ internal sealed record HostOptions(
         ReferencedProjects?.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries) ?? [];
 
     /// <summary>Makes sure that the snapshot options select one host mode. The launcher and the host use the same check.</summary>
-    /// <param name="snapshotPath">The value of <c>--snapshot</c>, or null.</param>
-    /// <param name="snapshotAllDirectory">The value of <c>--snapshot-all</c>, or null.</param>
-    /// <param name="viewModelName">The value of <c>--view-model</c>, or null.</param>
-    /// <param name="size">The value of <c>--size</c>, or null.</param>
-    /// <param name="theme">The value of <c>--theme</c>, or null.</param>
+    /// <param name="request">The snapshot options of the command line.</param>
     /// <exception cref="ArgumentException">
-    /// The options select more than one mode, a ViewModel without a snapshot, or a size or theme without a snapshot mode.
+    /// The options select more than one mode, a ViewModel or a tree without a snapshot, or a size or theme without a snapshot mode.
     /// </exception>
-    public static void ValidateMode(
-        string? snapshotPath, string? snapshotAllDirectory, string? viewModelName, PreviewSize? size = null, PreviewTheme? theme = null)
+    public static void ValidateMode(SnapshotRequest request)
     {
-        if (snapshotPath is not null && snapshotAllDirectory is not null)
+        if (request.Path is not null && request.AllDirectory is not null)
         {
             throw new ArgumentException($"Use {SnapshotKey} or {SnapshotAllKey}, not both.");
         }
 
-        if (viewModelName is not null && snapshotPath is null)
+        if (request.ViewModelName is not null && request.Path is null)
         {
             throw new ArgumentException($"{ViewModelKey} needs {SnapshotKey}.");
         }
 
-        bool isSnapshot = snapshotPath is not null || snapshotAllDirectory is not null;
-        if (size is not null && !isSnapshot)
+        if (request.TreePath is not null && request.Path is null)
+        {
+            throw new ArgumentException($"{TreeKey} needs {SnapshotKey}.");
+        }
+
+        if (request.Size is not null && !request.IsSnapshot)
         {
             throw new ArgumentException($"{SizeKey} needs {SnapshotKey} or {SnapshotAllKey}.");
         }
 
-        if (theme is not null && !isSnapshot)
+        if (request.Theme is not null && !request.IsSnapshot)
         {
             throw new ArgumentException($"{ThemeKey} needs {SnapshotKey} or {SnapshotAllKey}.");
         }
@@ -158,7 +160,8 @@ internal sealed record HostOptions(
         string? snapshotPath = values.GetValueOrDefault(SnapshotKey);
         string? snapshotAllDirectory = values.GetValueOrDefault(SnapshotAllKey);
         string? viewModelName = values.GetValueOrDefault(ViewModelKey);
-        ValidateMode(snapshotPath, snapshotAllDirectory, viewModelName, size, theme);
+        string? treePath = values.GetValueOrDefault(TreeKey);
+        ValidateMode(new SnapshotRequest(snapshotPath, snapshotAllDirectory, viewModelName, size, theme, treePath));
         return new HostOptions(
             Required(AxamlKey),
             Required(ProjectKey),
@@ -175,7 +178,8 @@ internal sealed record HostOptions(
             values.GetValueOrDefault(ReferencedProjectsKey),
             values.GetValueOrDefault(ChromeThemeKey),
             size,
-            theme);
+            theme,
+            treePath);
     }
 
     /// <summary>Writes the options as the host command line.</summary>
@@ -200,6 +204,7 @@ internal sealed record HostOptions(
         AddOptional(args, ChromeThemeKey, ChromeThemePath);
         AddOptional(args, SizeKey, Size?.ToArgument());
         AddOptional(args, ThemeKey, Theme?.ToString());
+        AddOptional(args, TreeKey, TreePath);
         return args;
     }
 

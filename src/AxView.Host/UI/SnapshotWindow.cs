@@ -57,6 +57,9 @@ internal sealed class SnapshotWindow : Window
     /// <remarks>A control that has the full size ignores this value.</remarks>
     public PreviewSize PreviewSize { get; set; } = PreviewSize.Fit;
 
+    /// <summary>Gets the preview of the file, or null when the load failed or the window shows a control.</summary>
+    public Control? View => livePreview?.View;
+
     /// <summary>Gets the error of the load or of a dispatcher job, or null.</summary>
     public string? Error => livePreview?.Error;
 

@@ -13,7 +13,7 @@ namespace AxView;
 internal static class Program
 {
     private const string Usage =
-        "usage: axview [<file.axaml> [--output <app-bin-dir>] [--snapshot <file.png> [--view-model <type>] | --snapshot-all <dir>]" +
+        "usage: axview [<file.axaml> [--output <app-bin-dir>] [--snapshot <file.png> [--view-model <type>] [--tree <file.json>] | --snapshot-all <dir>]" +
         " [--size <Fit|Phone|Tablet|Desktop|WxH>] [--theme <Default|Light|Dark>]]";
 
     [STAThread]
@@ -26,6 +26,7 @@ internal static class Program
         string? viewModel = null;
         string? sizeText = null;
         string? themeText = null;
+        string? tree = null;
         for (int i = 0; i < args.Length; i++)
         {
             switch (args[i])
@@ -48,6 +49,9 @@ internal static class Program
                 case "--theme" when i + 1 < args.Length:
                     themeText = args[++i];
                     break;
+                case "--tree" when i + 1 < args.Length:
+                    tree = Path.GetFullPath(args[++i]);
+                    break;
                 case "-h" or "--help":
                     Console.WriteLine(Usage);
                     return 0;
@@ -57,13 +61,13 @@ internal static class Program
             }
         }
 
-        PreviewSize? size;
-        PreviewTheme? theme;
+        SnapshotRequest request;
         try
         {
-            size = sizeText is null ? null : PreviewSize.Parse(sizeText);
-            theme = themeText is null ? null : HostOptions.ParseTheme(themeText);
-            HostOptions.ValidateMode(snapshot, snapshotAll, viewModel, size, theme);
+            PreviewSize? size = sizeText is null ? null : PreviewSize.Parse(sizeText);
+            PreviewTheme? theme = themeText is null ? null : HostOptions.ParseTheme(themeText);
+            request = new SnapshotRequest(snapshot, snapshotAll, viewModel, size, theme, tree);
+            HostOptions.ValidateMode(request);
         }
         catch (ArgumentException ex)
         {
@@ -80,16 +84,15 @@ internal static class Program
         try
         {
             RecentFiles recent = RecentFiles.ForCurrentUser();
-            if ((snapshot is not null) || (snapshotAll is not null))
+            if (request.IsSnapshot)
             {
                 using QuietBuildDisplay quietDisplay = new();
                 HostSession snapshotSession = HostSession.CreateDefault(recent.SettingsFile, quietDisplay);
-                Task<int> run = snapshotSession.RunAsync(axaml, outputDir, snapshot, recent.Add, snapshotAll, viewModel, size, theme);
-                return run.GetAwaiter().GetResult();
+                return snapshotSession.RunAsync(axaml, outputDir, recent.Add, request).GetAwaiter().GetResult();
             }
 
             HostSession session = HostSession.CreateDefault(recent.SettingsFile, new BuildWindowDisplay());
-            return RunWithBuildWindows(() => session.RunAsync(axaml, outputDir, snapshotPath: null, recent.Add));
+            return RunWithBuildWindows(() => session.RunAsync(axaml, outputDir, recent.Add));
         }
         catch (PreviewSetupException ex)
         {

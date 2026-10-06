@@ -41,17 +41,13 @@ internal sealed class HostSession(
 
     /// <param name="axamlPath">The first file to show.</param>
     /// <param name="outputDir">The app output to use, or null to find it.</param>
-    /// <param name="snapshotPath">If set, the host saves one PNG and exits.</param>
     /// <param name="opened">Called with each file that the session opens.</param>
-    /// <param name="snapshotAllDirectory">If set, the host saves a PNG of each file of the project in this folder and exits.</param>
-    /// <param name="viewModelName">If set, the full name of the ViewModel type for the DataContext of a snapshot.</param>
-    /// <param name="size">If set, the size of each snapshot.</param>
-    /// <param name="theme">If set, the theme variant of each snapshot.</param>
+    /// <param name="snapshot">The snapshot options, or null for the interactive preview.</param>
     /// <returns>The exit code of the last host.</returns>
     /// <exception cref="PreviewSetupException">The launcher cannot prepare the first file.</exception>
-    public async Task<int> RunAsync(string axamlPath, string? outputDir, string? snapshotPath, Action<string> opened, string? snapshotAllDirectory = null,
-        string? viewModelName = null, PreviewSize? size = null, PreviewTheme? theme = null)
+    public async Task<int> RunAsync(string axamlPath, string? outputDir, Action<string> opened, SnapshotRequest? snapshot = null)
     {
+        snapshot ??= SnapshotRequest.None;
         string handOffFile = Path.Combine(Path.GetTempPath(), $"axview-hand-off-{Guid.NewGuid():N}.json");
         PreviewTarget target = Open(axamlPath, outputDir, opened);
         string? setupError = null;
@@ -60,12 +56,13 @@ internal sealed class HostSession(
             while (true)
             {
                 await log.WriteLineAsync($"axview: {target.AssemblyName} in '{target.Output.Directory}'");
-                HostOptions options = target.ToHostOptions(snapshotPath, handOffFile, snapshotAllDirectory) with
+                HostOptions options = target.ToHostOptions(snapshot.Path, handOffFile, snapshot.AllDirectory) with
                 {
                     SetupError = setupError,
-                    ViewModelName = viewModelName,
-                    Size = size,
-                    Theme = theme,
+                    ViewModelName = snapshot.ViewModelName,
+                    Size = snapshot.Size,
+                    Theme = snapshot.Theme,
+                    TreePath = snapshot.TreePath,
                 };
 
                 // A snapshot must not depend on the last window of the user.

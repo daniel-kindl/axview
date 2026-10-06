@@ -157,7 +157,7 @@ internal sealed class PickerWindow : Window
         try
         {
             HostSession session = HostSession.CreateDefault(recent.SettingsFile, new BuildWindowDisplay());
-            int exitCode = await session.RunAsync(path, outputDir: null, snapshotPath: null, recent.Add);
+            int exitCode = await session.RunAsync(path, outputDir: null, recent.Add);
             if (exitCode == 0)
             {
                 Close();

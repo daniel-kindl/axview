@@ -32,7 +32,7 @@ To write the source and binary archives to `artifacts/`, run `./pack.ps1 all` (P
 ## Use
 
 ```text
-axview [<file.axaml> [--output <app-bin-dir>] [--snapshot <file.png> [--view-model <type>] | --snapshot-all <dir>]
+axview [<file.axaml> [--output <app-bin-dir>] [--snapshot <file.png> [--view-model <type>] [--tree <file.json>] | --snapshot-all <dir>]
        [--size <Fit|Phone|Tablet|Desktop|WxH>] [--theme <Default|Light|Dark>]]
 ```
 
@@ -51,6 +51,7 @@ axview [<file.axaml> [--output <app-bin-dir>] [--snapshot <file.png> [--view-mod
 | `--output <app-bin-dir>` | Use this app output. Without it, AxView finds the output: a Debug output wins, then the most recent build. |
 | `--snapshot <file.png>` | Write a PNG of the file, then exit. |
 | `--view-model <type>` | Set the DataContext of a `--snapshot` to a new instance of this ViewModel type (full name). |
+| `--tree <file.json>` | With `--snapshot`, also write the visual tree of the view to a JSON file. |
 | `--snapshot-all <dir>` | Write a PNG of each AXAML file of the project and `summary.txt` into the folder, then exit. |
 | `--size <size>` | Set the size of each snapshot: `Fit`, `Phone` (390×844), `Tablet` (820×1180), `Desktop` (1920×1080), or a width and height, for example `500x300`. `Fit` is 1280×800. |
 | `--theme <variant>` | Set the theme variant of each snapshot: `Default` (the variant of the app), `Light`, or `Dark`. |
@@ -101,6 +102,22 @@ FAIL    Views/Broken.axaml    The error text, on one line
 ```
 
 A failed file does not stop the run.
+
+`--tree` writes the visual tree of the `--snapshot` view, for agents and scripts.
+The file is one line of JSON, with one object for each visual:
+
+```json
+{"Type":"TextBlock","Name":"lblTitle","Classes":["title"],"X":0,"Y":0,"Width":500,"Height":19,
+ "IsVisible":true,"Text":"Hello","DataContext":"Ui.ViewModels.MainViewModel","Children":[]}
+```
+
+- `X`, `Y`, `Width`, and `Height` are relative to the view, in device-independent pixels.
+- `Classes` also has the pseudo-classes, for example `:disabled`.
+- `Text` is the text of a `TextBlock` or a `TextBox`.
+- `DataContext` is the full type name. It is only on the view and on each visual where the DataContext changes.
+- A value that is null is not in the file.
+
+A failed load writes no tree. Use `jq` to make the file easier to read.
 
 `--snapshot-all` also writes the control gallery to `axview-gallery.png`.
 The gallery has its full size. It ignores `--size`.

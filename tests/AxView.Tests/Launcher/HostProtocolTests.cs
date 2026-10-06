@@ -20,7 +20,8 @@ public sealed class HostProtocolTests
         ReferencedProjects: string.Join(Path.PathSeparator, "/src/Core", "/src/Common"),
         ChromeThemePath: "/nuget/theme.dll",
         Size: new PreviewSize(PreviewSizePreset.Custom, 500, 300),
-        Theme: PreviewTheme.Dark);
+        Theme: PreviewTheme.Dark,
+        TreePath: "/out/tree.json");
 
     [Fact]
     public void Parse_ReadsTheArgumentsThatToArgumentsWrites()
@@ -46,6 +47,7 @@ public sealed class HostProtocolTests
             ChromeThemePath = null,
             Size = null,
             Theme = null,
+            TreePath = null,
         };
 
         HostOptions parsed = HostOptions.Parse(options.ToArguments());
@@ -56,7 +58,7 @@ public sealed class HostProtocolTests
     [Fact]
     public void Parse_ReadsTheSnapshotFolder()
     {
-        HostOptions options = full with { SnapshotPath = null, ViewModelName = null, SnapshotAllDirectory = "/out/shots" };
+        HostOptions options = full with { SnapshotPath = null, ViewModelName = null, TreePath = null, SnapshotAllDirectory = "/out/shots" };
 
         HostOptions parsed = HostOptions.Parse(options.ToArguments());
 
@@ -67,8 +69,8 @@ public sealed class HostProtocolTests
     public void Mode_GivesTheHostModeOfTheOptions()
     {
         Assert.Equal(HostMode.Snapshot, full.Mode);
-        Assert.Equal(HostMode.Preview, (full with { SnapshotPath = null, ViewModelName = null }).Mode);
-        Assert.Equal(HostMode.SnapshotAll, (full with { SnapshotPath = null, ViewModelName = null, SnapshotAllDirectory = "/out" }).Mode);
+        Assert.Equal(HostMode.Preview, (full with { SnapshotPath = null, ViewModelName = null, TreePath = null }).Mode);
+        Assert.Equal(HostMode.SnapshotAll, (full with { SnapshotPath = null, ViewModelName = null, TreePath = null, SnapshotAllDirectory = "/out" }).Mode);
     }
 
     [Fact]
@@ -84,7 +86,7 @@ public sealed class HostProtocolTests
     [Fact]
     public void Parse_RejectsAViewModelWithoutASnapshot()
     {
-        string[] args = [.. (full with { SnapshotPath = null }).ToArguments()];
+        string[] args = [.. (full with { SnapshotPath = null, TreePath = null }).ToArguments()];
 
         ArgumentException ex = Assert.Throws<ArgumentException>(() => HostOptions.Parse(args));
 
@@ -94,7 +96,7 @@ public sealed class HostProtocolTests
     [Fact]
     public void Parse_RejectsAViewModelWithASnapshotFolder()
     {
-        string[] args = [.. (full with { SnapshotPath = null, SnapshotAllDirectory = "/out/shots" }).ToArguments()];
+        string[] args = [.. (full with { SnapshotPath = null, TreePath = null, SnapshotAllDirectory = "/out/shots" }).ToArguments()];
 
         ArgumentException ex = Assert.Throws<ArgumentException>(() => HostOptions.Parse(args));
 
@@ -104,11 +106,31 @@ public sealed class HostProtocolTests
     [Fact]
     public void Parse_ReadsTheRenderFlagsWithASnapshotFolder()
     {
-        HostOptions options = full with { SnapshotPath = null, ViewModelName = null, SnapshotAllDirectory = "/out/shots" };
+        HostOptions options = full with { SnapshotPath = null, ViewModelName = null, TreePath = null, SnapshotAllDirectory = "/out/shots" };
 
         HostOptions parsed = HostOptions.Parse(options.ToArguments());
 
         Assert.Equal(options, parsed);
+    }
+
+    [Fact]
+    public void Parse_RejectsATreeWithoutASnapshot()
+    {
+        string[] args = [.. (full with { SnapshotPath = null, ViewModelName = null }).ToArguments()];
+
+        ArgumentException ex = Assert.Throws<ArgumentException>(() => HostOptions.Parse(args));
+
+        Assert.Contains("--tree", ex.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Parse_RejectsATreeWithASnapshotFolder()
+    {
+        HostOptions options = full with { SnapshotPath = null, ViewModelName = null, SnapshotAllDirectory = "/out/shots" };
+
+        ArgumentException ex = Assert.Throws<ArgumentException>(() => HostOptions.Parse(options.ToArguments()));
+
+        Assert.Contains("--tree", ex.Message, StringComparison.Ordinal);
     }
 
     [Theory]
@@ -116,7 +138,7 @@ public sealed class HostProtocolTests
     [InlineData("--theme", "Dark")]
     public void ValidateMode_RejectsARenderFlagWithoutASnapshot(string key, string value)
     {
-        HostOptions preview = full with { SnapshotPath = null, ViewModelName = null, Size = null, Theme = null };
+        HostOptions preview = full with { SnapshotPath = null, ViewModelName = null, Size = null, Theme = null, TreePath = null };
         string[] args = [.. preview.ToArguments(), key, value];
 
         ArgumentException ex = Assert.Throws<ArgumentException>(() => HostOptions.Parse(args));

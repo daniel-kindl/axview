@@ -1,6 +1,8 @@
 using System.Globalization;
 using System.Text;
 
+using Avalonia.Controls;
+
 using AxView.Host.Catalog;
 using AxView.Host.Rendering;
 using AxView.Host.Startup;
@@ -26,6 +28,8 @@ namespace AxView.Host.UI;
 /// </code>
 /// A failed file does not stop the run.
 /// </para>
+/// <see cref="HostMode.Snapshot"/> also saves the visual tree of the view with <see cref="VisualTreeDump"/>, if the options have a tree path.
+/// A failed load gives no tree file.
 /// Each PNG has the size and the theme of the options, if they are set. The control gallery ignores the size.
 /// Each PNG waits for the settle time after the window shows. The errors go to the standard error stream.
 /// </remarks>
@@ -81,7 +85,7 @@ internal sealed class SnapshotRunner(ProjectSet projects, DesignServices service
         }
 
         SnapshotWindow window = new(renderer, options.AxamlPath, createTarget(), viewModelType);
-        string? error = await SaveAsync(window, png, options);
+        string? error = await SaveAsync(window, png, options, options.TreePath);
         if (error is null)
         {
             return ExitReason.Ok;
@@ -117,7 +121,7 @@ internal sealed class SnapshotRunner(ProjectSet projects, DesignServices service
     }
 
     // Gives the error of the snapshot, or null for a good snapshot.
-    private async Task<string?> SaveAsync(SnapshotWindow window, string png, HostOptions options)
+    private async Task<string?> SaveAsync(SnapshotWindow window, string png, HostOptions options, string? treePath = null)
     {
         window.PreviewSize = options.Size ?? PreviewSize.Fit;
         window.ShowTheme(options.Theme ?? PreviewTheme.Default);
@@ -127,6 +131,12 @@ internal sealed class SnapshotRunner(ProjectSet projects, DesignServices service
             window.Show();
             await Task.Delay(settleDelay);
             window.Save(png);
+            if (treePath is not null && window.View is Control view)
+            {
+                // The bounds need the layout of the PNG, and the window must still be open.
+                VisualTreeDump.Save(view, treePath);
+            }
+
             return window.Error;
         }
         catch (Exception ex)

@@ -19,7 +19,7 @@ public sealed class HostSessionTests
         hosts.Enqueue(ExitReason.RenderFailed);
         List<string> opened = [];
 
-        int exitCode = await Session(hosts).RunAsync(view, outputDir: null, snapshotPath: "shot.png", opened.Add);
+        int exitCode = await Session(hosts).RunAsync(view, outputDir: null, opened.Add, new SnapshotRequest(Path: "shot.png"));
 
         Assert.Equal((int)ExitReason.RenderFailed, exitCode);
         Assert.Equal([view], opened);
@@ -38,7 +38,7 @@ public sealed class HostSessionTests
         FakeHostProcess hosts = new();
         hosts.Enqueue(ExitReason.Ok);
 
-        _ = await Session(hosts).RunAsync(view, null, null, _ => { }, snapshotAllDirectory: "/out/shots");
+        _ = await Session(hosts).RunAsync(view, null, _ => { }, new SnapshotRequest(AllDirectory: "/out/shots"));
 
         HostOptions options = Assert.Single(hosts.Runs);
         Assert.Equal("/out/shots", options.SnapshotAllDirectory);
@@ -54,7 +54,7 @@ public sealed class HostSessionTests
         FakeHostProcess hosts = new();
         hosts.Enqueue(ExitReason.Ok);
 
-        _ = await Session(hosts).RunAsync(view, null, "shot.png", _ => { }, viewModelName: "Ui.MainViewModel");
+        _ = await Session(hosts).RunAsync(view, null, _ => { }, new SnapshotRequest("shot.png", ViewModelName: "Ui.MainViewModel"));
 
         Assert.Equal("Ui.MainViewModel", Assert.Single(hosts.Runs).ViewModelName);
     }
@@ -69,11 +69,12 @@ public sealed class HostSessionTests
         hosts.Enqueue(ExitReason.Ok);
         PreviewSize size = new(PreviewSizePreset.Custom, 500, 300);
 
-        _ = await Session(hosts).RunAsync(view, null, "shot.png", _ => { }, size: size, theme: PreviewTheme.Dark);
+        _ = await Session(hosts).RunAsync(view, null, _ => { }, new SnapshotRequest("shot.png", Size: size, Theme: PreviewTheme.Dark, TreePath: "tree.json"));
 
         HostOptions options = Assert.Single(hosts.Runs);
         Assert.Equal(size, options.Size);
         Assert.Equal(PreviewTheme.Dark, options.Theme);
+        Assert.Equal("tree.json", options.TreePath);
     }
 
     [Fact]
@@ -89,7 +90,7 @@ public sealed class HostSessionTests
         hosts.Enqueue(ExitReason.Ok);
         List<string> opened = [];
 
-        int exitCode = await Session(hosts).RunAsync(first, firstOutput, snapshotPath: null, opened.Add);
+        int exitCode = await Session(hosts).RunAsync(first, firstOutput, opened.Add);
 
         Assert.Equal((int)ExitReason.Ok, exitCode);
         Assert.Equal([first, second], opened);
@@ -112,7 +113,7 @@ public sealed class HostSessionTests
         hosts.Enqueue(ExitReason.Ok);
         List<string> opened = [];
 
-        int exitCode = await Session(hosts).RunAsync(first, outputDir: null, snapshotPath: null, opened.Add);
+        int exitCode = await Session(hosts).RunAsync(first, outputDir: null, opened.Add);
 
         Assert.Equal((int)ExitReason.Ok, exitCode);
         Assert.Equal([first], opened);
@@ -131,7 +132,7 @@ public sealed class HostSessionTests
         FakeHostProcess hosts = new();
         hosts.Enqueue(ExitReason.SwitchProject);
 
-        int exitCode = await Session(hosts).RunAsync(view, outputDir: null, snapshotPath: null, _ => { });
+        int exitCode = await Session(hosts).RunAsync(view, outputDir: null, _ => { });
 
         Assert.Equal((int)ExitReason.SwitchProject, exitCode);
         _ = Assert.Single(hosts.Runs);
@@ -149,7 +150,7 @@ public sealed class HostSessionTests
         hosts.Enqueue(ExitReason.Ok);
         FakeOutputBuilder builder = new();
 
-        int exitCode = await Session(hosts, builder).RunAsync(view, outputDir: null, snapshotPath: null, _ => { });
+        int exitCode = await Session(hosts, builder).RunAsync(view, outputDir: null, _ => { });
 
         Assert.Equal((int)ExitReason.Ok, exitCode);
         AppOutput built = Assert.Single(builder.Builds);
@@ -171,7 +172,7 @@ public sealed class HostSessionTests
         FakeOutputBuilder builder = new();
         FakeBuildDisplay display = new();
 
-        _ = await Session(hosts, builder, display).RunAsync(view, outputDir: null, snapshotPath: null, _ => { });
+        _ = await Session(hosts, builder, display).RunAsync(view, outputDir: null, _ => { });
 
         FakeBuildProgress progress = Assert.Single(display.Shown);
         Assert.Equal("Ui", progress.AppName);
@@ -191,7 +192,7 @@ public sealed class HostSessionTests
         hosts.Enqueue(ExitReason.Ok);
         FakeBuildDisplay display = new();
 
-        _ = await Session(hosts, new FakeOutputBuilder("error"), display).RunAsync(view, null, null, _ => { });
+        _ = await Session(hosts, new FakeOutputBuilder("error"), display).RunAsync(view, null, _ => { });
 
         Assert.True(Assert.Single(display.Shown).IsDisposed);
     }
@@ -208,7 +209,7 @@ public sealed class HostSessionTests
         hosts.Enqueue(ExitReason.Ok);
         FakeOutputBuilder builder = new("Program.cs(3,1): error CS1002: ; expected");
 
-        _ = await Session(hosts, builder).RunAsync(view, outputDir: null, snapshotPath: null, _ => { });
+        _ = await Session(hosts, builder).RunAsync(view, outputDir: null, _ => { });
 
         Assert.Equal([view, other], hosts.Runs.Select(options => options.AxamlPath));
         Assert.Equal("Program.cs(3,1): error CS1002: ; expected", hosts.Runs[1].SetupError);
@@ -221,7 +222,7 @@ public sealed class HostSessionTests
         FakeHostProcess hosts = new();
 
         _ = await Assert.ThrowsAsync<PreviewSetupException>(
-            () => Session(hosts).RunAsync(Path.Combine(dir.Path, "Missing.axaml"), null, null, _ => { }));
+            () => Session(hosts).RunAsync(Path.Combine(dir.Path, "Missing.axaml"), null, _ => { }));
 
         Assert.Empty(hosts.Runs);
     }
