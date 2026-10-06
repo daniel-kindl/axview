@@ -27,8 +27,8 @@ The cause that a host or a launcher gives when it stops, as a named exit code.
 _Avoid_: exit code, status, return value
 
 **Hand-off**:
-The data that a stopped host gives to the launcher for the next host, for example the next file.
-_Avoid_: switch file, message
+The exit reason and the next file that a stopped host gives to the launcher. A project preview gives it when the host must stop.
+_Avoid_: switch file, message, stop request
 
 ## Target
 
@@ -85,10 +85,6 @@ _Avoid_: reloader, preview session
 **Project preview**:
 The host module that shows the files of one project. It decides when the host stops, and which file the next host shows.
 _Avoid_: preview session, controller, workspace
-
-**Stop request**:
-The exit reason and the next file that a project preview gives when the host must stop.
-_Avoid_: shutdown, quit
 
 **Host mode**:
 The kind of work that one host does: an interactive preview, one snapshot, or a snapshot of each file of the project.

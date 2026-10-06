@@ -76,7 +76,7 @@ internal sealed class PreviewWindow : Window
         preview = new ProjectPreview(options, projects, services, appStyles, settings.ViewModels);
         preview.Changed += (_, _) => ShowPreview();
         preview.Failed += (_, message) => ShowError(message);
-        preview.StopRequested += (_, request) => StopWithHandOff(request);
+        preview.StopRequested += (_, handOff) => StopWithHandOff(handOff);
         viewModelSwitch = new ViewModelSwitch(preview.ViewModelTypes);
         viewModelSwitch.SelectionChanged += (_, _) => OnViewModelSelected();
 
@@ -377,13 +377,13 @@ internal sealed class PreviewWindow : Window
 
     // The shutdown does not close the window. Thus save the settings first, so the next host opens at the same place.
     // The preview gives a stop request only when the options have a hand-off file.
-    private void StopWithHandOff(StopRequest request)
+    private void StopWithHandOff(HandOff handOff)
     {
         SaveSettings();
-        new HandOff(request.NextFile).Save(options.HandOffFile!);
+        int exitCode = handOff.Save(options.HandOffFile!);
         if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            desktop.Shutdown((int)request.Reason);
+            desktop.Shutdown(exitCode);
         }
     }
 

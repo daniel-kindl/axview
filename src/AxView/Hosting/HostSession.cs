@@ -67,18 +67,16 @@ internal sealed class HostSession(
                 // A snapshot must not depend on the last window of the user.
                 options = options with { SettingsFile = options.Mode == HostMode.Preview ? settingsFile : null };
                 int exitCode = await hostProcess.RunAsync(target, options);
-                bool isHandOff = exitCode is (int)ExitReason.SwitchProject or (int)ExitReason.Rebuild;
-                HandOff? handOff = isHandOff ? HandOff.Load(handOffFile) : null;
+                HandOff? handOff = HandOff.Take(handOffFile, exitCode);
                 if (handOff is null)
                 {
                     return exitCode;
                 }
 
-                File.Delete(handOffFile);
                 setupError = null;
                 try
                 {
-                    if (exitCode == (int)ExitReason.Rebuild)
+                    if (handOff.Reason == ExitReason.Rebuild)
                     {
                         // The file of the hand-off is in the same project. On a build error, the next host shows it.
                         target = target with { AxamlPath = handOff.NextFile };
@@ -99,7 +97,7 @@ internal sealed class HostSession(
                 }
                 catch (PreviewSetupException ex)
                 {
-                    setupError = exitCode == (int)ExitReason.Rebuild ? ex.Message : $"Cannot open the file: {ex.Message}";
+                    setupError = handOff.Reason == ExitReason.Rebuild ? ex.Message : $"Cannot open the file: {ex.Message}";
                     await log.WriteLineAsync($"axview: {ex.Message}");
                 }
             }

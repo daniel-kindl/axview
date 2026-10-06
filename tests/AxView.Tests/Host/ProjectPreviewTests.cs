@@ -30,7 +30,7 @@ public sealed class ProjectPreviewTests
 
         File.WriteAllText(code, "class Library { int value; }");
 
-        StopRequest request = Assert.IsType<StopRequest>(WaitForStop(preview));
+        HandOff request = Assert.IsType<HandOff>(WaitForStop(preview));
         Assert.Equal(ExitReason.Rebuild, request.Reason);
         Assert.Equal(Path.GetFullPath(file), request.NextFile);
     }
@@ -44,7 +44,7 @@ public sealed class ProjectPreviewTests
         string otherFile = other.Write("Views/Other.axaml", TextBlockXaml);
         using ProjectPreview preview = Create(Options(view, file));
         preview.Show(file);
-        StopRequest? request = null;
+        HandOff? request = null;
         preview.StopRequested += (_, e) => request = e;
 
         preview.Open(otherFile);
@@ -145,11 +145,11 @@ public sealed class ProjectPreviewTests
         };
 
     // Run the dispatcher loop until the preview requests a stop, or until the timeout.
-    private static StopRequest? WaitForStop(ProjectPreview preview)
+    private static HandOff? WaitForStop(ProjectPreview preview)
     {
-        StopRequest? request = null;
+        HandOff? request = null;
         DispatcherFrame frame = new();
-        void OnStopRequested(object? sender, StopRequest e)
+        void OnStopRequested(object? sender, HandOff e)
         {
             request = e;
             frame.Continue = false;

@@ -25,7 +25,7 @@ internal sealed class FakeHostProcess : IHostProcess
         (ExitReason reason, string? nextFile) = script.Dequeue();
         if (nextFile is not null)
         {
-            new HandOff(nextFile).Save(options.HandOffFile!);
+            _ = new HandOff(reason, nextFile).Save(options.HandOffFile!);
         }
 
         return Task.FromResult((int)reason);

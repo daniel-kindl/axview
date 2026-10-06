@@ -16,7 +16,7 @@ namespace AxView.Host.Rendering;
 /// <item><description>The rebuild watch of the C# files.</description></item>
 /// </list>
 /// Only the launcher can build the app or open another project. Thus a rebuild or a project switch gives a
-/// <see cref="StopRequested"/> event. The owner writes the hand-off file and stops the host.
+/// <see cref="StopRequested"/> event. The owner saves the hand-off and stops the host.
 /// Without a hand-off file in the options, there is no rebuild watch, and a file of another project gives an error.
 /// </remarks>
 internal sealed class ProjectPreview : IDisposable
@@ -77,7 +77,7 @@ internal sealed class ProjectPreview : IDisposable
     public event EventHandler<string>? Failed;
 
     /// <summary>Occurs when the launcher must build the app or open another project.</summary>
-    public event EventHandler<StopRequest>? StopRequested;
+    public event EventHandler<HandOff>? StopRequested;
 
     /// <summary>Gets the full path of the shown file. Empty before the first <see cref="Show"/>.</summary>
     public string FilePath => livePreview.FilePath;
@@ -191,5 +191,5 @@ internal sealed class ProjectPreview : IDisposable
     }
 
     private void RequestStop(ExitReason reason, string nextFile) =>
-        StopRequested?.Invoke(this, new StopRequest(reason, Path.GetFullPath(nextFile)));
+        StopRequested?.Invoke(this, new HandOff(reason, Path.GetFullPath(nextFile)));
 }

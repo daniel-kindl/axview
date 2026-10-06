@@ -156,23 +156,54 @@ public sealed class HostProtocolTests
             ]);
     }
 
-    [Fact]
-    public void Load_ReadsTheHandOffThatSaveWrites()
+    [Theory]
+    [InlineData((int)ExitReason.SwitchProject)]
+    [InlineData((int)ExitReason.Rebuild)]
+    public void Take_GivesTheHandOffThatSaveWrites(int reasonCode)
     {
         using TempDir dir = new();
         string file = Path.Combine(dir.Path, "hand-off.json");
-        HandOff handOff = new("/src/Other/Views/Main.axaml");
+        HandOff handOff = new((ExitReason)reasonCode, "/src/Other/Views/Main.axaml");
 
-        handOff.Save(file);
+        int exitCode = handOff.Save(file);
 
-        Assert.Equal(handOff, HandOff.Load(file));
+        Assert.Equal(reasonCode, exitCode);
+        Assert.Equal(handOff, HandOff.Take(file, exitCode));
     }
 
     [Fact]
-    public void Load_ReturnsNullWhenTheHostWroteNoHandOff()
+    public void Take_DeletesTheFile()
+    {
+        using TempDir dir = new();
+        string file = Path.Combine(dir.Path, "hand-off.json");
+        int exitCode = new HandOff(ExitReason.Rebuild, "/src/Ui/Views/Main.axaml").Save(file);
+
+        _ = HandOff.Take(file, exitCode);
+
+        Assert.False(File.Exists(file));
+    }
+
+    [Fact]
+    public void Take_ReturnsNullWhenTheHostWroteNoHandOff()
     {
         using TempDir dir = new();
 
-        Assert.Null(HandOff.Load(Path.Combine(dir.Path, "hand-off.json")));
+        Assert.Null(HandOff.Take(Path.Combine(dir.Path, "hand-off.json"), (int)ExitReason.SwitchProject));
     }
+
+    [Theory]
+    [InlineData((int)ExitReason.Ok)]
+    [InlineData((int)ExitReason.RenderFailed)]
+    public void Take_IgnoresTheFileForAnExitCodeWithoutAHandOff(int exitCode)
+    {
+        using TempDir dir = new();
+        string file = Path.Combine(dir.Path, "hand-off.json");
+        _ = new HandOff(ExitReason.SwitchProject, "/src/Other/Views/Main.axaml").Save(file);
+
+        Assert.Null(HandOff.Take(file, exitCode));
+    }
+
+    [Fact]
+    public void Constructor_RejectsAReasonWithoutAHandOff() =>
+        Assert.Throws<ArgumentException>(() => new HandOff(ExitReason.Ok, "/src/Ui/Views/Main.axaml"));
 }
