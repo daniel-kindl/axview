@@ -11,10 +11,6 @@ Do not change or use again a number.
 
 ## Next
 
-- [ ] #79 **Snapshot report (M).** `--report <file.json>` with `--snapshot` writes the exit reason, the render time, and the errors.
-  Catch the binding errors from the Avalonia logger.
-  Give the XAML line and column of each error, if it is known.
-
 ## Later
 
 - [ ] #59 **Avalonia 11 host tests (M).** The test project tests only the Avalonia 12 host build (ADR 0002).
@@ -22,6 +18,7 @@ Do not change or use again a number.
 
 ## Done
 
+- [x] #79 Snapshot report: `--report <file.json>` with `--snapshot` writes `SnapshotReport`: the exit reason, the load time, the error with its line and column, and the log. `LogCapture` catches the Avalonia warnings, for example binding errors. `2c7f770`
 - [x] #78 Visual tree dump: `--tree <file.json>` with `--snapshot` writes the visual tree of the view with `VisualTreeDump`. Compact JSON, because indents made the file 7 times larger. `SnapshotRequest` holds the snapshot options of the launcher. `a2af3ce`
 - [x] #80 Render flags: `--size` and `--theme` set the size and the theme variant of `--snapshot` and `--snapshot-all`. The gallery ignores the size. `PreviewSize.Parse` reads the size. `ac6ba58`
 - [x] #77 Missing project folder: `PreviewWindowModel.RefreshCatalog` shows the error and keeps the old entries. Before, the dispatcher hook showed it as a file error. On Avalonia 11.0 the host stopped. `31831f1`
