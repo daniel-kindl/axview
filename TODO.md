@@ -16,12 +16,13 @@ Do not change or use again a number.
 
 - [ ] #57 **Version test on a tag (S).** `Read_GivesTheVersionFromTheGitTags` fails when a `v1.0.0` tag is on HEAD.
   MinVer then gives `1.0.0`, the same as the SDK default. Find a check that does not depend on the tag.
+- [ ] #58 **README (S).** Add `README.md` at the root. Tell what AxView does, how to build it, and how to use the launcher.
+  Include the command-line options, the snapshot modes, and `settings.json`. Link `docs/RELEASE.md`.
 
 ## Later
 
 - [ ] #20 **Avalonia 12 (L).** Check the loader and host APIs. A second host build may be necessary.
-- [ ] #55 **.NET 10 (S).** Change the launcher and the tests to `net10.0`. Keep the host on `net8.0`, because it runs in the runtime of the target app.
-  Update the `net9.0` paths in `AGENTS.md`, `pack.ps1`, and the docs.
+  DAT4000 now uses Avalonia 12.1.3. The host fails in `PreviewFrame`: `MissingMethodException` for `AvaloniaObject.set_Item(IndexerDescriptor, IBinding)`.
 - [ ] #56 **Launcher on Avalonia 12 (M).** Change the picker UI of the launcher to Avalonia 12. Do #20 first.
   The tests compile the host code against Avalonia 11. Make sure that one test project can test both.
 
@@ -81,3 +82,4 @@ Each known issue is now an item: #30 to #39.
 - [x] #51 StaticResource from an include of a view: `ChangedIncludes` gives the changed include files to `LoadGroup`. Then the load uses them. `1c69607`
 - [x] #52 Includes in the children of a view: `ChangedIncludes` finds each include element of the file, also in child controls. `1c69607`
 - [x] #39 Build progress: the launcher shows a build window with the app name, the time, and the last build line. Cancel stops the build. `f98134b`
+- [x] #55 .NET 10: the launcher and the tests target `net10.0`. The host stays on `net8.0`. `2471184`
