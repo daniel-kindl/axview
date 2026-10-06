@@ -13,9 +13,6 @@ Do not change or use again a number.
 
 UI overhaul. Goal: a modern, consistent look. Each item must work on Fluent and Simple, Light and Dark, and Avalonia 11 and 12.
 
-- [ ] #71 **Preview stage (M).** Show a neutral backdrop around the preview.
-  For a size preset, show the preview as a card with a border and a shadow, centered, and the size below it.
-  Fit fills the stage with no card.
 - [ ] #72 **Error panel (M).** Show the error as a theme card at the bottom of the stage, not a red overlay.
   The card has a header, a "Last good render" note, a copy button, and a collapse button.
   Keep the monospace text selectable.
@@ -41,6 +38,7 @@ UI overhaul. Goal: a modern, consistent look. Each item must work on Fluent and 
 
 ## Done
 
+- [x] #71 Preview stage: `PreviewStage` shows a size preset as a centered card with a shadow on the stage brush, and the size below it. Fit has no card and no backdrop. `0b2a2db`
 - [x] #70 Preview toolbar: theme, size, and DataContext groups with an icon or a label, and separators. About is an icon button at the right edge. `ChromeControls` gives the icon button and the separator. `45601b1`
 - [x] #69 Chrome icons: `ChromeIcons` gives a path geometry for each `ChromeIcon`, also a search icon for #73. The `icons` chrome shot shows all icons. `e25c012`
 - [x] #68 Chrome style module: `ChromeStyle` gives a spacing scale, font sizes, a corner radius, and theme brushes per variant. The picker and the preview window use it. `290aea1`
