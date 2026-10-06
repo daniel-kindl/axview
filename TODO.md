@@ -13,8 +13,6 @@ Do not change or use again a number.
 
 UI overhaul. Goal: a modern, consistent look. Each item must work on Fluent and Simple, Light and Dark, and Avalonia 11 and 12.
 
-- [ ] #74 **Status bar (S).** Show segments with separators: the status text, the output folder, and the DataContext badge.
-  Show the badge as a pill with the warning brush.
 - [ ] #75 **Picker window (M).** Restyle the start screen:
   - a header with the app icon, the name, and the subtitle,
   - a primary Open button and an About icon button,
@@ -30,6 +28,7 @@ UI overhaul. Goal: a modern, consistent look. Each item must work on Fluent and 
 
 ## Done
 
+- [x] #74 Status bar: the status, the output folder, and the DataContext pill as segments with separators. `f5e453d`
 - [x] #73 Sidebar: a header with Open and collapse icon buttons, a search icon in the filter, `FileRow` with a kind icon and an accent selection bar. `IsSidebarCollapsed` in `settings.json`. `130a2ed`
 - [x] #72 Error panel: `ErrorPanel` is a card with the error brush border, a header, copy and collapse buttons, and a last good render note. `1dfdca3`
 - [x] #71 Preview stage: `PreviewStage` shows a size preset as a centered card with a shadow on the stage brush, and the size below it. Fit has no card and no backdrop. `0b2a2db`
