@@ -8,11 +8,6 @@ Do not change or use again a number.
 
 ## Now
 
-Items #63 to #66 come from the architecture review of 2026-10-06.
-
-- [ ] #66 **Include update in one call (S).** `AppStyles.Update` also tells if an include of the shown view changed.
-  `ProjectPreview` makes one call and does not know the order of the checks.
-
 ## Next
 
 ## Later
@@ -88,3 +83,4 @@ Each known issue is now an item: #30 to #39.
 - [x] #63 Hand-off module: `HandOff` carries the exit reason. `Save` gives the exit code. `Take` reads and deletes the file in the launcher. `563f027`
 - [x] #64 Window model: `PreviewWindowModel` owns the file list, the shown item, the status, and the settings. `ProjectPreview` gives `Error` and `StylesError`, and saves the hand-off. `9069225`
 - [x] #65 Snapshot runner: `SnapshotRunner` runs `--snapshot` and `--snapshot-all` and gives the exit reason. The shutdown waits for the main loop. `9859a40`
+- [x] #66 Include update in one call: no change. `AppStyles` must then track each view search with a weak reference. That adds more code than the one check that it removes from `ProjectPreview`.
