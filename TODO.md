@@ -11,9 +11,6 @@ Do not change or use again a number.
 
 ## Next
 
-- [ ] #78 **Visual tree dump (M).** `--tree <file.json>` with `--snapshot` writes the visual tree of the preview.
-  Each node has the type, the Name, the classes, the bounds, IsVisible, the text, and the DataContext type.
-  An agent can then find overlaps, clipped controls, and zero-size controls without the PNG.
 - [ ] #79 **Snapshot report (M).** `--report <file.json>` with `--snapshot` writes the exit reason, the render time, and the errors.
   Catch the binding errors from the Avalonia logger.
   Give the XAML line and column of each error, if it is known.
@@ -25,6 +22,7 @@ Do not change or use again a number.
 
 ## Done
 
+- [x] #78 Visual tree dump: `--tree <file.json>` with `--snapshot` writes the visual tree of the view with `VisualTreeDump`. Compact JSON, because indents made the file 7 times larger. `SnapshotRequest` holds the snapshot options of the launcher. `a2af3ce`
 - [x] #80 Render flags: `--size` and `--theme` set the size and the theme variant of `--snapshot` and `--snapshot-all`. The gallery ignores the size. `PreviewSize.Parse` reads the size. `ac6ba58`
 - [x] #77 Missing project folder: `PreviewWindowModel.RefreshCatalog` shows the error and keeps the old entries. Before, the dispatcher hook showed it as a file error. On Avalonia 11.0 the host stopped. `31831f1`
 - [x] #76 Build window: the app icon, the app name, the time as `m:ss`, and the last line in monospace. It uses `ChromeStyle`. `3b684e9`
