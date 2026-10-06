@@ -10,9 +10,6 @@ Do not change or use again a number.
 
 Items #63 to #66 come from the architecture review of 2026-10-06.
 
-- [ ] #63 **Hand-off module (S).** `HandOff` carries the exit reason and the next file.
-  The host saves it and gets the exit code. The launcher takes it with the exit code.
-  `StopRequest` goes. `HostSession` does not decode the exit codes.
 - [ ] #64 **Window model (M).** A headless `PreviewWindowModel` owns the state of the preview window:
   - the file list with the filter, the gallery entry, and the selection
   - the shown item: a file or the control gallery
@@ -100,3 +97,4 @@ Each known issue is now an item: #30 to #39.
 - [x] #60 Control gallery: a file list entry shows the common controls in each state and each app style class. `--snapshot-all` writes `axview-gallery.png`. `800b60d`
 - [x] #62 Strict analyzers: all CA rules (`latest-all`) and all IDE rules are errors. `.editorconfig` tells the reason for each rule that is off. `66a48a7`
 - [x] #61 Gallery: each keyed `ControlTheme` of the app resources and app styles gets a row. Avalonia themes are ignored. `7ede774`
+- [x] #63 Hand-off module: `HandOff` carries the exit reason. `Save` gives the exit code. `Take` reads and deletes the file in the launcher. `563f027`
