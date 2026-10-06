@@ -27,11 +27,13 @@
   <!--
     The host runs inside the target app's runtime. Build it, but do not reference it.
     Each host build goes to its HostFolder next to the launcher. DotnetHostProcess selects the folder.
+    Private="false" keeps the host deps and runtimeconfig files out of the launcher output.
+    Both host builds have the same file names. The host runs with the deps and runtimeconfig of the target app.
   -->
   <ItemGroup>
     <HostProject Include="..\AxView.Host\AxView.Host.csproj" HostFolder="host" />
     <HostProject Include="..\AxView.Host12\AxView.Host12.csproj" HostFolder="host12" />
-    <ProjectReference Include="@(HostProject)" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="@(HostProject)" ReferenceOutputAssembly="false" Private="false" />
   </ItemGroup>
 
   <Target Name="CopyHost" AfterTargets="Build">
