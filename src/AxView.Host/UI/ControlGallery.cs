@@ -21,10 +21,11 @@ internal static class ControlGallery
     private static readonly Thickness pageMargin = new(16);
     private static readonly Thickness cellMargin = new(8);
 
-    /// <summary>Creates the gallery of the common controls, with a row for each style class of the app.</summary>
+    /// <summary>Creates the gallery of the common controls, with a row for each style class and keyed control theme of the app.</summary>
     /// <param name="appStyles">The styles of the app.</param>
-    public static Control Create(IEnumerable<IStyle> appStyles) =>
-        Create(GallerySections.WithStyleClasses(GallerySections.All, StyleClasses.Find(appStyles)));
+    /// <param name="appResources">The resources of the app.</param>
+    public static Control Create(IEnumerable<IStyle> appStyles, IResourceDictionary appResources) =>
+        Create(GallerySections.WithAppStyles(GallerySections.All, StyleClasses.Find(appStyles), ControlThemes.Find(appStyles, appResources)));
 
     /// <summary>Creates the gallery.</summary>
     /// <param name="sections">The sections to show.</param>

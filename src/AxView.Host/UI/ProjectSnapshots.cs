@@ -52,7 +52,7 @@ internal sealed class ProjectSnapshots(
         }
 
         TargetStyles galleryTarget = createTarget();
-        SnapshotWindow galleryWindow = new(ControlGallery.Create(galleryTarget.Styles), galleryTarget);
+        SnapshotWindow galleryWindow = new(ControlGallery.Create(galleryTarget.Styles, galleryTarget.Resources), galleryTarget);
         string? galleryError = await SnapshotAsync(galleryWindow, Path.Combine(outputDirectory, GalleryFileName));
         isGood &= AddSummaryLine(summary, GalleryName, galleryError);
 

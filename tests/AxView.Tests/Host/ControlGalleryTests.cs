@@ -41,16 +41,31 @@ public sealed class ControlGalleryTests
     }
 
     [AvaloniaFact]
-    public void WithStyleClasses_AddsARowForTheClassAfterTheRowOfTheType()
+    public void WithAppStyles_StyleClass_AddsARowAfterTheRowOfTheType()
     {
         GalleryVariant checkBox = new("CheckBox", () => new CheckBox());
         GallerySection section = new("Mixed", [GalleryState.Normal], [button, checkBox]);
 
-        IReadOnlyList<GallerySection> sections = GallerySections.WithStyleClasses([section], [new StyleClass("Button", "primary.large")]);
+        IReadOnlyList<GallerySection> sections = GallerySections.WithAppStyles([section], [new StyleClass("Button", "primary.large")], []);
 
         IReadOnlyList<GalleryVariant> variants = sections.Single().Variants;
         Assert.Equal(["Button", "Button .primary.large", "CheckBox"], variants.Select(v => v.Name));
         Assert.Equal(["primary", "large"], variants[1].Create().Classes);
+    }
+
+    [AvaloniaFact]
+    public void WithAppStyles_KeyedTheme_AddsARowAfterTheStyleClassRows()
+    {
+        GalleryVariant checkBox = new("CheckBox", () => new CheckBox());
+        GallerySection section = new("Mixed", [GalleryState.Normal], [button, checkBox]);
+        ControlTheme pillButton = new(typeof(Button));
+
+        IReadOnlyList<GallerySection> sections = GallerySections.WithAppStyles(
+            [section], [new StyleClass("Button", "primary")], [new KeyedControlTheme("PillButton", pillButton)]);
+
+        IReadOnlyList<GalleryVariant> variants = sections.Single().Variants;
+        Assert.Equal(["Button", "Button .primary", "Button {PillButton}", "CheckBox"], variants.Select(v => v.Name));
+        Assert.Same(pillButton, variants[2].Create().Theme);
     }
 
     [AvaloniaFact]

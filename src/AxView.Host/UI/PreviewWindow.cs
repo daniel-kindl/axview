@@ -417,8 +417,8 @@ internal sealed class PreviewWindow : Window
         ShowCatalog();
     }
 
-    // The scope has the app styles. An include reload can add or remove a style class, so the gallery needs new rows.
-    private void CreateGallery() => scope.Content = ControlGallery.Create(scope.Styles);
+    // The scope has the app styles and resources. An include reload can add or remove a style class or a keyed theme.
+    private void CreateGallery() => scope.Content = ControlGallery.Create(scope.Styles, scope.Resources);
 
     // The preview of the file stays live behind the gallery. It shows again when the user selects a file.
     // The preview changes also after an include reload. Then the gallery gets the changed style classes.

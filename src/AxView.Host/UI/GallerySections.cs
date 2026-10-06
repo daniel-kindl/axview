@@ -99,24 +99,39 @@ internal static class GallerySections
         ]),
     ];
 
-    /// <summary>Adds a row for each style class of the app. The row follows each row of the same control type.</summary>
+    /// <summary>
+    /// Adds a row for each style class and each keyed control theme of the app. The rows follow each row of the same control type.
+    /// </summary>
     /// <param name="sections">The sections.</param>
     /// <param name="classes">The style classes of the app.</param>
-    public static IReadOnlyList<GallerySection> WithStyleClasses(IReadOnlyList<GallerySection> sections, IReadOnlyList<StyleClass> classes) =>
-        [.. sections.Select(section => section with { Variants = [.. section.Variants.SelectMany(v => WithStyleClasses(v, classes))] })];
+    /// <param name="themes">The keyed control themes of the app.</param>
+    public static IReadOnlyList<GallerySection> WithAppStyles(
+        IReadOnlyList<GallerySection> sections, IReadOnlyList<StyleClass> classes, IReadOnlyList<KeyedControlTheme> themes) =>
+        [.. sections.Select(section => section with { Variants = [.. section.Variants.SelectMany(v => WithAppStyles(v, classes, themes))] })];
 
-    // The variant creates a control only to get its type. The style of a class applies only to that exact type.
-    private static IEnumerable<GalleryVariant> WithStyleClasses(GalleryVariant variant, IReadOnlyList<StyleClass> classes)
+    // The variant creates a control only to get its type. The style of a class and a control theme apply only to that exact type.
+    private static IEnumerable<GalleryVariant> WithAppStyles(
+        GalleryVariant variant, IReadOnlyList<StyleClass> classes, IReadOnlyList<KeyedControlTheme> themes)
     {
         yield return variant;
-        string typeName = variant.Create().GetType().Name;
-        foreach (StyleClass styleClass in classes.Where(c => c.TypeName == typeName))
+        Type type = variant.Create().GetType();
+        foreach (StyleClass styleClass in classes.Where(c => c.TypeName == type.Name))
         {
             string[] names = styleClass.Classes.Split('.');
             yield return new GalleryVariant($"{variant.Name} .{styleClass.Classes}", () =>
             {
                 Control control = variant.Create();
                 control.Classes.AddRange(names);
+                return control;
+            });
+        }
+
+        foreach (KeyedControlTheme theme in themes.Where(t => t.Theme.TargetType == type))
+        {
+            yield return new GalleryVariant($"{variant.Name} {{{theme.Key}}}", () =>
+            {
+                Control control = variant.Create();
+                control.Theme = theme.Theme;
                 return control;
             });
         }

@@ -107,6 +107,7 @@ Each section has one row for each variant and one column for each state.
 - The states are normal, pointer over, pressed, focus, disabled, and error.
 - The gallery sets the pseudo-classes, for example `:pointerover`. Only the normal column takes input.
 - Each style class of the app on a gallery control gets a row, for example `Button .primary`.
+- Each control theme with a key in the app resources gets a row, for example `Button {PillButton}`.
 - A control that fails in layout shows its error in its cell. The other cells stay.
 
 The gallery cannot show a state that needs a real popup or real focus, for example an open ComboBox or a focus adorner.
