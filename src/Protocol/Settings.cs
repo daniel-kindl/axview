@@ -13,6 +13,7 @@ namespace AxView.Protocol;
 ///   "Theme": "Dark",
 ///   "Size": { "Preset": "Custom", "Width": 500, "Height": 300 },
 ///   "ViewModels": { "/src/Ui/Views/Main.axaml": "Ui.ViewModels.MainViewModel" },
+///   "IsSidebarCollapsed": true,
 ///   "RunAppStartup": true
 /// }
 /// </code>
@@ -45,6 +46,9 @@ internal sealed record Settings
     /// <summary>The ViewModel type that the user selected for each AXAML file: full file path to full type name.</summary>
     /// <remarks>A file with no item uses the DataContext from its XAML.</remarks>
     public IReadOnlyDictionary<string, string> ViewModels { get; init; } = new Dictionary<string, string>();
+
+    /// <summary>True when the user collapsed the sidebar of the preview window.</summary>
+    public bool IsSidebarCollapsed { get; init; }
 
     /// <summary>True to call OnFrameworkInitializationCompleted of the target app. Its ApplicationLifetime is null.</summary>
     /// <remarks>The user sets this value in the file. The default is false.</remarks>

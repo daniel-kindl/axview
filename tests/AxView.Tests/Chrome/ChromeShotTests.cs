@@ -54,6 +54,11 @@ public sealed class ChromeShotTests
 
     [AvaloniaTheory]
     [MemberData(nameof(Looks))]
+    public void PreviewWindow_WithACollapsedSidebar(ChromeLook look) =>
+        SavePreview("preview-collapsed", ViewXaml, look, """{ "IsSidebarCollapsed": true }""");
+
+    [AvaloniaTheory]
+    [MemberData(nameof(Looks))]
     public void PreviewWindow_WithAnError(ChromeLook look) => SavePreview("preview-error", BrokenXaml, look);
 
     [AvaloniaTheory]

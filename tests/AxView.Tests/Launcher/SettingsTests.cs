@@ -17,6 +17,7 @@ public sealed class SettingsTests
             Theme = PreviewTheme.Dark,
             Size = new PreviewSize(PreviewSizePreset.Custom, 500, 300),
             ViewModels = new Dictionary<string, string> { ["/src/Ui/Views/Main.axaml"] = "Ui.ViewModels.MainViewModel" },
+            IsSidebarCollapsed = true,
         };
 
         settings.Save(file);
@@ -27,6 +28,7 @@ public sealed class SettingsTests
         Assert.Equal(PreviewTheme.Dark, loaded.Theme);
         Assert.Equal(settings.Size, loaded.Size);
         Assert.Equal(settings.ViewModels, loaded.ViewModels);
+        Assert.True(loaded.IsSidebarCollapsed);
     }
 
     [Fact]

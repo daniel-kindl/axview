@@ -3,6 +3,7 @@ extern alias host;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
+using Avalonia.Interactivity;
 using Avalonia.LogicalTree;
 using Avalonia.Styling;
 using Avalonia.Threading;
@@ -92,14 +93,89 @@ public sealed class PreviewWindowTests
         _ = Assert.IsType<Border>(groups.Children[3]);
     }
 
-    private static PreviewWindow CreateWindow(TempDir view)
+    [AvaloniaFact]
+    public void Sidebar_ShowsTheOpenButtonAsAnIconButtonInTheHeader()
+    {
+        using TempDir view = new();
+        PreviewWindow window = CreateWindow(view);
+
+        Button open = ButtonOf(window, "Open an AXAML file");
+
+        _ = Assert.IsType<PathIcon>(open.Content);
+        DockPanel header = open.GetLogicalAncestors().OfType<DockPanel>().First();
+        TextBlock projectName = header.GetLogicalDescendants().OfType<TextBlock>().Single();
+        Assert.Equal(view.Path, ToolTip.GetTip(projectName));
+    }
+
+    [AvaloniaFact]
+    public void Filter_ShowsASearchIcon()
+    {
+        using TempDir view = new();
+        PreviewWindow window = CreateWindow(view);
+
+        TextBox filter = window.GetLogicalDescendants().OfType<TextBox>().Single();
+
+        _ = Assert.IsType<PathIcon>(filter.InnerLeftContent);
+    }
+
+    [AvaloniaFact]
+    public void CollapseSidebar_HidesTheSidebar_AndExpandShowsItAgain()
+    {
+        using TempDir view = new();
+        PreviewWindow window = CreateWindow(view);
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        TextBox filter = window.GetLogicalDescendants().OfType<TextBox>().Single();
+        Button expand = ButtonOf(window, "Expand the sidebar");
+        bool isExpandShownFirst = IsShown(expand);
+
+        ButtonOf(window, "Collapse the sidebar").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        bool isFilterShownCollapsed = IsShown(filter);
+        bool isExpandShownCollapsed = IsShown(expand);
+        expand.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        bool isFilterShownExpanded = IsShown(filter);
+        bool isExpandShownExpanded = IsShown(expand);
+        window.Close();
+
+        Assert.False(isExpandShownFirst);
+        Assert.False(isFilterShownCollapsed);
+        Assert.True(isExpandShownCollapsed);
+        Assert.True(isFilterShownExpanded);
+        Assert.False(isExpandShownExpanded);
+    }
+
+    [AvaloniaFact]
+    public void CollapsedSidebar_StaysCollapsedInTheNextWindow()
+    {
+        using TempDir view = new();
+        string settingsFile = Path.Combine(view.Path, "settings.json");
+        PreviewWindow first = CreateWindow(view, settingsFile);
+        first.Show();
+        Dispatcher.UIThread.RunJobs();
+        ButtonOf(first, "Collapse the sidebar").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        first.Close();
+
+        PreviewWindow next = CreateWindow(view, settingsFile);
+
+        Assert.True(Settings.Load(settingsFile).IsSidebarCollapsed);
+        Assert.False(IsShown(next.GetLogicalDescendants().OfType<TextBox>().Single()));
+    }
+
+    private static PreviewWindow CreateWindow(TempDir view, string? settingsFile = null)
     {
         string file = view.Write("Views/Main.axaml", TextBlockXaml);
-        HostOptions options = new(file, view.Path, "AxView.Tests", null, "Loader.dll", null, null);
+        HostOptions options = new(file, view.Path, "AxView.Tests", null, "Loader.dll", null, null) { SettingsFile = settingsFile };
         ProjectSet projects = ProjectSet.Load(options);
         AppStyles appStyles = new(TargetStyles.None, () => TargetStyles.None, projects.CreateRenderers(DesignServices.None));
         return new PreviewWindow(options, projects, [], DesignServices.None, appStyles);
     }
+
+    private static Button ButtonOf(Window window, string tip) =>
+        window.GetLogicalDescendants().OfType<Button>().Single(button => Equals(ToolTip.GetTip(button), tip));
+
+    // The test app has no theme. Thus IsEffectivelyVisible does not see a hidden logical parent in a template.
+    private static bool IsShown(Control control) =>
+        control.IsVisible && control.GetLogicalAncestors().OfType<Control>().All(ancestor => ancestor.IsVisible);
 
     private static Panel GroupOf<TSwitch>(Window window)
         where TSwitch : Control

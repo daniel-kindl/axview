@@ -37,6 +37,27 @@ public sealed class PreviewWindowModelTests
     }
 
     [AvaloniaFact]
+    public void Entries_GiveTheKindOfEachFile()
+    {
+        using TempDir view = new();
+        string main = view.Write("Views/Main.axaml", TextBlockXaml);
+        _ = view.Write("Styles/Buttons.axaml", StylesXaml);
+        _ = view.Write("Styles/Single.axaml", """<Style xmlns="https://github.com/avaloniaui" Selector="Button" />""");
+        _ = view.Write("Styles/Colors.axaml", """<ResourceDictionary xmlns="https://github.com/avaloniaui" />""");
+        _ = view.Write("Views/Broken.axaml", "<TextBlock");
+        using PreviewWindowModel model = Create(Options(view, main));
+
+        Dictionary<string, FileKind> kinds = model.Entries.ToDictionary(e => e.Title, e => e.Kind);
+
+        Assert.Equal(FileKind.Gallery, kinds[GalleryTitle]);
+        Assert.Equal(FileKind.View, kinds["Main"]);
+        Assert.Equal(FileKind.Styles, kinds["Buttons"]);
+        Assert.Equal(FileKind.Styles, kinds["Single"]);
+        Assert.Equal(FileKind.Resources, kinds["Colors"]);
+        Assert.Equal(FileKind.View, kinds["Broken"]);
+    }
+
+    [AvaloniaFact]
     public void SetFilter_KeepsTheMatchingEntries_AndTheSelection()
     {
         using TempDir view = new();

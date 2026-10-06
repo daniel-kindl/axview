@@ -24,7 +24,7 @@ internal sealed class PreviewWindowModel : IDisposable
     private const string GalleryDetail = "The controls in each state, with the app styles";
     private const string TitlePrefix = "AxView - ";
 
-    private static readonly FileListEntry galleryEntry = new(GalleryTitle, GalleryDetail, null);
+    private static readonly FileListEntry galleryEntry = new(GalleryTitle, GalleryDetail, null, FileKind.Gallery);
     private static readonly StringComparison pathComparison =
         OperatingSystem.IsLinux() ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
 
@@ -33,6 +33,9 @@ internal sealed class PreviewWindowModel : IDisposable
     private readonly Func<Settings, Settings> addWindowState;
     private readonly Action<int> shutdown;
     private readonly string outputDirectory;
+
+    // A filter change lists the entries again. The cache keeps the files from a read for each key press.
+    private readonly Dictionary<string, FileKind> fileKinds = new(StringComparer.FromComparison(pathComparison));
     private string filter = string.Empty;
     private bool isGalleryShown;
 
@@ -65,6 +68,7 @@ internal sealed class PreviewWindowModel : IDisposable
         preview.Failed += (_, error) => ShowItem(error);
         preview.StopRequested += (_, handOff) => Stop(handOff);
         preview.RefreshCatalog();
+        fileKinds.Clear();
         UpdateEntries();
         preview.Show(options.AxamlPath);
         if (options.SetupError is not null)
@@ -131,6 +135,7 @@ internal sealed class PreviewWindowModel : IDisposable
     public void RefreshCatalog()
     {
         preview.RefreshCatalog();
+        fileKinds.Clear();
         UpdateEntries();
         Changed?.Invoke(this, EventArgs.Empty);
     }
@@ -209,17 +214,17 @@ internal sealed class PreviewWindowModel : IDisposable
         return found.Count == 0 ? null : string.Join(Environment.NewLine, found);
     }
 
-    private static FileListEntry FileEntry(string relativePath)
+    private FileListEntry FileEntry(string path)
     {
+        string relativePath = RelativePath(path);
         string folder = Path.GetDirectoryName(relativePath)?.Replace(Path.DirectorySeparatorChar, '/') ?? string.Empty;
-        return new FileListEntry(Path.GetFileNameWithoutExtension(relativePath), folder.Length == 0 ? "/" : folder, relativePath);
+        return new FileListEntry(Path.GetFileNameWithoutExtension(relativePath), folder.Length == 0 ? "/" : folder, relativePath, KindOf(path));
     }
 
     private void UpdateEntries()
     {
         List<FileListEntry> entries = [.. preview.Catalog
-            .Select(RelativePath)
-            .Where(p => p.Contains(filter, StringComparison.OrdinalIgnoreCase))
+            .Where(p => RelativePath(p).Contains(filter, StringComparison.OrdinalIgnoreCase))
             .Select(FileEntry)];
         if (GalleryTitle.Contains(filter, StringComparison.OrdinalIgnoreCase))
         {
@@ -285,6 +290,17 @@ internal sealed class PreviewWindowModel : IDisposable
     {
         SaveSettings();
         shutdown((int)handOff.Reason);
+    }
+
+    private FileKind KindOf(string path)
+    {
+        if (!fileKinds.TryGetValue(path, out FileKind kind))
+        {
+            kind = FileKindReader.Read(path);
+            fileKinds[path] = kind;
+        }
+
+        return kind;
     }
 
     private string RelativePath(string path) => Path.GetRelativePath(options.ProjectDirectory, path);

@@ -3,6 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Templates;
 using Avalonia.Layout;
 using Avalonia.Media;
@@ -39,6 +40,12 @@ internal sealed class PreviewWindow : Window
     private readonly ThemeSwitch themeSwitch;
     private readonly PreviewSizeSwitch sizeSwitch;
     private readonly ViewModelSwitch viewModelSwitch;
+    private readonly StackPanel expandSidebarGroup;
+    private readonly Control sidebar;
+    private readonly GridSplitter splitter = new() { Width = 4, ResizeDirection = GridResizeDirection.Columns };
+    private readonly ColumnDefinition sidebarColumn = new(SidebarWidth, GridUnitType.Pixel);
+    private GridLength expandedSidebarWidth = new(SidebarWidth);
+    private bool isSidebarCollapsed;
     private readonly WindowPlacementTracker? placementTracker;
 
     public PreviewWindow(HostOptions options, ProjectSet projects, IReadOnlyList<string> notes, DesignServices services, AppStyles appStyles)
@@ -87,7 +94,10 @@ internal sealed class PreviewWindow : Window
         ToolTip.SetTip(noDataContextBadge, "Select a ViewModel, set Design.DataContext, or make x:DataType creatable. See AxViewDesign.CreateServices.");
         DockPanel.SetDock(noDataContextBadge, Dock.Right);
 
-        filter = new TextBox { Watermark = "Filter", Margin = new Thickness(8) };
+        PathIcon searchIcon = ChromeControls.CreateIcon(ChromeIcon.Search);
+        searchIcon.Margin = new Thickness(ChromeStyle.SpacingMedium, 0, ChromeStyle.SpacingSmall, 0);
+        ChromeStyle.SetBrush(searchIcon, PathIcon.ForegroundProperty, ChromeStyle.MutedTextBrushKey);
+        filter = new TextBox { Watermark = "Filter", Margin = new Thickness(ChromeStyle.SpacingMedium), InnerLeftContent = searchIcon };
         filter.PropertyChanged += (_, e) =>
         {
             if (e.Property == TextBox.TextProperty)
@@ -96,7 +106,13 @@ internal sealed class PreviewWindow : Window
             }
         };
 
-        fileList = new ListBox { ItemTemplate = new FuncDataTemplate<FileListEntry>((entry, _) => FileItem(entry)) };
+        fileList = new ListBox
+        {
+            ItemTemplate = new FuncDataTemplate<FileListEntry>((entry, _) => entry is null ? new Panel() : new FileRow(entry)),
+            Styles = { FileRow.CreateSelectionStyles() },
+        };
+        // A long folder trims. It does not scroll the list to the side.
+        ScrollViewer.SetHorizontalScrollBarVisibility(fileList, ScrollBarVisibility.Disabled);
         fileList.SelectionChanged += (_, _) =>
         {
             if (fileList.SelectedItem is FileListEntry entry)
@@ -105,10 +121,14 @@ internal sealed class PreviewWindow : Window
             }
         };
 
-        Button openButton = new() { Content = "Open...", Margin = new Thickness(8), HorizontalAlignment = HorizontalAlignment.Stretch };
-        openButton.Click += async (_, _) => await OpenAsync();
-
-        Control sidebar = BuildSidebar(openButton);
+        Button expandSidebarButton = CreateSidebarButton(ChromeIcon.Collapse, "Expand the sidebar", -90);
+        expandSidebarButton.Click += (_, _) => SetSidebarCollapsed(false);
+        expandSidebarGroup = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Children = { expandSidebarButton, ChromeControls.CreateSeparator() },
+        };
+        sidebar = BuildSidebar();
         Control previewArea = BuildPreviewArea();
         Border statusBar = new()
         {
@@ -118,15 +138,18 @@ internal sealed class PreviewWindow : Window
         ChromeStyle.SetBrush(statusBar, Border.BorderBrushProperty, ChromeStyle.BorderBrushKey);
         DockPanel.SetDock(statusBar, Dock.Bottom);
 
-        Grid body = new() { ColumnDefinitions = new ColumnDefinitions($"{SidebarWidth},Auto,*") };
+        Grid body = new()
+        {
+            ColumnDefinitions = { sidebarColumn, new ColumnDefinition(GridLength.Auto), new ColumnDefinition(GridLength.Star) },
+        };
         body.Children.Add(sidebar);
-        GridSplitter splitter = new() { Width = 4, ResizeDirection = GridResizeDirection.Columns };
         Grid.SetColumn(splitter, 1);
         body.Children.Add(splitter);
         Grid.SetColumn(previewArea, 2);
         body.Children.Add(previewArea);
 
         Content = new DockPanel { Children = { statusBar, body } };
+        SetSidebarCollapsed(settings.IsSidebarCollapsed);
 
         // The user can add files while the window is open.
         Activated += (_, _) => model.RefreshCatalog();
@@ -158,23 +181,16 @@ internal sealed class PreviewWindow : Window
         }
     }
 
-    // The title first, so a long folder path does not hide the file name.
-    private static StackPanel FileItem(FileListEntry? entry)
+    // The chevron of the collapse icon points down. The angle turns it to the side.
+    private static Button CreateSidebarButton(ChromeIcon icon, string tip, double angle)
     {
-        StackPanel item = new() { Spacing = 1 };
-        if (entry is null)
+        Button button = ChromeControls.CreateIconButton(icon, tip);
+        if (button.Content is PathIcon pathIcon)
         {
-            return item;
+            pathIcon.RenderTransform = new RotateTransform(angle);
         }
 
-        item.Children.Add(new TextBlock { Text = entry.Title, TextTrimming = TextTrimming.CharacterEllipsis });
-        item.Children.Add(new TextBlock { Text = entry.Detail, FontSize = 11, Opacity = 0.6, TextTrimming = TextTrimming.CharacterEllipsis });
-        if (entry.RelativePath is not null)
-        {
-            ToolTip.SetTip(item, entry.RelativePath);
-        }
-
-        return item;
+        return button;
     }
 
     // The label of a group is an icon or a text in front of its control.
@@ -190,24 +206,33 @@ internal sealed class PreviewWindow : Window
         return label;
     }
 
-    private DockPanel BuildSidebar(Button openButton)
+    private DockPanel BuildSidebar()
     {
         TextBlock projectName = new()
         {
             Text = Path.GetFileName(options.ProjectDirectory.TrimEnd(Path.DirectorySeparatorChar)),
             FontWeight = FontWeight.SemiBold,
-            Margin = new Thickness(8, 8, 8, 0),
+            VerticalAlignment = VerticalAlignment.Center,
             TextTrimming = TextTrimming.CharacterEllipsis,
         };
         ToolTip.SetTip(projectName, options.ProjectDirectory);
+        Button openButton = ChromeControls.CreateIconButton(ChromeIcon.Open, "Open an AXAML file");
+        openButton.Click += async (_, _) => await OpenAsync();
+        Button collapseButton = CreateSidebarButton(ChromeIcon.Collapse, "Collapse the sidebar", 90);
+        collapseButton.Click += (_, _) => SetSidebarCollapsed(true);
+        StackPanel buttons = new() { Orientation = Orientation.Horizontal, Children = { openButton, collapseButton } };
+        DockPanel.SetDock(buttons, Dock.Right);
+        DockPanel header = new()
+        {
+            Margin = new Thickness(ChromeStyle.SpacingMedium, ChromeStyle.SpacingSmall, ChromeStyle.SpacingSmall, 0),
+            Children = { buttons, projectName },
+        };
 
         DockPanel sidebar = new();
-        DockPanel.SetDock(projectName, Dock.Top);
+        DockPanel.SetDock(header, Dock.Top);
         DockPanel.SetDock(filter, Dock.Top);
-        DockPanel.SetDock(openButton, Dock.Bottom);
-        sidebar.Children.Add(projectName);
+        sidebar.Children.Add(header);
         sidebar.Children.Add(filter);
-        sidebar.Children.Add(openButton);
         sidebar.Children.Add(fileList);
         return sidebar;
     }
@@ -221,6 +246,7 @@ internal sealed class PreviewWindow : Window
         Button aboutButton = ChromeControls.CreateIconButton(ChromeIcon.About, "About AxView");
         aboutButton.Click += async (_, _) => await new AboutDialog(AboutInfo.Read(typeof(AboutInfo).Assembly)).ShowDialog(this);
         DockPanel.SetDock(aboutButton, Dock.Right);
+        DockPanel.SetDock(expandSidebarGroup, Dock.Left);
 
         TextBlock dataContextLabel = new() { Text = "DataContext", VerticalAlignment = VerticalAlignment.Center };
         ChromeStyle.SetBrush(dataContextLabel, TextBlock.ForegroundProperty, ChromeStyle.MutedTextBrushKey);
@@ -232,6 +258,7 @@ internal sealed class PreviewWindow : Window
                 Children =
                 {
                     aboutButton,
+                    expandSidebarGroup,
                     new StackPanel
                     {
                         Orientation = Orientation.Horizontal,
@@ -262,7 +289,23 @@ internal sealed class PreviewWindow : Window
                 Window = placementTracker.GetPlacement(),
                 Theme = themeSwitch.SelectedItem is PreviewTheme theme ? theme : PreviewTheme.Default,
                 Size = sizeSwitch.Size,
+                IsSidebarCollapsed = isSidebarCollapsed,
             };
+
+    // The splitter changes the width of the sidebar. The expand gives back the last width.
+    private void SetSidebarCollapsed(bool isCollapsed)
+    {
+        if (isCollapsed && !isSidebarCollapsed)
+        {
+            expandedSidebarWidth = sidebarColumn.Width;
+        }
+
+        isSidebarCollapsed = isCollapsed;
+        sidebar.IsVisible = !isCollapsed;
+        splitter.IsVisible = !isCollapsed;
+        expandSidebarGroup.IsVisible = isCollapsed;
+        sidebarColumn.Width = isCollapsed ? new GridLength(0) : expandedSidebarWidth;
+    }
 
     private async Task OpenAsync()
     {
