@@ -6,7 +6,6 @@ using Avalonia.Media.Imaging;
 
 using AxView.Host.Rendering;
 using AxView.Host.Startup;
-using AxView.Protocol;
 
 namespace AxView.Host.UI;
 
@@ -56,10 +55,9 @@ internal sealed class SnapshotWindow : Window
     /// <summary>Gets the error of the load or of a dispatcher job, or null.</summary>
     public string? Error => livePreview?.Error;
 
-    /// <summary>Writes a PNG of the window. Writes the error, if any, to the standard error stream.</summary>
+    /// <summary>Writes a PNG of the window. <see cref="Error"/> tells if the PNG shows the last good preview.</summary>
     /// <param name="pngPath">The path of the PNG.</param>
-    /// <returns><see cref="ExitReason.RenderFailed"/> when the load or a dispatcher job failed, else <see cref="ExitReason.Ok"/>.</returns>
-    public ExitReason Save(string pngPath)
+    public void Save(string pngPath)
     {
         Size clientSize = ClientSize;
         Visual captured = this;
@@ -74,19 +72,9 @@ internal sealed class SnapshotWindow : Window
         }
 
         PixelSize size = PixelSize.FromSize(clientSize, RenderScaling);
-        using (RenderTargetBitmap bitmap = new(size, new Vector(ScreenDpi * RenderScaling, ScreenDpi * RenderScaling)))
-        {
-            bitmap.Render(captured);
-            bitmap.Save(pngPath);
-        }
-
-        if (Error is null)
-        {
-            return ExitReason.Ok;
-        }
-
-        Console.Error.WriteLine($"axview: error: {Error}");
-        return ExitReason.RenderFailed;
+        using RenderTargetBitmap bitmap = new(size, new Vector(ScreenDpi * RenderScaling, ScreenDpi * RenderScaling));
+        bitmap.Render(captured);
+        bitmap.Save(pngPath);
     }
 
     protected override void OnClosed(EventArgs e)

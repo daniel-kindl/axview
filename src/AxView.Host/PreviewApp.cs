@@ -6,7 +6,6 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Styling;
 using Avalonia.Threading;
 
-using AxView.Host.Catalog;
 using AxView.Host.Rendering;
 using AxView.Host.Startup;
 using AxView.Host.UI;
@@ -53,22 +52,17 @@ internal sealed class PreviewApp(HostOptions options, List<string> notes) : Appl
 
     public override void OnFrameworkInitializationCompleted()
     {
-        // The mode of the options guarantees the path of each snapshot mode.
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            switch (options.Mode)
+            if (options.Mode == HostMode.Preview)
             {
-                case HostMode.SnapshotAll:
-                    // The run opens and closes one window per file. Thus the app must not exit at the first close.
-                    desktop.ShutdownMode = ShutdownMode.OnExplicitShutdown;
-                    _ = SnapshotAllAsync(desktop, options.SnapshotAllDirectory!);
-                    break;
-                case HostMode.Snapshot:
-                    desktop.MainWindow = CreateSnapshotWindow(desktop, options.SnapshotPath!);
-                    break;
-                default:
-                    desktop.MainWindow = new PreviewWindow(options, Projects, notes, services, ImportedAppStyles);
-                    break;
+                desktop.MainWindow = new PreviewWindow(options, Projects, notes, services, ImportedAppStyles);
+            }
+            else
+            {
+                // A snapshot run opens and closes its own windows. Thus the app must not exit at the first close.
+                desktop.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+                _ = SnapshotAsync(desktop);
             }
         }
 
@@ -102,18 +96,13 @@ internal sealed class PreviewApp(HostOptions options, List<string> notes) : Appl
         }
     }
 
-    private async Task SnapshotAllAsync(IClassicDesktopStyleApplicationLifetime desktop, string directory)
+    private async Task SnapshotAsync(IClassicDesktopStyleApplicationLifetime desktop)
     {
-        ProjectSnapshots snapshots = new(
-            Projects.CreateViewRenderer(services),
-            ImportedAppStyles.CreateCopy,
-            options.ProjectDirectory,
-            directory,
-            snapshotDelay);
+        SnapshotRunner runner = new(Projects, services, ImportedAppStyles.CreateCopy, snapshotDelay);
         ExitReason reason;
         try
         {
-            reason = await snapshots.RunAsync();
+            reason = await runner.RunAsync(options);
         }
         catch (Exception ex)
         {
@@ -122,28 +111,7 @@ internal sealed class PreviewApp(HostOptions options, List<string> notes) : Appl
             reason = ExitReason.RenderFailed;
         }
 
-        desktop.Shutdown((int)reason);
-    }
-
-    private SnapshotWindow? CreateSnapshotWindow(IClassicDesktopStyleApplicationLifetime desktop, string pngPath)
-    {
-        PreviewRenderer renderer = Projects.CreateViewRenderer(services);
-        Type? viewModelType = null;
-        if (options.ViewModelName is not null)
-        {
-            viewModelType = ViewModelCatalog.Find(Projects.ViewAssembly, services, options.ViewModelName);
-            if (viewModelType is null)
-            {
-                Console.Error.WriteLine($"axview: error: No ViewModel '{options.ViewModelName}' that the design services can create.");
-
-                // The lifetime has not started yet. Thus the shutdown must wait for the main loop.
-                Dispatcher.UIThread.Post(() => desktop.Shutdown((int)ExitReason.BadArguments));
-                return null;
-            }
-        }
-
-        SnapshotWindow window = new(renderer, options.AxamlPath, ImportedAppStyles.CreateCopy(), viewModelType);
-        window.Opened += (_, _) => _ = DispatcherTimer.RunOnce(() => desktop.Shutdown((int)window.Save(pngPath)), snapshotDelay);
-        return window;
+        // A run can end before the main loop starts, for example on an unknown ViewModel. Thus the shutdown waits for the main loop.
+        Dispatcher.UIThread.Post(() => desktop.Shutdown((int)reason));
     }
 }

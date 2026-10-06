@@ -1,0 +1,148 @@
+extern alias host;
+
+using Avalonia.Headless.XUnit;
+
+using AxView.Tests.Fixtures;
+
+using host::AxView.Host.Rendering;
+using host::AxView.Host.Startup;
+using host::AxView.Host.UI;
+using host::AxView.Protocol;
+
+namespace AxView.Tests.Host;
+
+public sealed class SnapshotRunnerTests
+{
+    private const string AvaloniaXmlns = "xmlns=\"https://github.com/avaloniaui\"";
+
+    [AvaloniaFact]
+    public async Task RunAsync_Snapshot_WritesThePngOfTheFileAsync()
+    {
+        using TempDir dir = new();
+        string file = dir.Write("Views/Hello.axaml", $"""<TextBlock {AvaloniaXmlns} Text="Hello" />""");
+        string png = Path.Combine(dir.Path, "hello.png");
+
+        ExitReason reason = await Runner(dir).RunAsync(Options(dir, file) with { SnapshotPath = png });
+
+        Assert.Equal(ExitReason.Ok, reason);
+        Assert.True(File.Exists(png));
+    }
+
+    [AvaloniaFact]
+    public async Task RunAsync_SnapshotOfABrokenFile_GivesRenderFailedAsync()
+    {
+        using TempDir dir = new();
+        string file = dir.Write("Views/Broken.axaml", "<TextBlock");
+        string png = Path.Combine(dir.Path, "broken.png");
+
+        ExitReason reason = await Runner(dir).RunAsync(Options(dir, file) with { SnapshotPath = png });
+
+        Assert.Equal(ExitReason.RenderFailed, reason);
+        Assert.True(File.Exists(png));
+    }
+
+    [AvaloniaFact]
+    public async Task RunAsync_SnapshotWithAViewModel_GivesOkAsync()
+    {
+        using TempDir dir = new();
+        string file = dir.Write("Views/Hello.axaml", $"""<TextBlock {AvaloniaXmlns} Text="Hello" />""");
+        string png = Path.Combine(dir.Path, "hello.png");
+        HostOptions options = Options(dir, file) with { SnapshotPath = png, ViewModelName = typeof(FixtureViewModel).FullName };
+
+        ExitReason reason = await Runner(dir).RunAsync(options);
+
+        Assert.Equal(ExitReason.Ok, reason);
+    }
+
+    [AvaloniaFact]
+    public async Task RunAsync_SnapshotWithAnUnknownViewModel_GivesBadArgumentsAndNoPngAsync()
+    {
+        using TempDir dir = new();
+        string file = dir.Write("Views/Hello.axaml", $"""<TextBlock {AvaloniaXmlns} Text="Hello" />""");
+        string png = Path.Combine(dir.Path, "hello.png");
+        HostOptions options = Options(dir, file) with { SnapshotPath = png, ViewModelName = "Unknown.ViewModel" };
+
+        ExitReason reason = await Runner(dir).RunAsync(options);
+
+        Assert.Equal(ExitReason.BadArguments, reason);
+        Assert.False(File.Exists(png));
+    }
+
+    [AvaloniaFact]
+    public async Task RunAsync_SnapshotAll_WritesASummaryLinePerFileAsync()
+    {
+        using TempDir dir = new();
+        string file = dir.Write("Views/Hello.axaml", $"""<TextBlock {AvaloniaXmlns} Text="Hello" />""");
+        _ = dir.Write("Views/Sub/World.axaml", $"""<TextBlock {AvaloniaXmlns} Text="World" />""");
+        string output = Path.Combine(dir.Path, "out");
+
+        ExitReason reason = await Runner(dir).RunAsync(Options(dir, file) with { SnapshotAllDirectory = output });
+
+        Assert.Equal(ExitReason.Ok, reason);
+        Assert.Equal(
+            ["ok\tViews/Hello.axaml", "ok\tViews/Sub/World.axaml", "ok\t(control gallery)"],
+            await File.ReadAllLinesAsync(Path.Combine(output, "summary.txt")));
+    }
+
+    [AvaloniaFact]
+    public async Task RunAsync_SnapshotAllWithABrokenFile_FailsButStillRendersTheOtherFilesAsync()
+    {
+        using TempDir dir = new();
+        string file = dir.Write("Views/Broken.axaml", "<TextBlock");
+        _ = dir.Write("Views/Hello.axaml", $"""<TextBlock {AvaloniaXmlns} Text="Hello" />""");
+        string output = Path.Combine(dir.Path, "out");
+
+        ExitReason reason = await Runner(dir).RunAsync(Options(dir, file) with { SnapshotAllDirectory = output });
+
+        Assert.Equal(ExitReason.RenderFailed, reason);
+        string[] summary = await File.ReadAllLinesAsync(Path.Combine(output, "summary.txt"));
+        Assert.StartsWith("FAIL\tViews/Broken.axaml\t", summary[0], StringComparison.Ordinal);
+        Assert.Equal("ok\tViews/Hello.axaml", summary[1]);
+    }
+
+    [AvaloniaFact]
+    public async Task RunAsync_SnapshotAllWithAFileThatThrowsInLayout_FailsButStillRendersTheOtherFilesAsync()
+    {
+        using TempDir dir = new();
+        string file = dir.Write(
+            "Views/Throws.axaml",
+            $"""<local:FixtureThrowingControl {AvaloniaXmlns} xmlns:local="using:AxView.Tests.Fixtures" />""");
+        _ = dir.Write("Views/Hello.axaml", $"""<TextBlock {AvaloniaXmlns} Text="Hello" />""");
+        string output = Path.Combine(dir.Path, "out");
+
+        ExitReason reason = await Runner(dir).RunAsync(Options(dir, file) with { SnapshotAllDirectory = output });
+
+        Assert.Equal(ExitReason.RenderFailed, reason);
+        string[] summary = await File.ReadAllLinesAsync(Path.Combine(output, "summary.txt"));
+        Assert.Contains("Layout failed.", summary[1], StringComparison.Ordinal);
+        Assert.StartsWith("FAIL\tViews/Throws.axaml\t", summary[1], StringComparison.Ordinal);
+        Assert.Equal("ok\tViews/Hello.axaml", summary[0]);
+    }
+
+    [AvaloniaFact]
+    public async Task RunAsync_SnapshotAll_WritesTheControlGalleryAsync()
+    {
+        using TempDir dir = new();
+        string file = dir.Write("Views/Hello.axaml", $"""<TextBlock {AvaloniaXmlns} Text="Hello" />""");
+        string output = Path.Combine(dir.Path, "out");
+
+        _ = await Runner(dir).RunAsync(Options(dir, file) with { SnapshotAllDirectory = output });
+
+        Assert.True(File.Exists(Path.Combine(output, "axview-gallery.png")));
+    }
+
+    [AvaloniaFact]
+    public async Task RunAsync_Preview_ThrowsAsync()
+    {
+        using TempDir dir = new();
+        string file = dir.Write("Views/Hello.axaml", $"""<TextBlock {AvaloniaXmlns} Text="Hello" />""");
+
+        _ = await Assert.ThrowsAsync<ArgumentException>(() => Runner(dir).RunAsync(Options(dir, file)));
+    }
+
+    private static SnapshotRunner Runner(TempDir dir) =>
+        new(ProjectSet.Load(Options(dir, string.Empty)), DesignServices.None, () => TargetStyles.None, TimeSpan.Zero);
+
+    private static HostOptions Options(TempDir dir, string file) =>
+        new(file, dir.Path, "AxView.Tests", null, "Loader.dll", null, null);
+}
