@@ -195,6 +195,19 @@ internal sealed class PreviewWindow : Window
         return item;
     }
 
+    // The label of a group is an icon or a text in front of its control.
+    private static StackPanel ToolbarGroup(Control label, Control control) =>
+        new() { Orientation = Orientation.Horizontal, Spacing = ChromeStyle.SpacingMedium, Children = { label, control } };
+
+    private static PathIcon ToolbarIcon(ChromeIcon icon, string tip)
+    {
+        PathIcon label = ChromeControls.CreateIcon(icon);
+        label.VerticalAlignment = VerticalAlignment.Center;
+        ToolTip.SetTip(label, tip);
+        ChromeStyle.SetBrush(label, PathIcon.ForegroundProperty, ChromeStyle.MutedTextBrushKey);
+        return label;
+    }
+
     private DockPanel BuildSidebar(Button openButton)
     {
         TextBlock projectName = new()
@@ -227,28 +240,30 @@ internal sealed class PreviewWindow : Window
         });
         preview.Children.Add(errorPanel);
 
-        Button aboutButton = new() { Content = "About" };
+        Button aboutButton = ChromeControls.CreateIconButton(ChromeIcon.About, "About AxView");
         aboutButton.Click += async (_, _) => await new AboutDialog(AboutInfo.Read(typeof(AboutInfo).Assembly)).ShowDialog(this);
         DockPanel.SetDock(aboutButton, Dock.Right);
 
+        TextBlock dataContextLabel = new() { Text = "DataContext", VerticalAlignment = VerticalAlignment.Center };
+        ChromeStyle.SetBrush(dataContextLabel, TextBlock.ForegroundProperty, ChromeStyle.MutedTextBrushKey);
         Border toolbar = new()
         {
             Child = new DockPanel
             {
-                Margin = new Thickness(8, 4),
+                Margin = new Thickness(ChromeStyle.SpacingMedium, ChromeStyle.SpacingSmall),
                 Children =
                 {
                     aboutButton,
                     new StackPanel
                     {
                         Orientation = Orientation.Horizontal,
-                        Spacing = 8,
                         Children =
                         {
-                            themeSwitch,
-                            sizeSwitch,
-                            new TextBlock { Text = "DataContext", Margin = new Thickness(8, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center },
-                            viewModelSwitch,
+                            ToolbarGroup(ToolbarIcon(ChromeIcon.Theme, "Preview theme"), themeSwitch),
+                            ChromeControls.CreateSeparator(),
+                            ToolbarGroup(ToolbarIcon(ChromeIcon.Size, "Preview size"), sizeSwitch),
+                            ChromeControls.CreateSeparator(),
+                            ToolbarGroup(dataContextLabel, viewModelSwitch),
                         },
                     },
                 },
