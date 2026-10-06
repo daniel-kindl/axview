@@ -8,16 +8,7 @@ Do not change or use again a number.
 
 ## Now
 
-- [ ] #37 **Own chrome theme (M).** When the app ships no Fluent or Simple theme, get `Avalonia.Themes.Simple` from NuGet.
-  Use the Avalonia version of the app, as `NuGetLoaderSource` does for the loader.
-  Add the package to the probe path of `LoaderResolver`. Then the chrome does not use a second instance of the app styles.
-
 ## Next
-
-- [ ] #57 **Version test on a tag (S).** `Read_GivesTheVersionFromTheGitTags` fails when a `v1.0.0` tag is on HEAD.
-  MinVer then gives `1.0.0`, the same as the SDK default. Find a check that does not depend on the tag.
-- [ ] #58 **README (S).** Add `README.md` at the root. Tell what AxView does, how to build it, and how to use the launcher.
-  Include the command-line options, the snapshot modes, and `settings.json`. Link `docs/RELEASE.md`.
 
 ## Later
 
@@ -83,3 +74,6 @@ Each known issue is now an item: #30 to #39.
 - [x] #55 .NET 10: the launcher and the tests target `net10.0`. The host stays on `net8.0`. `2471184`
 - [x] #20 Avalonia 12: `AxView.Host12` compiles the host sources against Avalonia 12. The launcher selects `host` or `host12` (ADR 0002). `ce322b7`
 - [x] #56 Launcher on Avalonia 12: the picker and the tests use Avalonia 12.1.3 and xunit v3. The tests test the Avalonia 12 host build. `264b173`
+- [x] #57 Version test on a tag: the test project writes the MinVer version. The test compares the launcher version with it. `ec8bd65`
+- [x] #37 Own chrome theme: the launcher gets `Avalonia.Themes.Simple` from NuGet when the app ships no theme. `d200d03`
+- [x] #58 README: what AxView does, the build, the options, the snapshot modes, and `settings.json`. `cb9462b`
