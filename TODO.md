@@ -18,6 +18,7 @@ Do not change or use again a number.
 
 ## Done
 
+- [x] #81 Launcher publish: `Private="false"` on the host references keeps their deps and runtimeconfig files out of the output. Before, `dotnet publish` failed with NETSDK1152. `PublishTests` publishes the launcher. `1ff1918`
 - [x] #79 Snapshot report: `--report <file.json>` with `--snapshot` writes `SnapshotReport`: the exit reason, the load time, the error with its line and column, and the log. `LogCapture` catches the Avalonia warnings, for example binding errors. `2c7f770`
 - [x] #78 Visual tree dump: `--tree <file.json>` with `--snapshot` writes the visual tree of the view with `VisualTreeDump`. Compact JSON, because indents made the file 7 times larger. `SnapshotRequest` holds the snapshot options of the launcher. `a2af3ce`
 - [x] #80 Render flags: `--size` and `--theme` set the size and the theme variant of `--snapshot` and `--snapshot-all`. The gallery ignores the size. `PreviewSize.Parse` reads the size. `ac6ba58`
