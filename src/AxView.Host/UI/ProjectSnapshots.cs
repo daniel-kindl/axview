@@ -7,13 +7,15 @@ using AxView.Protocol;
 
 namespace AxView.Host.UI;
 
-/// <summary>Renders all AXAML files of a project. Writes one PNG per file and a summary file.</summary>
+/// <summary>Renders all AXAML files of a project and the control gallery. Writes one PNG for each, and a summary file.</summary>
 /// <remarks>
 /// The PNG of <c>Views/Main.axaml</c> is <c>Views/Main.png</c> in the output folder.
-/// The summary file <c>summary.txt</c> has one line per file, with tab-separated fields:
+/// The PNG of the <see cref="ControlGallery"/> is <c>axview-gallery.png</c> in the output folder.
+/// The summary file <c>summary.txt</c> has one line per file, and a last line for the gallery, with tab-separated fields:
 /// <code>
 /// ok    Views/Main.axaml
 /// FAIL  Views/Broken.axaml    The error text, on one line
+/// ok    (control gallery)
 /// </code>
 /// A failed file does not stop the run.
 /// </remarks>
@@ -30,39 +32,51 @@ internal sealed class ProjectSnapshots(
     TimeSpan settleDelay)
 {
     private const string SummaryFileName = "summary.txt";
+    private const string GalleryFileName = "axview-gallery.png";
+    private const string GalleryName = "(control gallery)";
 
-    /// <summary>Renders each file in turn.</summary>
-    /// <returns><see cref="ExitReason.RenderFailed"/> when any file failed, else <see cref="ExitReason.Ok"/>.</returns>
+    /// <summary>Renders each file in turn, then the control gallery.</summary>
+    /// <returns><see cref="ExitReason.RenderFailed"/> when any snapshot failed, else <see cref="ExitReason.Ok"/>.</returns>
     public async Task<ExitReason> RunAsync()
     {
         _ = Directory.CreateDirectory(outputDirectory);
         StringBuilder summary = new();
-        ExitReason result = ExitReason.Ok;
+        bool isGood = true;
         foreach (string file in AxamlCatalog.List(projectDirectory))
         {
             string relative = Path.GetRelativePath(projectDirectory, file).Replace(Path.DirectorySeparatorChar, '/');
-            string? error = await SnapshotAsync(file, relative);
-            if (error is null)
-            {
-                _ = summary.AppendLine($"ok\t{relative}");
-                continue;
-            }
-
-            result = ExitReason.RenderFailed;
-            _ = summary.AppendLine($"FAIL\t{relative}\t{error.ReplaceLineEndings(" ")}");
+            string png = Path.Combine(outputDirectory, Path.ChangeExtension(relative, ".png"));
+            string? error = await SnapshotAsync(new SnapshotWindow(renderer, file, createTarget()), png);
+            isGood &= AddSummaryLine(summary, relative, error);
         }
+
+        TargetStyles galleryTarget = createTarget();
+        SnapshotWindow galleryWindow = new(ControlGallery.Create(galleryTarget.Styles), galleryTarget);
+        string? galleryError = await SnapshotAsync(galleryWindow, Path.Combine(outputDirectory, GalleryFileName));
+        isGood &= AddSummaryLine(summary, GalleryName, galleryError);
 
         string summaryText = summary.ToString();
         File.WriteAllText(Path.Combine(outputDirectory, SummaryFileName), summaryText);
         Console.Error.Write(summaryText);
-        return result;
+        return isGood ? ExitReason.Ok : ExitReason.RenderFailed;
     }
 
-    private async Task<string?> SnapshotAsync(string file, string relative)
+    // Gives true for a good snapshot.
+    private static bool AddSummaryLine(StringBuilder summary, string name, string? error)
     {
-        string png = Path.Combine(outputDirectory, Path.ChangeExtension(relative, ".png"));
+        if (error is null)
+        {
+            _ = summary.AppendLine($"ok\t{name}");
+            return true;
+        }
+
+        _ = summary.AppendLine($"FAIL\t{name}\t{error.ReplaceLineEndings(" ")}");
+        return false;
+    }
+
+    private async Task<string?> SnapshotAsync(SnapshotWindow window, string png)
+    {
         _ = Directory.CreateDirectory(Path.GetDirectoryName(png)!);
-        SnapshotWindow window = new(renderer, file, createTarget());
         try
         {
             window.Show();

@@ -24,6 +24,10 @@ internal sealed class PreviewWindow : Window
 {
     private const double SidebarWidth = 280;
 
+    // The file list shows the gallery as the first entry. No relative path of a project file is empty.
+    private const string GalleryEntry = "";
+    private const string GalleryTitle = "Control gallery";
+
     private static readonly FontFamily monospace = new("Cascadia Mono, Consolas, Menlo, DejaVu Sans Mono, monospace");
     private static readonly StringComparison pathComparison =
         OperatingSystem.IsLinux() ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
@@ -44,6 +48,7 @@ internal sealed class PreviewWindow : Window
     private readonly ViewModelSwitch viewModelSwitch;
     private readonly WindowPlacementTracker? placementTracker;
     private bool isSyncingSelection;
+    private bool isGalleryShown;
 
     public PreviewWindow(HostOptions options, ProjectSet projects, IReadOnlyList<string> notes, DesignServices services, AppStyles appStyles)
     {
@@ -191,6 +196,19 @@ internal sealed class PreviewWindow : Window
     private static StackPanel FileItem(string? relative)
     {
         string path = relative ?? string.Empty;
+        if (path == GalleryEntry)
+        {
+            return new StackPanel
+            {
+                Spacing = 1,
+                Children =
+                {
+                    new TextBlock { Text = GalleryTitle },
+                    new TextBlock { Text = "The controls in each state, with the app styles", FontSize = 11, Opacity = 0.6 },
+                },
+            };
+        }
+
         string folder = Path.GetDirectoryName(path)?.Replace(Path.DirectorySeparatorChar, '/') ?? string.Empty;
         StackPanel item = new() { Spacing = 1 };
         item.Children.Add(new TextBlock { Text = Path.GetFileNameWithoutExtension(path), TextTrimming = TextTrimming.CharacterEllipsis });
@@ -303,17 +321,30 @@ internal sealed class PreviewWindow : Window
         List<string> items = [.. preview.Catalog
             .Select(RelativePath)
             .Where(p => p.Contains(text, StringComparison.OrdinalIgnoreCase))];
+        if (GalleryTitle.Contains(text, StringComparison.OrdinalIgnoreCase))
+        {
+            items.Insert(0, GalleryEntry);
+        }
 
         isSyncingSelection = true;
         fileList.ItemsSource = items;
-        string shown = RelativePath(preview.FilePath);
+        string shown = isGalleryShown ? GalleryEntry : RelativePath(preview.FilePath);
         fileList.SelectedItem = items.FirstOrDefault(p => string.Equals(p, shown, pathComparison));
         isSyncingSelection = false;
     }
 
     private void OnFileSelected()
     {
-        if (!isSyncingSelection && fileList.SelectedItem is string relative)
+        if (isSyncingSelection || fileList.SelectedItem is not string relative)
+        {
+            return;
+        }
+
+        if (relative == GalleryEntry)
+        {
+            ShowGallery();
+        }
+        else
         {
             Show(Path.Combine(options.ProjectDirectory, relative));
         }
@@ -332,6 +363,7 @@ internal sealed class PreviewWindow : Window
         string? path = picked.Count == 1 ? picked[0].TryGetLocalPath() : null;
         if (path is not null)
         {
+            isGalleryShown = false;
             preview.Open(path);
             ShowShownFile();
         }
@@ -351,22 +383,47 @@ internal sealed class PreviewWindow : Window
 
     private void Show(string path)
     {
+        isGalleryShown = false;
         preview.Show(path);
         ShowShownFile();
+    }
+
+    private void ShowGallery()
+    {
+        isGalleryShown = true;
+        Title = $"AxView - {GalleryTitle}";
+        viewModelSwitch.IsEnabled = false;
+        noDataContextBadge.IsVisible = false;
+        HideError();
+        CreateGallery();
+        status.Text = $"{GalleryTitle}   Output: {OutputDirectory()}";
+        ShowCatalog();
     }
 
     // Show the title, the ViewModel, and the list selection of the shown file.
     private void ShowShownFile()
     {
         Title = $"AxView - {RelativePath(preview.FilePath)}";
+        viewModelSwitch.IsEnabled = true;
         isSyncingSelection = true;
         viewModelSwitch.SelectedTypeName = preview.ViewModelName;
         isSyncingSelection = false;
         ShowCatalog();
     }
 
+    // The scope has the app styles. An include reload can add or remove a style class, so the gallery needs new rows.
+    private void CreateGallery() => scope.Content = ControlGallery.Create(scope.Styles);
+
+    // The preview of the file stays live behind the gallery. It shows again when the user selects a file.
+    // The preview changes also after an include reload. Then the gallery gets the changed style classes.
     private void ShowPreview()
     {
+        if (isGalleryShown)
+        {
+            CreateGallery();
+            return;
+        }
+
         scope.Content = preview.View;
         noDataContextBadge.IsVisible = preview.View is { DataContext: null } && !preview.IsStylePreview;
         if (preview.Error is not null)

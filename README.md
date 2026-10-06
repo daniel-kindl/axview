@@ -7,6 +7,7 @@ When you save the file, AxView loads it again.
 - A change of a C# file of the project starts a build of the app. Then the preview starts again.
 - A change of App.axaml or of a `StyleInclude` or `ResourceInclude` file updates the preview.
 - An error in the file shows an error panel. The last good preview stays.
+- The "Control gallery" entry of the file list shows the common controls in each state, with the app styles.
 - A snapshot mode writes PNG files for scripts and CI.
 
 ## Requirements
@@ -94,6 +95,21 @@ FAIL    Views/Broken.axaml    The error text, on one line
 ```
 
 A failed file does not stop the run.
+
+`--snapshot-all` also writes the control gallery to `axview-gallery.png`.
+The last line of `summary.txt` is for the gallery: `ok      (control gallery)`.
+
+### Control gallery
+
+The gallery shows the common controls with the styles of the app.
+Each section has one row for each variant and one column for each state.
+
+- The states are normal, pointer over, pressed, focus, disabled, and error.
+- The gallery sets the pseudo-classes, for example `:pointerover`. Only the normal column takes input.
+- Each style class of the app on a gallery control gets a row, for example `Button .primary`.
+- A control that fails in layout shows its error in its cell. The other cells stay.
+
+The gallery cannot show a state that needs a real popup or real focus, for example an open ComboBox or a focus adorner.
 
 ### Exit codes
 

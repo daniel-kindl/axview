@@ -27,7 +27,7 @@ public sealed class ProjectSnapshotsTests
 
         Assert.Equal(ExitReason.Ok, reason);
         Assert.Equal(
-            ["ok\tViews/Hello.axaml", "ok\tViews/Sub/World.axaml"],
+            ["ok\tViews/Hello.axaml", "ok\tViews/Sub/World.axaml", "ok\t(control gallery)"],
             File.ReadAllLines(Path.Combine(output, "summary.txt")));
     }
 
@@ -64,6 +64,18 @@ public sealed class ProjectSnapshotsTests
         Assert.Contains("Layout failed.", summary[1], StringComparison.Ordinal);
         Assert.StartsWith("FAIL	Views/Throws.axaml	", summary[1], StringComparison.Ordinal);
         Assert.Equal("ok	Views/Hello.axaml", summary[0]);
+    }
+
+    [AvaloniaFact]
+    public async Task RunAsync_WritesTheControlGalleryAsync()
+    {
+        using TempDir dir = new();
+        _ = dir.Write("Views/Hello.axaml", $"""<TextBlock {AvaloniaXmlns} Text="Hello" />""");
+        string output = Path.Combine(dir.Path, "out");
+
+        _ = await Snapshots(dir, output).RunAsync();
+
+        Assert.True(File.Exists(Path.Combine(output, "axview-gallery.png")));
     }
 
     private static ProjectSnapshots Snapshots(TempDir dir, string output) => new(
