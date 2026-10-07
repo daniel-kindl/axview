@@ -11,6 +11,30 @@ Do not change or use again a number.
 
 ## Next
 
+- [ ] #82 **Stale app output (S).** `OutputFinder` prefers a Debug output to a newer Release output.
+  The launcher does not build before the first host start.
+  An old output gives errors such as `Unable to resolve "ShellDesignData.Login" as static field`.
+  Do one or more of these steps:
+  - Select the newest output, or show a warning when a Release output is newer than the Debug output.
+  - Show a warning when a source file of the project is newer than the selected output.
+  - Build the app before the first host start, when the output is old.
+- [ ] #83 **ReactiveUI scheduler (S).** The host does not set the ReactiveUI main thread scheduler of the app.
+  A `ReactiveCommand` that runs in the preview then raises `CanExecuteChanged` on the thread pool.
+  A `Button` reads its `Command` on that thread, and the host stops with an unhandled exception.
+  Error: `The calling thread cannot access this object because a different thread owns it.`
+  The snapshot exit code was -532462766, not 1, and no report was written.
+  Example: a design ViewModel that calls `AddCmd.Execute().Subscribe()` (DAT4000 `UserManagementDesignData`).
+  Do these steps:
+  - Set `RxSchedulers.MainThreadScheduler` to the Avalonia dispatcher when the app references ReactiveUI.
+  - Catch an unhandled exception of a background thread. Show it in the error panel and in `--report`.
+- [ ] #84 **Design mode flag (S).** The host does not set `Design.IsDesignMode`.
+  App code that checks the flag runs its runtime path in the preview.
+  Example: DAT4000 design data must test `LoggerService.IsInitialized` because the flag is false.
+  Set the flag before the host loads the first file.
+- [ ] #85 **Locked app output (M).** The host loads the assemblies from the app output folder.
+  While a preview is open, a build of the app cannot replace these files (MSB3021).
+  Load the assemblies from a shadow copy, or from memory, so that the app build can continue.
+
 ## Later
 
 - [ ] #59 **Avalonia 11 host tests (M).** The test project tests only the Avalonia 12 host build (ADR 0002).
