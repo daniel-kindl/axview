@@ -22,7 +22,8 @@ public sealed class HostProtocolTests
         Size: new PreviewSize(PreviewSizePreset.Custom, 500, 300),
         Theme: PreviewTheme.Dark,
         TreePath: "/out/tree.json",
-        ReportPath: "/out/report.json");
+        ReportPath: "/out/report.json",
+        OutputDirectory: "/src/Desktop/bin/Debug/net9.0");
 
     // The full options without the options that need a snapshot.
     private static readonly HostOptions fullPreview = full with { SnapshotPath = null, ViewModelName = null, TreePath = null, ReportPath = null };
@@ -53,6 +54,7 @@ public sealed class HostProtocolTests
             Theme = null,
             TreePath = null,
             ReportPath = null,
+            OutputDirectory = null,
         };
 
         HostOptions parsed = HostOptions.Parse(options.ToArguments());

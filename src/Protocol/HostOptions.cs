@@ -34,6 +34,9 @@ namespace AxView.Protocol;
 /// <param name="Theme">If set, the theme variant of each snapshot. <see cref="ParseTheme"/> reads the value.</param>
 /// <param name="TreePath">If set, the host saves the visual tree of the snapshot to this JSON file.</param>
 /// <param name="ReportPath">If set, the host saves the result, the load time, the error, and the log of the snapshot to this JSON file.</param>
+/// <param name="OutputDirectory">
+/// If set, the app output that the launcher found. The host shows it. The host runs in a copy of this folder, so the build can replace its files.
+/// </param>
 internal sealed record HostOptions(
     string AxamlPath,
     string ProjectDirectory,
@@ -52,7 +55,8 @@ internal sealed record HostOptions(
     PreviewSize? Size = null,
     PreviewTheme? Theme = null,
     string? TreePath = null,
-    string? ReportPath = null)
+    string? ReportPath = null,
+    string? OutputDirectory = null)
 {
     private const string AxamlKey = "--axaml";
     private const string ProjectKey = "--project";
@@ -68,6 +72,7 @@ internal sealed record HostOptions(
     private const string ViewModelKey = "--view-model";
     private const string ReferencedProjectsKey = "--referenced-projects";
     private const string ChromeThemeKey = "--chrome-theme";
+    private const string OutputKey = "--output";
     private const string SizeKey = "--size";
     private const string ThemeKey = "--theme";
     private const string TreeKey = "--tree";
@@ -76,7 +81,7 @@ internal sealed record HostOptions(
     private static readonly string[] keys =
     [
         AxamlKey, ProjectKey, AssemblyKey, AppAssemblyKey, LoaderKey, SnapshotKey, HandOffKey, SetupErrorKey, SettingsKey, AppProjectKey,
-        SnapshotAllKey, ViewModelKey, ReferencedProjectsKey, ChromeThemeKey, SizeKey, ThemeKey, TreeKey, ReportKey,
+        SnapshotAllKey, ViewModelKey, ReferencedProjectsKey, ChromeThemeKey, SizeKey, ThemeKey, TreeKey, ReportKey, OutputKey,
     ];
 
     /// <summary>Gets the host mode. A snapshot folder selects <see cref="HostMode.SnapshotAll"/>, a snapshot path <see cref="HostMode.Snapshot"/>.</summary>
@@ -190,7 +195,8 @@ internal sealed record HostOptions(
             size,
             theme,
             treePath,
-            reportPath);
+            reportPath,
+            values.GetValueOrDefault(OutputKey));
     }
 
     /// <summary>Writes the options as the host command line.</summary>
@@ -217,6 +223,7 @@ internal sealed record HostOptions(
         AddOptional(args, ThemeKey, Theme?.ToString());
         AddOptional(args, TreeKey, TreePath);
         AddOptional(args, ReportKey, ReportPath);
+        AddOptional(args, OutputKey, OutputDirectory);
         return args;
     }
 

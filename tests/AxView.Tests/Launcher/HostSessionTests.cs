@@ -27,6 +27,7 @@ public sealed class HostSessionTests
         Assert.Equal(view, options.AxamlPath);
         Assert.Equal("shot.png", options.SnapshotPath);
         Assert.Null(options.SettingsFile);
+        Assert.Equal(Path.Combine(dir.Path, "src", "Ui", "bin", "Debug", "net9.0"), options.OutputDirectory);
     }
 
     [Fact]

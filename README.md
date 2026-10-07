@@ -211,6 +211,14 @@ AxView gets these packages in the Avalonia version of the app:
 AxView takes the packages from the NuGet cache (`NUGET_PACKAGES`, or `~/.nuget/packages`).
 When a package is missing, AxView restores it with `dotnet restore`.
 
+## Copy of the app output
+
+The preview runs in a copy of the app output. Thus a build of the app can replace the files while the preview is open.
+The copy is in `AxView/shadow` in the local application data folder, for example `%LOCALAPPDATA%\AxView\shadow` on Windows.
+The first start copies the full output. A later start copies only the changed files.
+Each app output has one copy for each AxView window that is open at the same time.
+You can delete the folder when no preview is open.
+
 ## Versions and releases
 
 [docs/RELEASE.md](docs/RELEASE.md) tells how AxView gets its version from git tags, and how to make a release.

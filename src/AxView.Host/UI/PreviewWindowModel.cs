@@ -59,7 +59,7 @@ internal sealed class PreviewWindowModel : IDisposable
         this.options = options;
         this.addWindowState = addWindowState;
         this.shutdown = shutdown;
-        OutputDirectory = Path.GetDirectoryName(projects.ViewAssembly.Location) ?? string.Empty;
+        OutputDirectory = options.OutputDirectory ?? Path.GetDirectoryName(projects.ViewAssembly.Location) ?? string.Empty;
         Styles = appStyles.CreateCopy();
         Settings = options.SettingsFile is null ? Settings.Default : Settings.Load(options.SettingsFile);
         preview = new ProjectPreview(options, projects, services, appStyles, Settings.ViewModels);

@@ -72,6 +72,17 @@ public sealed class PreviewWindowModelTests
     }
 
     [AvaloniaFact]
+    public void OutputDirectory_IsTheOutputOfTheOptions_WhenTheHostRunsInACopy()
+    {
+        using TempDir view = new();
+        string file = view.Write("Views/Main.axaml", TextBlockXaml);
+        string output = Path.Combine(view.Path, "bin", "Debug", "net9.0");
+        using PreviewWindowModel model = Create(Options(view, file) with { OutputDirectory = output });
+
+        Assert.Equal(output, model.OutputDirectory);
+    }
+
+    [AvaloniaFact]
     public void SetFilter_KeepsTheMatchingEntries_AndTheSelection()
     {
         using TempDir view = new();

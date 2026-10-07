@@ -7,6 +7,7 @@ namespace AxView.Hosting;
 
 /// <summary>Runs the host with <c>dotnet exec</c> inside the runtime of the target app.</summary>
 /// <param name="toolDirectory">The folder that contains the host folders.</param>
+/// <param name="shadowRoot">The folder of the <see cref="OutputShadow"/> copies. The host runs in a copy, so that a build can replace the app output.</param>
 /// <remarks>
 /// Each host folder contains one host build. The build agrees with the Avalonia major version of the app:
 /// <list type="bullet">
@@ -14,7 +15,7 @@ namespace AxView.Hosting;
 /// <item><description><c>host12</c>: Avalonia 12 and later.</description></item>
 /// </list>
 /// </remarks>
-internal sealed class DotnetHostProcess(string toolDirectory) : IHostProcess
+internal sealed class DotnetHostProcess(string toolDirectory, string shadowRoot) : IHostProcess
 {
     private const string HostAssembly = "AxView.Host.dll";
     private const string Avalonia11Folder = "host";
@@ -22,7 +23,7 @@ internal sealed class DotnetHostProcess(string toolDirectory) : IHostProcess
     private const int Avalonia12Major = 12;
 
     /// <summary>Makes the host process for the host builds that the launcher ships next to it.</summary>
-    public static DotnetHostProcess ForInstalledHost() => new(AppContext.BaseDirectory);
+    public static DotnetHostProcess ForInstalledHost() => new(AppContext.BaseDirectory, OutputShadow.DefaultRoot);
 
     /// <summary>Gives the path of the host build for an Avalonia version.</summary>
     /// <param name="toolDirectory">The folder that contains the host folders.</param>
@@ -41,12 +42,15 @@ internal sealed class DotnetHostProcess(string toolDirectory) : IHostProcess
     }
 
     /// <summary>Makes the dotnet command line.</summary>
-    /// <remarks>The target's runtimeconfig and deps file make the host run on the target's runtime and Avalonia.</remarks>
-    public static IReadOnlyList<string> Arguments(string hostPath, PreviewTarget target, HostOptions options) =>
+    /// <remarks>The runtimeconfig and deps file of the output make the host run on the target's runtime and Avalonia.</remarks>
+    /// <param name="hostPath">The host build.</param>
+    /// <param name="output">The app output that the host runs in.</param>
+    /// <param name="options">The options of the host.</param>
+    public static IReadOnlyList<string> Arguments(string hostPath, AppOutput output, HostOptions options) =>
     [
         "exec",
-        "--runtimeconfig", target.Output.RuntimeConfig,
-        "--depsfile", target.Output.DepsFile,
+        "--runtimeconfig", output.RuntimeConfig,
+        "--depsfile", output.DepsFile,
         hostPath,
         .. options.ToArguments(),
     ];
@@ -55,8 +59,9 @@ internal sealed class DotnetHostProcess(string toolDirectory) : IHostProcess
     public async Task<int> RunAsync(PreviewTarget target, HostOptions options)
     {
         string hostPath = HostPath(toolDirectory, target.Output.ReadAvaloniaVersion());
+        using OutputShadow shadow = OutputShadow.Create(target.Output, shadowRoot);
         ProcessStartInfo info = new(DotnetHost.Path()) { UseShellExecute = false };
-        foreach (string argument in Arguments(hostPath, target, options))
+        foreach (string argument in Arguments(hostPath, shadow.Output, options))
         {
             info.ArgumentList.Add(argument);
         }

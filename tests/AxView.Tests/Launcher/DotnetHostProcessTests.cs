@@ -32,7 +32,7 @@ public sealed class DotnetHostProcessTests
         PreviewTarget target = new("/src/Ui/Views/Main.axaml", "/src/Ui", "Ui", output, "/nuget/loader.dll", null, []);
         HostOptions options = target.ToHostOptions(snapshotPath: null, handOffFile: null);
 
-        IReadOnlyList<string> args = DotnetHostProcess.Arguments("/tool/host/AxView.Host.dll", target, options);
+        IReadOnlyList<string> args = DotnetHostProcess.Arguments("/tool/host/AxView.Host.dll", output, options);
 
         Assert.Equal(
             [

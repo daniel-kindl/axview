@@ -46,5 +46,6 @@ internal sealed record PreviewTarget(
             SnapshotAllDirectory = snapshotAllDirectory,
             ReferencedProjects = ReferencedProjectDirectories.Count > 0 ? string.Join(Path.PathSeparator, ReferencedProjectDirectories) : null,
             ChromeThemePath = ChromeThemePath,
+            OutputDirectory = Output.Directory,
         };
 }
