@@ -15,6 +15,7 @@ internal static class BuilderExtensions
     [
         ("Avalonia.Fonts.Inter", "WithInterFont"),
         ("ReactiveUI.Avalonia", "UseReactiveUI"),
+        ("ReactiveUI.Avalonia.Reactive", "UseReactiveUI"),
         ("Avalonia.ReactiveUI", "UseReactiveUI"),
     ];
 

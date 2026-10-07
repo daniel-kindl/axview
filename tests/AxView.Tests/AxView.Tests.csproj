@@ -24,6 +24,8 @@
     <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.3" />
     <!-- The chrome shots show the chrome also in the Simple theme. -->
     <PackageReference Include="Avalonia.Themes.Simple" Version="12.1.3" />
+    <!-- BuilderExtensionsTests check that the host finds UseReactiveUI of this package. -->
+    <PackageReference Include="ReactiveUI.Avalonia.Reactive" Version="12.1.6" />
   </ItemGroup>
 
   <ItemGroup>
