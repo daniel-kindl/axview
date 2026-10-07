@@ -11,13 +11,6 @@ Do not change or use again a number.
 
 ## Next
 
-- [ ] #82 **Stale app output (S).** `OutputFinder` prefers a Debug output to a newer Release output.
-  The launcher does not build before the first host start.
-  An old output gives errors such as `Unable to resolve "ShellDesignData.Login" as static field`.
-  Do one or more of these steps:
-  - Select the newest output, or show a warning when a Release output is newer than the Debug output.
-  - Show a warning when a source file of the project is newer than the selected output.
-  - Build the app before the first host start, when the output is old.
 - [ ] #83 **ReactiveUI scheduler (S).** The host does not set the ReactiveUI main thread scheduler of the app.
   A `ReactiveCommand` that runs in the preview then raises `CanExecuteChanged` on the thread pool.
   A `Button` reads its `Command` on that thread, and the host stops with an unhandled exception.
@@ -42,6 +35,7 @@ Do not change or use again a number.
 
 ## Done
 
+- [x] #82 Stale app output: when a C# file of the view, app, or referenced project is newer than the found output, the session builds the app before the first host. A build error shows in the host. A given `--output` gets no build. `3dbd5c5`
 - [x] #81 Launcher publish: `Private="false"` on the host references keeps their deps and runtimeconfig files out of the output. Before, `dotnet publish` failed with NETSDK1152. `PublishTests` publishes the launcher. `1ff1918`
 - [x] #79 Snapshot report: `--report <file.json>` with `--snapshot` writes `SnapshotReport`: the exit reason, the load time, the error with its line and column, and the log. `LogCapture` catches the Avalonia warnings, for example binding errors. `2c7f770`
 - [x] #78 Visual tree dump: `--tree <file.json>` with `--snapshot` writes the visual tree of the view with `VisualTreeDump`. Compact JSON, because indents made the file 7 times larger. `SnapshotRequest` holds the snapshot options of the launcher. `a2af3ce`
