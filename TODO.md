@@ -11,15 +11,6 @@ Do not change or use again a number.
 
 ## Next
 
-- [ ] #83 **ReactiveUI scheduler (S).** The host does not set the ReactiveUI main thread scheduler of the app.
-  A `ReactiveCommand` that runs in the preview then raises `CanExecuteChanged` on the thread pool.
-  A `Button` reads its `Command` on that thread, and the host stops with an unhandled exception.
-  Error: `The calling thread cannot access this object because a different thread owns it.`
-  The snapshot exit code was -532462766, not 1, and no report was written.
-  Example: a design ViewModel that calls `AddCmd.Execute().Subscribe()` (DAT4000 `UserManagementDesignData`).
-  Do these steps:
-  - Set `RxSchedulers.MainThreadScheduler` to the Avalonia dispatcher when the app references ReactiveUI.
-  - Catch an unhandled exception of a background thread. Show it in the error panel and in `--report`.
 - [ ] #84 **Design mode flag (S).** The host does not set `Design.IsDesignMode`.
   App code that checks the flag runs its runtime path in the preview.
   Example: DAT4000 design data must test `LoggerService.IsInitialized` because the flag is false.
@@ -35,6 +26,7 @@ Do not change or use again a number.
 
 ## Done
 
+- [x] #83 ReactiveUI scheduler: `BuilderExtensions` also applies `UseReactiveUI` of `ReactiveUI.Avalonia.Reactive` (ReactiveUI 12). `BackgroundErrors` writes an error of a background thread and the `--report`, and exits with 1. The error panel cannot show it: .NET stops the process. `90680aa` `c064f62`
 - [x] #82 Stale app output: when a C# file of the view, app, or referenced project is newer than the found output, the session builds the app before the first host. A build error shows in the host. A given `--output` gets no build. `3dbd5c5`
 - [x] #81 Launcher publish: `Private="false"` on the host references keeps their deps and runtimeconfig files out of the output. Before, `dotnet publish` failed with NETSDK1152. `PublishTests` publishes the launcher. `1ff1918`
 - [x] #79 Snapshot report: `--report <file.json>` with `--snapshot` writes `SnapshotReport`: the exit reason, the load time, the error with its line and column, and the log. `LogCapture` catches the Avalonia warnings, for example binding errors. `2c7f770`
