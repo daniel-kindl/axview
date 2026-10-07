@@ -29,9 +29,17 @@ internal sealed class PreviewApp(HostOptions options, List<string> notes) : Appl
     // The target styles go only to the preview. The AxView chrome gets its own theme.
     public override void Initialize()
     {
+        Settings settings = LoadSettings();
+
+        // The design services factory and the views can check the flag. Thus set it before they run.
+        if (settings.SetDesignMode && !DesignMode.Enable())
+        {
+            notes.Add("Cannot set Design.IsDesignMode. App code runs its runtime path.");
+        }
+
         Projects = ProjectSet.Load(options);
         services = LoadServices();
-        appStyles = AppStyles.Import(Projects, services, notes, LoadSettings().RunAppStartup);
+        appStyles = AppStyles.Import(Projects, services, notes, settings.RunAppStartup);
 
         // The app gets the first copy. It is the import that ran the startup.
         // The preview finds Application.Current resources too. Thus it finds the resources that the startup adds.

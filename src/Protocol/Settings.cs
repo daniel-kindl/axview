@@ -14,7 +14,8 @@ namespace AxView.Protocol;
 ///   "Size": { "Preset": "Custom", "Width": 500, "Height": 300 },
 ///   "ViewModels": { "/src/Ui/Views/Main.axaml": "Ui.ViewModels.MainViewModel" },
 ///   "IsSidebarCollapsed": true,
-///   "RunAppStartup": true
+///   "RunAppStartup": true,
+///   "SetDesignMode": true
 /// }
 /// </code>
 /// Each change loads the file again, changes one value, and saves the file.
@@ -53,6 +54,13 @@ internal sealed record Settings
     /// <summary>True to call OnFrameworkInitializationCompleted of the target app. Its ApplicationLifetime is null.</summary>
     /// <remarks>The user sets this value in the file. The default is false.</remarks>
     public bool RunAppStartup { get; init; }
+
+    /// <summary>True to set <c>Design.IsDesignMode</c> in the preview. App code that checks the flag then runs its design path.</summary>
+    /// <remarks>
+    /// The user sets this value in the file. The default is false, because some controls draw nothing in design mode.
+    /// For example, LiveCharts draws no chart.
+    /// </remarks>
+    public bool SetDesignMode { get; init; }
 
     /// <summary>Reads the settings file.</summary>
     /// <returns>The settings, or <see cref="Default"/> when the file is missing or not valid.</returns>

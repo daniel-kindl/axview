@@ -80,6 +80,15 @@ public sealed class SettingsTests
         Assert.Empty(loaded.ViewModels);
     }
 
+    [Fact]
+    public void Load_ReadsTheDesignModeSwitchThatTheUserSetsInTheFile()
+    {
+        using TempDir dir = new();
+        string file = dir.Write("settings.json", "{ \"SetDesignMode\": true }");
+
+        Assert.True(Settings.Load(file).SetDesignMode);
+    }
+
     private static void AssertDefault(Settings settings)
     {
         Assert.Empty(settings.RecentFiles);
@@ -87,5 +96,6 @@ public sealed class SettingsTests
         Assert.Equal(PreviewTheme.Default, settings.Theme);
         Assert.Equal(PreviewSize.Fit, settings.Size);
         Assert.Empty(settings.ViewModels);
+        Assert.False(settings.SetDesignMode);
     }
 }

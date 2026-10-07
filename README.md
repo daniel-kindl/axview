@@ -181,7 +181,8 @@ Each value is optional:
   "Size": { "Preset": "Custom", "Width": 500, "Height": 300 },
   "ViewModels": { "/src/Ui/Views/Main.axaml": "Ui.ViewModels.MainViewModel" },
   "IsSidebarCollapsed": true,
-  "RunAppStartup": true
+  "RunAppStartup": true,
+  "SetDesignMode": true
 }
 ```
 
@@ -194,8 +195,11 @@ Each value is optional:
 | `ViewModels` | The ViewModel type that you selected for each file. |
 | `IsSidebarCollapsed` | `true` when you collapsed the sidebar of the preview window. |
 | `RunAppStartup` | `true` calls `OnFrameworkInitializationCompleted` of the app. Its `ApplicationLifetime` is null. The default is `false`. You set this value in the file. |
+| `SetDesignMode` | `true` sets `Design.IsDesignMode`, so that app code runs its design path. Some controls then draw nothing, for example LiveCharts. The default is `false`. You set this value in the file. |
 
-AxView writes all values except `RunAppStartup`.
+A snapshot does not read the settings file. Thus `RunAppStartup` and `SetDesignMode` apply only to the preview window.
+
+AxView writes all values except `RunAppStartup` and `SetDesignMode`.
 
 ## Packages from NuGet
 
