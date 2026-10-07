@@ -2,6 +2,7 @@ using System.Runtime.CompilerServices;
 
 using Avalonia;
 
+using AxView.Host.Rendering;
 using AxView.Host.Startup;
 using AxView.Protocol;
 
@@ -29,6 +30,15 @@ internal static class Program
         {
             LoaderResolver.Register(options.ChromeThemePath);
         }
+
+        // Without an exit here, .NET stops the host with an unknown exit code and no report.
+        AppDomain.CurrentDomain.UnhandledException += (_, e) =>
+        {
+            if (e.ExceptionObject is Exception ex)
+            {
+                Environment.Exit((int)BackgroundErrors.Report(options, ex, Console.Error));
+            }
+        };
 
         return Run(options);
     }
