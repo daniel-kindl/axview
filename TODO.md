@@ -11,10 +11,6 @@ Do not change or use again a number.
 
 ## Next
 
-- [ ] #84 **Design mode flag (S).** The host does not set `Design.IsDesignMode`.
-  App code that checks the flag runs its runtime path in the preview.
-  Example: DAT4000 design data must test `LoggerService.IsInitialized` because the flag is false.
-  Set the flag before the host loads the first file.
 - [ ] #85 **Locked app output (M).** The host loads the assemblies from the app output folder.
   While a preview is open, a build of the app cannot replace these files (MSB3021).
   Load the assemblies from a shadow copy, or from memory, so that the app build can continue.
@@ -26,6 +22,7 @@ Do not change or use again a number.
 
 ## Done
 
+- [x] #84 Design mode flag: `"SetDesignMode": true` in `settings.json` sets `Design.IsDesignMode` by reflection (`DesignMode`). Off by default, because LiveCharts draws no chart in design mode. A snapshot does not read the settings, so the flag applies only to the preview window. `feb22bf`
 - [x] #83 ReactiveUI scheduler: `BuilderExtensions` also applies `UseReactiveUI` of `ReactiveUI.Avalonia.Reactive` (ReactiveUI 12). `BackgroundErrors` writes an error of a background thread and the `--report`, and exits with 1. The error panel cannot show it: .NET stops the process. `90680aa` `c064f62`
 - [x] #82 Stale app output: when a C# file of the view, app, or referenced project is newer than the found output, the session builds the app before the first host. A build error shows in the host. A given `--output` gets no build. `3dbd5c5`
 - [x] #81 Launcher publish: `Private="false"` on the host references keeps their deps and runtimeconfig files out of the output. Before, `dotnet publish` failed with NETSDK1152. `PublishTests` publishes the launcher. `1ff1918`
