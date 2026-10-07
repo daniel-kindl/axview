@@ -217,6 +217,96 @@ public sealed class HostSessionTests
     }
 
     [Fact]
+    public async Task RunAsync_BuildsTheAppBeforeTheFirstHostWhenACodeFileIsNewerThanTheOutputAsync()
+    {
+        using TempDir dir = new();
+        _ = dir.Write("Repo.sln");
+        string view = AppFixture.WriteProject(dir, "Ui");
+        File.SetLastWriteTimeUtc(dir.Write("src/Ui/MainViewModel.cs"), DateTime.UtcNow.AddHours(1));
+        FakeHostProcess hosts = new();
+        hosts.Enqueue(ExitReason.Ok);
+        FakeOutputBuilder builder = new();
+
+        _ = await Session(hosts, builder).RunAsync(view, outputDir: null, _ => { });
+
+        AppOutput built = Assert.Single(builder.Builds);
+        Assert.Equal(Path.Combine(dir.Path, "src", "Ui", "bin", "Debug", "net9.0"), built.Directory);
+        Assert.Null(Assert.Single(hosts.Runs).SetupError);
+    }
+
+    [Fact]
+    public async Task RunAsync_BuildsTheAppWhenACodeFileOfAReferencedProjectIsNewerThanTheOutputAsync()
+    {
+        using TempDir dir = new();
+        _ = dir.Write("Repo.sln");
+        string view = AppFixture.WriteProject(dir, "Ui");
+        _ = dir.Write("src/Ui/Ui.csproj", """<Project><ItemGroup><ProjectReference Include="../Core/Core.csproj" /></ItemGroup></Project>""");
+        _ = dir.Write("src/Core/Core.csproj", "<Project />");
+        File.SetLastWriteTimeUtc(dir.Write("src/Core/Service.cs"), DateTime.UtcNow.AddHours(1));
+        FakeHostProcess hosts = new();
+        hosts.Enqueue(ExitReason.Ok);
+        FakeOutputBuilder builder = new();
+
+        _ = await Session(hosts, builder).RunAsync(view, outputDir: null, _ => { });
+
+        _ = Assert.Single(builder.Builds);
+    }
+
+    [Fact]
+    public async Task RunAsync_StartsTheFirstHostWithoutABuildWhenTheOutputIsNewerThanTheCodeAsync()
+    {
+        using TempDir dir = new();
+        _ = dir.Write("Repo.sln");
+        string view = AppFixture.WriteProject(dir, "Ui");
+        File.SetLastWriteTimeUtc(dir.Write("src/Ui/MainViewModel.cs"), DateTime.UtcNow.AddHours(-1));
+        FakeHostProcess hosts = new();
+        hosts.Enqueue(ExitReason.Ok);
+        FakeOutputBuilder builder = new();
+
+        _ = await Session(hosts, builder).RunAsync(view, outputDir: null, _ => { });
+
+        Assert.Empty(builder.Builds);
+        _ = Assert.Single(hosts.Runs);
+    }
+
+    [Fact]
+    public async Task RunAsync_StartsTheFirstHostWithoutABuildWhenTheOutputIsGivenAsync()
+    {
+        using TempDir dir = new();
+        _ = dir.Write("Repo.sln");
+        string view = AppFixture.WriteProject(dir, "Ui");
+        File.SetLastWriteTimeUtc(dir.Write("src/Ui/MainViewModel.cs"), DateTime.UtcNow.AddHours(1));
+        string output = Path.Combine(dir.Path, "src", "Ui", "bin", "Debug", "net9.0");
+        FakeHostProcess hosts = new();
+        hosts.Enqueue(ExitReason.Ok);
+        FakeOutputBuilder builder = new();
+
+        _ = await Session(hosts, builder).RunAsync(view, output, _ => { });
+
+        Assert.Empty(builder.Builds);
+    }
+
+    [Fact]
+    public async Task RunAsync_ShowsTheBuildErrorInTheFirstHostWhenTheFirstBuildFailsAsync()
+    {
+        using TempDir dir = new();
+        _ = dir.Write("Repo.sln");
+        string view = AppFixture.WriteProject(dir, "Ui");
+        File.SetLastWriteTimeUtc(dir.Write("src/Ui/MainViewModel.cs"), DateTime.UtcNow.AddHours(1));
+        FakeHostProcess hosts = new();
+        hosts.Enqueue(ExitReason.Ok);
+        FakeBuildDisplay display = new();
+
+        _ = await Session(hosts, new FakeOutputBuilder("MainViewModel.cs(3,1): error CS1002: ; expected"), display)
+            .RunAsync(view, outputDir: null, _ => { });
+
+        HostOptions options = Assert.Single(hosts.Runs);
+        Assert.Equal(view, options.AxamlPath);
+        Assert.Equal("MainViewModel.cs(3,1): error CS1002: ; expected", options.SetupError);
+        Assert.True(Assert.Single(display.Shown).IsDisposed);
+    }
+
+    [Fact]
     public async Task RunAsync_StartsNoHostWhenTheSetupFailsAsync()
     {
         using TempDir dir = new();

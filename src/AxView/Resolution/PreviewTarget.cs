@@ -21,6 +21,20 @@ internal sealed record PreviewTarget(
     IReadOnlyList<string> ReferencedProjectDirectories,
     string? ChromeThemePath = null)
 {
+    /// <summary>Tells if a C# file of the view project, the app project, or a referenced project is newer than the app output.</summary>
+    /// <remarks>The newest assembly of the output gives the time of the last build.</remarks>
+    public bool IsOutputOlderThanCode()
+    {
+        DateTime buildTime = Directory.EnumerateFiles(Output.Directory, "*.dll").Max(File.GetLastWriteTimeUtc);
+        IEnumerable<string> projectDirectories = [ProjectDirectory, .. ReferencedProjectDirectories];
+        if (AppProjectDirectory is not null)
+        {
+            projectDirectories = projectDirectories.Append(AppProjectDirectory);
+        }
+
+        return projectDirectories.Any(directory => ProjectSources.GetLastCodeWriteTime(directory) > buildTime);
+    }
+
     /// <summary>Makes the options that tell the host to show this target.</summary>
     /// <param name="snapshotPath">If set, the host saves one PNG to this path and exits.</param>
     /// <param name="handOffFile">If set, the host writes a hand-off here before a project switch.</param>

@@ -48,7 +48,7 @@ axview [<file.axaml> [--output <app-bin-dir>] [--snapshot <file.png> [--view-mod
 
 | Option | Meaning |
 |---|---|
-| `--output <app-bin-dir>` | Use this app output. Without it, AxView finds the output: a Debug output wins, then the most recent build. |
+| `--output <app-bin-dir>` | Use this app output. Without it, AxView finds the output: a Debug output wins, then the most recent build. When a C# file is newer than the found output, AxView builds the app first. |
 | `--snapshot <file.png>` | Write a PNG of the file, then exit. |
 | `--view-model <type>` | Set the DataContext of a `--snapshot` to a new instance of this ViewModel type (full name). |
 | `--tree <file.json>` | With `--snapshot`, also write the visual tree of the view to a JSON file. |

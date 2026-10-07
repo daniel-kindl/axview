@@ -1,5 +1,7 @@
 using Avalonia.Threading;
 
+using AxView.Protocol;
+
 namespace AxView.Host.Catalog;
 
 /// <summary>Raises one change on the UI thread after a burst of file system events for the watched files.</summary>

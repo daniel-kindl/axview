@@ -10,6 +10,7 @@ namespace AxView.Hosting;
 /// <item>The user opens a file of another project.</item>
 /// <item>A code file of the project changes. The session builds the app before the next host.</item>
 /// </list>
+/// <para>When a code file is newer than the found app output, the session builds the app before the first host.</para>
 /// <remarks>
 /// If the launcher cannot prepare the file of the other project, the host starts again on the previous file.
 /// If the build fails or the user cancels it, the host starts again on the old app output.
@@ -53,6 +54,12 @@ internal sealed class HostSession(
         string? setupError = null;
         try
         {
+            // A given output is the choice of the user. A found output can be older than the code.
+            if ((outputDir is null) && target.IsOutputOlderThanCode())
+            {
+                setupError = await TryBuildAsync(target);
+            }
+
             while (true)
             {
                 await log.WriteLineAsync($"axview: {target.AssemblyName} in '{target.Output.Directory}'");
@@ -82,12 +89,7 @@ internal sealed class HostSession(
                     {
                         // The file of the hand-off is in the same project. On a build error, the next host shows it.
                         target = target with { AxamlPath = handOff.NextFile };
-                        await log.WriteLineAsync($"axview: build of the app in '{target.Output.Directory}'");
-                        using (IBuildProgress progress = buildDisplay.Show(target.Output.AppName))
-                        {
-                            await outputBuilder.BuildAsync(target.Output, progress, progress.Cancellation);
-                        }
-
+                        await BuildAsync(target);
                         target = Open(handOff.NextFile, outputDir, opened);
                     }
                     else
@@ -107,6 +109,28 @@ internal sealed class HostSession(
         finally
         {
             File.Delete(handOffFile);
+        }
+    }
+
+    private async Task BuildAsync(PreviewTarget target)
+    {
+        await log.WriteLineAsync($"axview: build of the app in '{target.Output.Directory}'");
+        using IBuildProgress progress = buildDisplay.Show(target.Output.AppName);
+        await outputBuilder.BuildAsync(target.Output, progress, progress.Cancellation);
+    }
+
+    // On a build error, the host starts on the old output and shows the error.
+    private async Task<string?> TryBuildAsync(PreviewTarget target)
+    {
+        try
+        {
+            await BuildAsync(target);
+            return null;
+        }
+        catch (PreviewSetupException ex)
+        {
+            await log.WriteLineAsync($"axview: {ex.Message}");
+            return ex.Message;
         }
     }
 
