@@ -18,6 +18,7 @@ Do not change or use again a number.
 
 ## Done
 
+- [x] #86 Clipped modal snapshots: the PNG now has 96 DPI at all screen scales. A higher DPI on a scaled screen made Avalonia 12 scale a part of the content two times. `--fit-content` crops a snapshot to the content size. The snapshot window gets the `--size`. `34ab8de`
 - [x] #85 Locked app output: `OutputShadow` copies the app output to `AxView/shadow` in the local application data, and the host runs there. Later starts copy only changed files. A lock file gives each open host its own folder. The status bar shows the real output (`--output` host option). `97eaf4a`
 - [x] #84 Design mode flag: `"SetDesignMode": true` in `settings.json` sets `Design.IsDesignMode` by reflection (`DesignMode`). Off by default, because LiveCharts draws no chart in design mode. A snapshot does not read the settings, so the flag applies only to the preview window. `feb22bf`
 - [x] #83 ReactiveUI scheduler: `BuilderExtensions` also applies `UseReactiveUI` of `ReactiveUI.Avalonia.Reactive` (ReactiveUI 12). `BackgroundErrors` writes an error of a background thread and the `--report`, and exits with 1. The error panel cannot show it: .NET stops the process. `90680aa` `c064f62`
