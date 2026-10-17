@@ -32,6 +32,7 @@ namespace AxView.Host.UI;
 /// <see cref="HostMode.Snapshot"/> also saves the visual tree of the view with <see cref="VisualTreeDump"/>, if the options have a tree path.
 /// A failed load gives no tree file. If the options have a report path, it also saves a <see cref="SnapshotReport"/>.
 /// Each PNG has the size and the theme of the options, if they are set. The control gallery ignores the size.
+/// With <see cref="HostOptions.FitsContent"/>, each PNG has the size of the view content, in the limits of the size.
 /// Each PNG waits for the settle time after the window shows. The errors go to the standard error stream.
 /// </remarks>
 /// <param name="projects">The projects of the preview.</param>
@@ -140,6 +141,7 @@ internal sealed class SnapshotRunner(ProjectSet projects, DesignServices service
     private async Task<string?> SaveAsync(SnapshotWindow window, string png, HostOptions options, string? treePath = null)
     {
         window.PreviewSize = options.Size ?? PreviewSize.Fit;
+        window.FitsContent = options.FitsContent;
         window.ShowTheme(options.Theme ?? PreviewTheme.Default);
         _ = Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(png))!);
         try

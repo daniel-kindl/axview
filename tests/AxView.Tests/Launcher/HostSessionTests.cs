@@ -70,13 +70,14 @@ public sealed class HostSessionTests
         hosts.Enqueue(ExitReason.Ok);
         PreviewSize size = new(PreviewSizePreset.Custom, 500, 300);
 
-        _ = await Session(hosts).RunAsync(view, null, _ => { }, new SnapshotRequest("shot.png", Size: size, Theme: PreviewTheme.Dark, TreePath: "tree.json", ReportPath: "report.json"));
+        _ = await Session(hosts).RunAsync(view, null, _ => { }, new SnapshotRequest("shot.png", Size: size, Theme: PreviewTheme.Dark, TreePath: "tree.json", ReportPath: "report.json", FitsContent: true));
 
         HostOptions options = Assert.Single(hosts.Runs);
         Assert.Equal(size, options.Size);
         Assert.Equal(PreviewTheme.Dark, options.Theme);
         Assert.Equal("tree.json", options.TreePath);
         Assert.Equal("report.json", options.ReportPath);
+        Assert.True(options.FitsContent);
     }
 
     [Fact]

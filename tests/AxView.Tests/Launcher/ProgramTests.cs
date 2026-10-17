@@ -32,6 +32,14 @@ public sealed class ProgramTests
         Assert.Equal((int)ExitReason.BadArguments, exitCode);
     }
 
+    [Fact]
+    public void Main_RejectsFitContentWithoutASnapshot()
+    {
+        int exitCode = Program.Main(["Main.axaml", "--fit-content"]);
+
+        Assert.Equal((int)ExitReason.BadArguments, exitCode);
+    }
+
     [Theory]
     [InlineData("--size", "Huge")]
     [InlineData("--theme", "Blue")]

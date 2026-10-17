@@ -49,6 +49,21 @@ public sealed class SnapshotRunnerTests
     }
 
     [AvaloniaFact]
+    public async Task RunAsync_SnapshotWithFitsContent_WritesAPngOfTheContentSizeAsync()
+    {
+        using TempDir dir = new();
+        string file = dir.Write("Views/Card.axaml", $"""<Border {AvaloniaXmlns} Width="120" Height="80" />""");
+        string png = Path.Combine(dir.Path, "card.png");
+        HostOptions options = Options(dir, file) with { SnapshotPath = png, FitsContent = true };
+
+        ExitReason reason = await Runner(dir).RunAsync(options);
+
+        Assert.Equal(ExitReason.Ok, reason);
+        using Bitmap bitmap = new(png);
+        Assert.Equal(new PixelSize(120, 80), bitmap.PixelSize);
+    }
+
+    [AvaloniaFact]
     public async Task RunAsync_SnapshotAllWithASize_WritesPngsOfThatSizeAsync()
     {
         using TempDir dir = new();

@@ -33,7 +33,7 @@ To write the source and binary archives to `artifacts/`, run `./pack.ps1 all` (P
 
 ```text
 axview [<file.axaml> [--output <app-bin-dir>] [--snapshot <file.png> [--view-model <type>] [--tree <file.json>] [--report <file.json>] | --snapshot-all <dir>]
-       [--size <Fit|Phone|Tablet|Desktop|WxH>] [--theme <Default|Light|Dark>]]
+       [--size <Fit|Phone|Tablet|Desktop|WxH>] [--theme <Default|Light|Dark>] [--fit-content]]
 ```
 
 | Command | Result |
@@ -43,6 +43,7 @@ axview [<file.axaml> [--output <app-bin-dir>] [--snapshot <file.png> [--view-mod
 | `axview Views/MainView.axaml --snapshot main.png` | Writes one PNG and exits. |
 | `axview Views/MainView.axaml --snapshot-all shots` | Writes one PNG for each AXAML file of the project and exits. |
 | `axview Views/MainView.axaml --snapshot main.png --size Phone --theme Dark` | Writes one PNG at the phone size in the dark variant. |
+| `axview Views/DialogView.axaml --snapshot dialog.png --fit-content` | Writes one PNG with only the view content, for example a modal card. |
 
 ### Options
 
@@ -56,11 +57,13 @@ axview [<file.axaml> [--output <app-bin-dir>] [--snapshot <file.png> [--view-mod
 | `--snapshot-all <dir>` | Write a PNG of each AXAML file of the project and `summary.txt` into the folder, then exit. |
 | `--size <size>` | Set the size of each snapshot: `Fit`, `Phone` (390×844), `Tablet` (820×1180), `Desktop` (1920×1080), or a width and height, for example `500x300`. `Fit` is 1280×800. |
 | `--theme <variant>` | Set the theme variant of each snapshot: `Default` (the variant of the app), `Light`, or `Dark`. |
+| `--fit-content` | Crop each snapshot to the size that the view content needs. The content gets the `--size` as its available size. |
 | `-h`, `--help` | Show the usage. |
 
 Use `--snapshot` or `--snapshot-all`, not both.
-`--size` and `--theme` need `--snapshot` or `--snapshot-all`. The names can have any case.
+`--size`, `--theme`, and `--fit-content` need `--snapshot` or `--snapshot-all`. The names can have any case.
 A snapshot does not use the size and the theme of `settings.json`.
+A PNG has one pixel for each device-independent pixel, at all screen scales. Thus `--size 500x300` gives a PNG of 500×300 pixels.
 
 ### Preview window
 
@@ -142,7 +145,7 @@ A failed load writes no tree. Use `jq` to make the file easier to read.
 - The host also writes the report when the ViewModel is unknown.
 
 `--snapshot-all` also writes the control gallery to `axview-gallery.png`.
-The gallery has its full size. It ignores `--size`.
+The gallery has its full size. It ignores `--size` and `--fit-content`.
 The last line of `summary.txt` is for the gallery: `ok      (control gallery)`.
 
 ### Control gallery

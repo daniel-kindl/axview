@@ -54,8 +54,28 @@ internal sealed class SnapshotWindow : Window
     }
 
     /// <summary>Gets or sets the size of the snapshot. <see cref="PreviewSize.Fit"/> gives the default window size.</summary>
-    /// <remarks>A control that has the full size ignores this value.</remarks>
-    public PreviewSize PreviewSize { get; set; } = PreviewSize.Fit;
+    /// <remarks>
+    /// A control that has the full size ignores this value. The window also gets this size, because some views read the window size.
+    /// The operating system can make the window smaller than the screen. The PNG keeps this size.
+    /// </remarks>
+    public PreviewSize PreviewSize
+    {
+        get;
+        set
+        {
+            field = value;
+            bool isFit = value.Preset == PreviewSizePreset.Fit;
+            Width = isFit ? DefaultWidth : value.Width;
+            Height = isFit ? DefaultHeight : value.Height;
+        }
+    } = PreviewSize.Fit;
+
+    /// <summary>Gets or sets a value that tells if the PNG has the size that the content needs.</summary>
+    /// <remarks>
+    /// The content gets the snapshot size as the available size. The PNG then has the desired size of the content.
+    /// A control that has the full size ignores this value.
+    /// </remarks>
+    public bool FitsContent { get; set; }
 
     /// <summary>Gets the preview of the file, or null when the load failed or the window shows a control.</summary>
     public Control? View => livePreview?.View;
@@ -84,6 +104,15 @@ internal sealed class SnapshotWindow : Window
             scope.Arrange(new Rect(clientSize));
             captured = scope;
         }
+        else if (FitsContent)
+        {
+            // Lay out the preview in the snapshot size. Then crop the PNG to the size that the content needs.
+            Size available = PreviewSize.Preset == PreviewSizePreset.Fit ? clientSize : new Size(PreviewSize.Width, PreviewSize.Height);
+            scope.Measure(available);
+            clientSize = scope.DesiredSize;
+            scope.Arrange(new Rect(clientSize));
+            captured = scope;
+        }
         else if (PreviewSize.Preset != PreviewSizePreset.Fit)
         {
             // The operating system limits a window to the screen size. Thus lay out the preview at the size, not the window.
@@ -93,8 +122,10 @@ internal sealed class SnapshotWindow : Window
             captured = scope;
         }
 
-        PixelSize size = PixelSize.FromSize(clientSize, RenderScaling);
-        using RenderTargetBitmap bitmap = new(size, new Vector(ScreenDpi * RenderScaling, ScreenDpi * RenderScaling));
+        // Render one pixel for each device-independent pixel, at all screen scales. Thus the PNG has the requested size.
+        // A bitmap DPI other than 96 on a scaled screen makes Avalonia 12 scale a part of the content two times.
+        PixelSize size = new(Math.Max(1, (int)Math.Ceiling(clientSize.Width)), Math.Max(1, (int)Math.Ceiling(clientSize.Height)));
+        using RenderTargetBitmap bitmap = new(size, new Vector(ScreenDpi, ScreenDpi));
         bitmap.Render(captured);
         bitmap.Save(pngPath);
     }

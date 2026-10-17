@@ -79,6 +79,46 @@ public sealed class SnapshotWindowTests
     }
 
     [AvaloniaFact]
+    public void Save_WithFitsContent_WritesAPngOfTheContentSize()
+    {
+        using TempDir dir = new();
+        string file = dir.Write(
+            "Views/Card.axaml",
+            $"""<Border {AvaloniaXmlns} Width="300" Height="200" Margin="8" />""");
+        string png = Path.Combine(dir.Path, "card.png");
+        SnapshotWindow window = new(Renderer(dir), file, TargetStyles.None) { FitsContent = true };
+        window.Show();
+
+        window.Save(png);
+
+        using Bitmap bitmap = new(png);
+        Assert.Equal(new PixelSize(316, 216), bitmap.PixelSize);
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void Save_WithFitsContentAndAPreviewSize_LimitsTheContentToThatSize()
+    {
+        using TempDir dir = new();
+        string file = dir.Write(
+            "Views/Wide.axaml",
+            $"""<Border {AvaloniaXmlns} MinWidth="100" MinHeight="50" />""");
+        string png = Path.Combine(dir.Path, "wide.png");
+        SnapshotWindow window = new(Renderer(dir), file, TargetStyles.None)
+        {
+            PreviewSize = PreviewSize.Parse("500x300"),
+            FitsContent = true,
+        };
+        window.Show();
+
+        window.Save(png);
+
+        using Bitmap bitmap = new(png);
+        Assert.Equal(new PixelSize(100, 50), bitmap.PixelSize);
+        window.Close();
+    }
+
+    [AvaloniaFact]
     public void ShowTheme_Dark_GivesThePreviewTheDarkVariant()
     {
         using TempDir dir = new();

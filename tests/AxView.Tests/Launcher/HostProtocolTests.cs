@@ -23,7 +23,8 @@ public sealed class HostProtocolTests
         Theme: PreviewTheme.Dark,
         TreePath: "/out/tree.json",
         ReportPath: "/out/report.json",
-        OutputDirectory: "/src/Desktop/bin/Debug/net9.0");
+        OutputDirectory: "/src/Desktop/bin/Debug/net9.0",
+        FitsContent: true);
 
     // The full options without the options that need a snapshot.
     private static readonly HostOptions fullPreview = full with { SnapshotPath = null, ViewModelName = null, TreePath = null, ReportPath = null };
@@ -55,6 +56,7 @@ public sealed class HostProtocolTests
             TreePath = null,
             ReportPath = null,
             OutputDirectory = null,
+            FitsContent = false,
         };
 
         HostOptions parsed = HostOptions.Parse(options.ToArguments());
@@ -153,14 +155,25 @@ public sealed class HostProtocolTests
     [Theory]
     [InlineData("--size", "Phone")]
     [InlineData("--theme", "Dark")]
+    [InlineData("--fit-content", "true")]
     public void ValidateMode_RejectsARenderFlagWithoutASnapshot(string key, string value)
     {
-        HostOptions preview = fullPreview with { Size = null, Theme = null };
+        HostOptions preview = fullPreview with { Size = null, Theme = null, FitsContent = false };
         string[] args = [.. preview.ToArguments(), key, value];
 
         ArgumentException ex = Assert.Throws<ArgumentException>(() => HostOptions.Parse(args));
 
         Assert.Contains(key, ex.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Parse_RejectsAFitContentValueThatIsNotABoolean()
+    {
+        string[] args = [.. (full with { FitsContent = false }).ToArguments(), "--fit-content", "maybe"];
+
+        ArgumentException ex = Assert.Throws<ArgumentException>(() => HostOptions.Parse(args));
+
+        Assert.Contains("--fit-content", ex.Message, StringComparison.Ordinal);
     }
 
     [Fact]

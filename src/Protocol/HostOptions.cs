@@ -37,6 +37,9 @@ namespace AxView.Protocol;
 /// <param name="OutputDirectory">
 /// If set, the app output that the launcher found. The host shows it. The host runs in a copy of this folder, so the build can replace its files.
 /// </param>
+/// <param name="FitsContent">
+/// If true, each snapshot PNG has the size that the view content needs. <see cref="Size"/> then limits that size.
+/// </param>
 internal sealed record HostOptions(
     string AxamlPath,
     string ProjectDirectory,
@@ -56,7 +59,8 @@ internal sealed record HostOptions(
     PreviewTheme? Theme = null,
     string? TreePath = null,
     string? ReportPath = null,
-    string? OutputDirectory = null)
+    string? OutputDirectory = null,
+    bool FitsContent = false)
 {
     private const string AxamlKey = "--axaml";
     private const string ProjectKey = "--project";
@@ -77,11 +81,13 @@ internal sealed record HostOptions(
     private const string ThemeKey = "--theme";
     private const string TreeKey = "--tree";
     private const string ReportKey = "--report";
+    private const string FitContentKey = "--fit-content";
 
     private static readonly string[] keys =
     [
         AxamlKey, ProjectKey, AssemblyKey, AppAssemblyKey, LoaderKey, SnapshotKey, HandOffKey, SetupErrorKey, SettingsKey, AppProjectKey,
         SnapshotAllKey, ViewModelKey, ReferencedProjectsKey, ChromeThemeKey, SizeKey, ThemeKey, TreeKey, ReportKey, OutputKey,
+        FitContentKey,
     ];
 
     /// <summary>Gets the host mode. A snapshot folder selects <see cref="HostMode.SnapshotAll"/>, a snapshot path <see cref="HostMode.Snapshot"/>.</summary>
@@ -96,7 +102,7 @@ internal sealed record HostOptions(
     /// <param name="request">The snapshot options of the command line.</param>
     /// <exception cref="ArgumentException">
     /// The options select more than one mode, a ViewModel, a tree, or a report without a snapshot,
-    /// or a size or theme without a snapshot mode.
+    /// or a size, a theme, or a content fit without a snapshot mode.
     /// </exception>
     public static void ValidateMode(SnapshotRequest request)
     {
@@ -128,6 +134,11 @@ internal sealed record HostOptions(
         if (request.Theme is not null && !request.IsSnapshot)
         {
             throw new ArgumentException($"{ThemeKey} needs {SnapshotKey} or {SnapshotAllKey}.");
+        }
+
+        if (request.FitsContent && !request.IsSnapshot)
+        {
+            throw new ArgumentException($"{FitContentKey} needs {SnapshotKey} or {SnapshotAllKey}.");
         }
     }
 
@@ -176,7 +187,8 @@ internal sealed record HostOptions(
         string? viewModelName = values.GetValueOrDefault(ViewModelKey);
         string? treePath = values.GetValueOrDefault(TreeKey);
         string? reportPath = values.GetValueOrDefault(ReportKey);
-        ValidateMode(new SnapshotRequest(snapshotPath, snapshotAllDirectory, viewModelName, size, theme, treePath, reportPath));
+        bool fitsContent = values.TryGetValue(FitContentKey, out string? fitText) && ParseFitContent(fitText);
+        ValidateMode(new SnapshotRequest(snapshotPath, snapshotAllDirectory, viewModelName, size, theme, treePath, reportPath, fitsContent));
         return new HostOptions(
             Required(AxamlKey),
             Required(ProjectKey),
@@ -196,7 +208,8 @@ internal sealed record HostOptions(
             theme,
             treePath,
             reportPath,
-            values.GetValueOrDefault(OutputKey));
+            values.GetValueOrDefault(OutputKey),
+            fitsContent);
     }
 
     /// <summary>Writes the options as the host command line.</summary>
@@ -224,8 +237,14 @@ internal sealed record HostOptions(
         AddOptional(args, TreeKey, TreePath);
         AddOptional(args, ReportKey, ReportPath);
         AddOptional(args, OutputKey, OutputDirectory);
+        AddOptional(args, FitContentKey, FitsContent ? bool.TrueString : null);
         return args;
     }
+
+    private static bool ParseFitContent(string text) =>
+        bool.TryParse(text, out bool value)
+            ? value
+            : throw new ArgumentException($"The value '{text}' of {FitContentKey} is not true or false.");
 
     private static void AddOptional(List<string> args, string key, string? value)
     {
