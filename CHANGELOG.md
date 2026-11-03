@@ -21,11 +21,13 @@ The version numbers follow [semantic versioning](https://semver.org/spec/v2.0.0.
 ### Security
 
 - The Avalonia 11 host project pins SkiaSharp 2.88.9 and Tmds.DBus.Protocol 0.21.3.
-- The Avalonia 12 host project pins Tmds.DBus.Protocol 0.92.0.
+- The Avalonia 12 host project pins Tmds.DBus.Protocol 0.94.1.
 - The host does not ship those assemblies. The target app still supplies its own copies at runtime.
 
 ### Changed
 
+- The Avalonia 12 host compiles against Avalonia 12.1.5.
+- Package versions are in `Directory.Packages.props`.
 - This repository follows dkstack v1.
 - A task that is not done is a GitHub issue. `TODO.md` remains the historical list.
 

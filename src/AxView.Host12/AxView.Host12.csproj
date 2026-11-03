@@ -2,7 +2,8 @@
 
   <!--
     The host for apps on Avalonia 12 and later. Avalonia 12 breaks the binary API of Avalonia 11.
-    This project compiles the sources of AxView.Host against the Avalonia 12.0 API.
+    This project compiles the sources of AxView.Host against Avalonia 12.1.5.
+    The sources use APIs that Avalonia 12.0 has.
     The launcher selects the host build from the Avalonia version of the app.
   -->
   <PropertyGroup>
@@ -25,11 +26,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Avalonia" Version="12.0.0" ExcludeAssets="runtime" />
-    <PackageReference Include="Avalonia.Desktop" Version="12.0.0" ExcludeAssets="runtime" />
-    <PackageReference Include="Avalonia.Markup.Xaml.Loader" Version="12.0.0" ExcludeAssets="runtime" />
-    <!-- Avalonia 12.0.0 brings Tmds.DBus.Protocol 0.90.3. This pin keeps the compile-only closure on the patched version. -->
-    <PackageReference Include="Tmds.DBus.Protocol" Version="0.92.0" ExcludeAssets="runtime" />
+    <PackageReference Include="Avalonia" ExcludeAssets="runtime" />
+    <PackageReference Include="Avalonia.Desktop" ExcludeAssets="runtime" />
+    <PackageReference Include="Avalonia.Markup.Xaml.Loader" ExcludeAssets="runtime" />
+    <!-- Avalonia 12.1.5 brings Tmds.DBus.Protocol 0.94.1. This pin keeps the compile-only closure on that patched version. -->
+    <PackageReference Include="Tmds.DBus.Protocol" ExcludeAssets="runtime" />
   </ItemGroup>
 
 </Project>

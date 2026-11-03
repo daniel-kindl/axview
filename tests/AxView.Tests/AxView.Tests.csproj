@@ -10,22 +10,22 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="coverlet.collector" Version="6.0.0" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
+    <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <!-- Avalonia.Headless.XUnit 12 needs xunit v3 3.2. -->
-    <PackageReference Include="xunit.v3" Version="3.2.2" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.runner.visualstudio" />
   </ItemGroup>
 
   <!-- The host tests render real AXAML on the headless platform. Only the tests use these packages, never the host. -->
   <ItemGroup>
-    <PackageReference Include="Avalonia.Headless.XUnit" Version="12.1.3" />
-    <PackageReference Include="Avalonia.Markup.Xaml.Loader" Version="12.1.3" />
-    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.3" />
+    <PackageReference Include="Avalonia.Headless.XUnit" />
+    <PackageReference Include="Avalonia.Markup.Xaml.Loader" />
+    <PackageReference Include="Avalonia.Themes.Fluent" />
     <!-- The chrome shots show the chrome also in the Simple theme. -->
-    <PackageReference Include="Avalonia.Themes.Simple" Version="12.1.3" />
+    <PackageReference Include="Avalonia.Themes.Simple" />
     <!-- BuilderExtensionsTests check that the host finds UseReactiveUI of this package. -->
-    <PackageReference Include="ReactiveUI.Avalonia.Reactive" Version="12.1.6" />
+    <PackageReference Include="ReactiveUI.Avalonia.Reactive" />
   </ItemGroup>
 
   <ItemGroup>
