@@ -27,6 +27,7 @@ The version numbers follow [semantic versioning](https://semver.org/spec/v2.0.0.
 ### Changed
 
 - The Avalonia 12 host compiles against Avalonia 12.1.5.
+- Package versions are in `Directory.Packages.props`.
 - This repository follows dkstack v1.
 - A task that is not done is a GitHub issue. `TODO.md` remains the historical list.
 

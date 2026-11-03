@@ -21,12 +21,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Avalonia" Version="11.0.0" ExcludeAssets="runtime" />
-    <PackageReference Include="Avalonia.Desktop" Version="11.0.0" ExcludeAssets="runtime" />
-    <PackageReference Include="Avalonia.Markup.Xaml.Loader" Version="11.0.0" ExcludeAssets="runtime" />
+    <PackageReference Include="Avalonia" VersionOverride="11.0.0" ExcludeAssets="runtime" />
+    <PackageReference Include="Avalonia.Desktop" VersionOverride="11.0.0" ExcludeAssets="runtime" />
+    <PackageReference Include="Avalonia.Markup.Xaml.Loader" VersionOverride="11.0.0" ExcludeAssets="runtime" />
     <!-- Avalonia 11.0.0 brings older copies. These pins keep the same compile-only closure on the patched versions. -->
-    <PackageReference Include="SkiaSharp" Version="2.88.9" ExcludeAssets="runtime" />
-    <PackageReference Include="Tmds.DBus.Protocol" Version="0.21.3" ExcludeAssets="runtime" />
+    <PackageReference Include="SkiaSharp" ExcludeAssets="runtime" />
+    <PackageReference Include="Tmds.DBus.Protocol" VersionOverride="0.21.3" ExcludeAssets="runtime" />
   </ItemGroup>
 
 </Project>

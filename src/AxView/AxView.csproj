@@ -18,10 +18,11 @@
 
   <!-- The picker UI. Its Avalonia version is independent of the target app's version. -->
   <ItemGroup>
-    <PackageReference Include="Avalonia" Version="12.1.3" />
-    <PackageReference Include="Avalonia.Desktop" Version="12.1.3" />
-    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.3" />
-    <PackageReference Include="Avalonia.Fonts.Inter" Version="12.1.3" />
+    <!-- VersionOverride keeps the picker on Avalonia 12.1.3. -->
+    <PackageReference Include="Avalonia" VersionOverride="12.1.3" />
+    <PackageReference Include="Avalonia.Desktop" VersionOverride="12.1.3" />
+    <PackageReference Include="Avalonia.Themes.Fluent" VersionOverride="12.1.3" />
+    <PackageReference Include="Avalonia.Fonts.Inter" />
   </ItemGroup>
 
   <!--

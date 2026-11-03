@@ -238,6 +238,7 @@ A task that is not done is a GitHub issue. `TODO.md` is only the historical list
 
 GitHub Actions runs the build, the tests, and the format check on each pull request and on each push to `main`.
 The workflow can only read the repository contents.
+Package versions are in `Directory.Packages.props`.
 Dependabot checks NuGet packages and GitHub Actions each week.
 The build stops when NuGet audit reports a high or critical advisory.
 

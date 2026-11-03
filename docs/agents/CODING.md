@@ -130,6 +130,12 @@ Order members in this sequence:
 - Use `async`/`await` for asynchronous work.
 - Use `this` and `base` only when the compiler requires them.
 
+## Packages
+
+Package versions are in `Directory.Packages.props`.
+Do not set `Version` on a `PackageReference`.
+A project that needs a different version sets `VersionOverride`.
+
 ## Host
 
 - The host runs inside the target app's runtime. Do not add package references with runtime assets to `AxView.Host`.

@@ -26,11 +26,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Avalonia" Version="12.1.5" ExcludeAssets="runtime" />
-    <PackageReference Include="Avalonia.Desktop" Version="12.1.5" ExcludeAssets="runtime" />
-    <PackageReference Include="Avalonia.Markup.Xaml.Loader" Version="12.1.5" ExcludeAssets="runtime" />
+    <PackageReference Include="Avalonia" ExcludeAssets="runtime" />
+    <PackageReference Include="Avalonia.Desktop" ExcludeAssets="runtime" />
+    <PackageReference Include="Avalonia.Markup.Xaml.Loader" ExcludeAssets="runtime" />
     <!-- Avalonia 12.1.5 brings Tmds.DBus.Protocol 0.94.1. This pin keeps the compile-only closure on that patched version. -->
-    <PackageReference Include="Tmds.DBus.Protocol" Version="0.94.1" ExcludeAssets="runtime" />
+    <PackageReference Include="Tmds.DBus.Protocol" ExcludeAssets="runtime" />
   </ItemGroup>
 
 </Project>
