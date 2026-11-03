@@ -43,7 +43,7 @@ The About dialog and the name of the binary archive show this version.
 1. Make a branch from the release tag: `git switch -c hotfix/1.2.1 v1.2.0`.
 2. Fix the problem, and commit.
 3. Tag the fix `v1.2.1`, and make the release.
-4. Merge the fix into `master`.
+4. Merge the hotfix branch into `main`.
 
 ## Clone for a build
 

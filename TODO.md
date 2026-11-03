@@ -1,17 +1,21 @@
 # TODO
 
-Work list for agents. Do the top open item first.
-Effort: S = one session, M = two or three sessions, L = more.
-When you finish an item, mark it `[x]`, add the commit hash, and move it to the top of Done.
-Done has the newest item first.
-Each item has a number, for example `#16`. Give a new item the next free number.
-Do not change or use again a number.
+This file is the historical work list.
+A task that is not done is a GitHub issue in `daniel-kindl/axview`.
+Do not add a new item here.
+A number in this file or in an old commit is a historical item number.
+It is not a GitHub issue number.
+
+The one open item moved to GitHub Issues.
+Its title is "Run the host tests on the Avalonia 11 host build".
 
 ## Now
 
 ## Next
 
 ## Later
+
+## Moved
 
 - [ ] #59 **Avalonia 11 host tests (M).** The test project tests only the Avalonia 12 host build (ADR 0002).
   Find a way to run the host tests also on the Avalonia 11 build, for example a second test run in CI.

@@ -1,0 +1,14 @@
+version: 2
+updates:
+  - package-ecosystem: nuget
+    directory: /
+    commit-message:
+      prefix: chore
+    schedule:
+      interval: weekly
+  - package-ecosystem: github-actions
+    directory: /
+    commit-message:
+      prefix: chore
+    schedule:
+      interval: weekly
